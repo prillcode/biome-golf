@@ -1,0 +1,28 @@
+services:
+  minecraft:
+    image: itzg/minecraft-server:latest
+    container_name: minecraft-golf-dev
+    ports:
+      - "25565:25565"
+    environment:
+      EULA: "TRUE"
+      TYPE: FABRIC
+      VERSION: "26.2"
+      MEMORY: "4G"
+      MODE: creative
+      DIFFICULTY: peaceful
+      ONLINE_MODE: "true"
+      MOTD: "Minecraft Golf dev server"
+    volumes:
+      - minecraft-golf-data:/data
+      - ./mods:/data/mods-local:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mc-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  minecraft-golf-data:
