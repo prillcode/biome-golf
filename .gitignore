@@ -1,0 +1,48 @@
+# Gradle
+.gradle/
+build/
+out/
+classes/
+
+# IntelliJ / editor
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+
+# VS Code
+.settings/
+bin/
+
+# macOS
+.DS_Store
+
+# Fabric / Minecraft dev runtime data (worlds, saves, logs are disposable)
+run/
+classes/
+
+# Java
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr
+
+# Docker dev-server data (named volume is used for persistent data; any bind data is disposable)
+dev-server/data/
+
+# Background-shell / local harness state
+.bg-shell/
+.bgs/
+.gsd/
+.bgs-shell/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+*.local
+bg-shell*
+*.log
