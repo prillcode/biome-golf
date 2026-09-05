@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "minecraft_golf",
+	"version": "${version}",
+	"name": "Minecraft Golf",
+	"description": "A Minecraft golf mod: hit balls through real Minecraft terrain using a skill-based swing.",
+	"authors": [
+		"prillcode"
+	],
+	"contact": {
+		"sources": "https://github.com/prillcode/minecraft-golf"
+	},
+	"license": "MIT",
+	"icon": "assets/minecraft_golf/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.prillcode.minecraftgolf.MinecraftGolf"
+		],
+		"client": [
+			"com.prillcode.minecraftgolf.client.MinecraftGolfClient"
+		]
+	},
+	"mixins": [],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
