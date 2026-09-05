@@ -131,8 +131,8 @@ The host operating system should not affect the Fabric server architecture.
 
 | Milestone | Name | Status |
 |---|---|---|
-| M0 | Project Setup | Not Started |
-| M1 | Golf Ball Physics | Not Started |
+| M0 | Project Setup | Complete |
+| M1 | Golf Ball Physics | Next |
 | M2 | Clubs and Shot Execution | Not Started |
 | M3 | Three-Click Swing and HUD | Not Started |
 | M4 | Holes, Cups, Boundaries, and Scoring | Not Started |
