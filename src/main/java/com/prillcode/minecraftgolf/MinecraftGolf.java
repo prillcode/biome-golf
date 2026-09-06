@@ -6,6 +6,7 @@ import net.minecraft.world.entity.EntityType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.prillcode.minecraftgolf.command.GolfDevCommands;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 
 public class MinecraftGolf implements ModInitializer {
@@ -27,5 +28,9 @@ public class MinecraftGolf implements ModInitializer {
 		LOGGER.info("Registered entity {} as {}",
 				EntityType.getKey(type),
 				type.toShortString());
+
+		// Developer launch and test controls (M001-S03). Server-side only; the
+		// command tree is op-gated and consumes only server-authoritative state.
+		GolfDevCommands.register();
 	}
 }
