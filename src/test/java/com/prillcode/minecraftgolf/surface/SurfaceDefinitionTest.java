@@ -1,6 +1,7 @@
 package com.prillcode.minecraftgolf.surface;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,9 +31,19 @@ class SurfaceDefinitionTest {
 	void sandAndHoneyAreHazardsWithLowRollBounce() {
 		assertEquals(0.60, SurfaceDefinition.SAND.rollingFriction(), TOL);
 		assertEquals(0.30, SurfaceDefinition.SAND.bounceMultiplier(), TOL);
+		assertTrue(SurfaceDefinition.SAND.hazard());
 
 		assertEquals(0.55, SurfaceDefinition.HONEY.rollingFriction(), TOL);
 		assertEquals(0.05, SurfaceDefinition.HONEY.bounceMultiplier(), TOL);
+		assertTrue(SurfaceDefinition.HONEY.hazard());
+	}
+
+	@Test
+	void ordinarySurfacesAreNotHazards() {
+		assertFalse(SurfaceDefinition.NORMAL.hazard());
+		assertFalse(SurfaceDefinition.ICE.hazard());
+		assertFalse(SurfaceDefinition.SLIME.hazard());
+		assertFalse(SurfaceDefinition.GENERIC.hazard());
 	}
 
 	@Test
@@ -60,20 +71,20 @@ class SurfaceDefinitionTest {
 	@Test
 	void rollingFrictionMustBeInZeroOneRange() {
 		assertThrows(IllegalArgumentException.class,
-				() -> new SurfaceDefinition("bad", -0.1, 1.0));
+				() -> new SurfaceDefinition("bad", -0.1, 1.0, false));
 		assertThrows(IllegalArgumentException.class,
-				() -> new SurfaceDefinition("bad", 1.1, 1.0));
+				() -> new SurfaceDefinition("bad", 1.1, 1.0, false));
 	}
 
 	@Test
 	void bounceMultiplierMustBeNonNegative() {
 		assertThrows(IllegalArgumentException.class,
-				() -> new SurfaceDefinition("bad", 0.5, -0.1));
+				() -> new SurfaceDefinition("bad", 0.5, -0.1, false));
 	}
 
 	@Test
 	void idMustNotBeNull() {
 		assertThrows(NullPointerException.class,
-				() -> new SurfaceDefinition(null, 0.5, 1.0));
+				() -> new SurfaceDefinition(null, 0.5, 1.0, false));
 	}
 }
