@@ -47,7 +47,7 @@ advanced lies.
   and only the third click sends `ShotRequestPayload`.
 - Resting/owner values are tracker-synchronized as client selection hints. The
   server still re-validates them and remains the sole launch authority.
-- Inc3 compiles, all 90 tests pass, clean build passes, Loom client reaches mod
+- Inc3 compiles, all 97 tests pass, clean build passes, Loom client reaches mod
   initialization, and Loom dedicated server boots on an alternate local port.
 - Manual testing confirmed the three-click feel across the club set. The HUD was
   moved to the lower-right above the hotbar after overlap feedback.
@@ -61,6 +61,10 @@ advanced lies.
   third-person camera follows the authoritative ball, tracks its heading, and
   restores the prior camera on rest, rejection, removal, disconnect, timeout,
   or sneak cancel.
+- Post-Inc4 physics tuning adds one-block terrain step assist when lower ground
+  is within one block beneath the ball, including the upward phase just after a
+  bounce. Genuinely airborne hits, two-block sheer faces, and ground bounce
+  remain unchanged. The second in-world hill test accepted this behavior.
 
 ## Verification notes
 - Headless: `./gradlew test` — Inc1 carries the deterministic shot calculations.
