@@ -39,13 +39,24 @@ threads power/accuracy into the same resolver/launch contract.
   - rcon `/golf spawn`/`inspect` show owner field; ball settles RESTING `owner unowned`
 - Evidence log: `build/m2-devserver-evidence.log` (gitignored, disposable)
 
-## Not yet verified (needs a real player/client — human visual/manual gate)
-- Right-click `use()` shot actually fires a ball toward the camera in a live client,
-  and ownership claim-on-first-hit + "belongs to another player" rejection behave
-  in 2-player play.
-- Club items visually distinguish / feel okay when given (`/give @s
-  minecraft_golf:club_driver`) and used; real per-club art pending.
-- Per-club distance/lie feel (tuning is M7).
+## Client validation — CONFIRMED (live runClient, singleplayer)
+All three clubs tested cleanly launch a resting ball with a right-click toward the
+owner's camera aim:
+- Driver — expected long carry
+- Putter — too hot initially (rolled up to ~20+ blocks); fixed fullPowerSpeed
+  1.05 -> 0.45 (gentle, controllable roll)
+- Wedge — too flat/low initially; fixed launchAngle 34 -> 46 (higher, soft arc)
+Re-validated: clubs work as desired. Feel is pinned headlessly by `ClubCarryTest`
+flat-range invariants (driver carries farthest; wedge apex > driver apex; putter
+low and under wedge energy). Tuning lives only in `GolfClubs` data.
+
+## Still needs (deferred, lower priority)
+- Two-player ownership rejection (player A's ball cannot be struck by player B)
+  — needs a 2nd concurrent client connection.
+- Real per-club item art (all 7 share one simple club texture) and a /give helper
+  for non-creative servers is opt via creative search.
+- Club-shot distance *display* (nominal carry number in an HUD) belongs to M3.
+
 
 ## Trying it in a client (cheats/creative, op)
 1. `./gradlew runClient` (or connect to the Docker server — dev-server is creative)
