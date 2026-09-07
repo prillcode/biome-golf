@@ -132,9 +132,9 @@ The host operating system should not affect the Fabric server architecture.
 | Milestone | Name | Status |
 |---|---|---|
 | M0 | Project Setup | Complete |
-| M1 | Golf Ball Physics | Server-verified; human visual sign-off pending (see docs/M1-CLOSEOUT.md) |
-| M2 | Clubs and Shot Execution | Not Started |
-| M3 | Three-Click Swing and HUD | Not Started |
+| M1 | Golf Ball Physics | Complete (see docs/M1-CLOSEOUT.md) |
+| M2 | Clubs and Shot Execution | Complete (see docs/M2-NOTES.md) |
+| M3 | Three-Click Swing and HUD | Next |
 | M4 | Holes, Cups, Boundaries, and Scoring | Not Started |
 | M5 | Multiplayer Ready Golf | Not Started |
 | M6 | Three-Hole MVP Course | Not Started |
@@ -1144,8 +1144,8 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-The repository is built (M0 baseline committed to `main`). M1 (Golf Ball Physics)
-code is merged to `main` and server-verified; a human visual sign-off remains — see
-`docs/M1-CLOSEOUT.md`. After that sign-off the next execution target is:
+The repository baseline and golf-physics core are on `main`; M1 (ball physics) and
+M2 (clubs + server-authoritative shots) are complete, validated, and pushed.
+See `docs/M1-CLOSEOUT.md` and `docs/M2-NOTES.md`. The next execution target is:
 
-> **M2 — Clubs and Shot Execution**
+> **M3 — Three-Click Swing and HUD**
