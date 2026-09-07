@@ -222,7 +222,9 @@ public final class GolfDevCommands {
 		} else {
 			double speedBlocksPerSecond = state.velocity().length() * 20.0;
 			String motion = state.resting() ? "RESTING" : (state.grounded() ? "MOVING (rolling)" : "MOVING (airborne)");
+			String owner = ball.owner() == null ? "unowned" : shortUuid(ball.owner());
 			msg = "golf: ball #" + ball.getId() + " " + motion
+					+ " | owner " + owner
 					+ " | pos " + fmt(state.position())
 					+ " | vel " + fmt(state.velocity()) + " blocks/tick"
 					+ " | speed " + String.format("%.2f", speedBlocksPerSecond) + " blocks/s"
@@ -304,5 +306,10 @@ public final class GolfDevCommands {
 
 	private static String fmt(double x, double y, double z) {
 		return String.format("(%.2f, %.2f, %.2f)", x, y, z);
+	}
+
+	private static String shortUuid(java.util.UUID uuid) {
+		String s = uuid.toString();
+		return s.substring(0, 8);
 	}
 }
