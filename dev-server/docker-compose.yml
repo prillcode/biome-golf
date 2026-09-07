@@ -13,9 +13,10 @@ services:
       DIFFICULTY: peaceful
       ONLINE_MODE: "true"
       MOTD: "Minecraft Golf dev server"
+      MODRINTH_PROJECTS: "fabric-api"
     volumes:
       - minecraft-golf-data:/data
-      - ./mods:/data/mods-local:ro
+      - ./mods:/mods:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mc-health"]
