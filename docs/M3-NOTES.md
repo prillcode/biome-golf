@@ -1,6 +1,6 @@
-# M3 — Three-Click Swing and HUD: In-Progress Notes
+# M3 — Three-Click Swing and HUD: Implementation Notes
 
-Branch: `m3-three-click-swing` (base `main` @ the validated M2 merge).
+Status: **Complete**. Branch: `m3-three-click-swing` (base `main` @ the validated M2 merge).
 
 ## Scope (MILESTONES.md M3, PRD §5–7)
 Skill-based three-click shot interaction + a lightweight HUD + a simple post-shot

@@ -134,8 +134,8 @@ The host operating system should not affect the Fabric server architecture.
 | M0 | Project Setup | Complete |
 | M1 | Golf Ball Physics | Complete (see docs/M1-CLOSEOUT.md) |
 | M2 | Clubs and Shot Execution | Complete (see docs/M2-NOTES.md) |
-| M3 | Three-Click Swing and HUD | Next |
-| M4 | Holes, Cups, Boundaries, and Scoring | Not Started |
+| M3 | Three-Click Swing and HUD | Complete (see docs/M3-CLOSEOUT.md) |
+| M4 | Holes, Cups, Boundaries, and Scoring | Next |
 | M5 | Multiplayer Ready Golf | Not Started |
 | M6 | Three-Hole MVP Course | Not Started |
 | M7 | MVP Hardening and Family Playtest | Not Started |
