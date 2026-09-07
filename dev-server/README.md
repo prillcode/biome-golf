@@ -16,7 +16,7 @@ sudo usermod -aG docker $USER   # then log out and back in
 ```bash
 # from the repository root:
 ./scripts/dev-server-sync.sh     # build the mod and sync its JAR into dev-server/mods/
-./scripts/dev-server-up.sh       # start the server (detached)
+./scripts/dev-server-up.sh       # start the server (detached; Compose copies /mods into /data/mods)
 ./scripts/dev-server-logs.sh     # follow server logs
 ./scripts/dev-server-restart.sh  # restart
 ./scripts/dev-server-down.sh     # stop
@@ -46,7 +46,7 @@ Server settings (version, memory, game mode, MOTD, etc.) are in `dev-server/dock
 - `VERSION` pins the Minecraft version — keep it in sync with `gradle.properties`.
 - `MEMORY` is the JVM heap.
 - `MODE` / `DIFFICULTY` / `MOTD` are gameplay-facing.
-- Fabric API is downloaded automatically by the server image at startup.
+- Fabric API is downloaded automatically from Modrinth through `MODRINTH_PROJECTS`.
 
 ## Notes
 
