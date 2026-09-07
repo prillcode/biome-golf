@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.prillcode.minecraftgolf.command.GolfDevCommands;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.item.GolfItems;
+import com.prillcode.minecraftgolf.net.ShotNetworking;
 
 public class MinecraftGolf implements ModInitializer {
 	public static final String MOD_ID = "minecraft_golf";
@@ -37,5 +38,8 @@ public class MinecraftGolf implements ModInitializer {
 		// Developer launch and test controls (M001-S03). Server-side only; the
 		// command tree is op-gated and consumes only server-authoritative state.
 		GolfDevCommands.register();
+
+		// M3: typed shot-request networking (payload codec + server receiver).
+		ShotNetworking.register();
 	}
 }

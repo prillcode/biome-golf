@@ -7,5 +7,8 @@
   "item.minecraft_golf.club_wedge": "Wedge",
   "item.minecraft_golf.club_putter": "Putter",
 
-  "itemGroup.minecraft_golf.clubs": "Minecraft Golf — Clubs"
+  "itemGroup.minecraft_golf.clubs": "Minecraft Golf — Clubs",
+
+  "key.category.minecraft_golf.controls": "Minecraft Golf",
+  "key.minecraft_golf.drop_ball": "Drop Practice Ball"
 }

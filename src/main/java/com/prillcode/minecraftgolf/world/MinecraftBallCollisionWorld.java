@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.ball.BallCollisionWorld;
 import com.prillcode.minecraftgolf.ball.CollisionResult;
 import com.prillcode.minecraftgolf.golf.Vec3;
@@ -35,6 +36,8 @@ import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
 public final class MinecraftBallCollisionWorld implements BallCollisionWorld {
 
 	private static final double EPSILON = 1.0E-7;
+	private static final double MAX_STEP_UP = 1.0;
+	private static final double NEAR_GROUND_PROBE = 1.0;
 
 	private final Level level;
 	private final Entity contextEntity;
@@ -90,6 +93,19 @@ public final class MinecraftBallCollisionWorld implements BallCollisionWorld {
 			return CollisionResult.moved(toDomain(mcFrom.add(mcDelta)));
 		}
 
+		if (blockedAxis != Direction.Axis.Y) {
+			net.minecraft.world.phys.Vec3 stepped = tryStepMove(
+					box, mcDelta, adjusted,
+					(candidateBox, requested) -> Entity.collideBoundingBox(
+							contextEntity, requested, candidateBox, level, List.of()));
+			if (stepped != null) {
+				MinecraftGolf.LOGGER.info(
+						"Golf ball {} stepped terrain rise={} at ({}, {}, {})",
+						contextEntity.getId(), stepped.y, mcFrom.x, mcFrom.y, mcFrom.z);
+				return CollisionResult.moved(toDomain(mcFrom.add(stepped)));
+			}
+		}
+
 		// Contact normal points back toward the ball (opposite the attempted
 		// travel on the blocked axis), matching the S01 synthetic worlds.
 		double sign = -Math.signum(mcDelta.get(blockedAxis));
@@ -101,6 +117,58 @@ public final class MinecraftBallCollisionWorld implements BallCollisionWorld {
 
 		Vec3 center = toDomain(mcFrom.add(adjusted));
 		return CollisionResult.hit(center, normal);
+	}
+
+	/**
+	 * Attempts a vanilla-style alternate path over a one-block ledge. This is
+	 * deliberately limited to motion with lower terrain nearby: genuinely
+	 * airborne wall hits and sheer faces taller than one block keep their normal
+	 * collision response.
+	 */
+	static net.minecraft.world.phys.Vec3 tryStepMove(
+			AABB box,
+			net.minecraft.world.phys.Vec3 requested,
+			net.minecraft.world.phys.Vec3 blocked,
+			CollisionSweep sweep) {
+		// The visible block staircase is treated as terrain only while lower ground
+		// is nearby. This includes the upward phase immediately after a ground
+		// bounce, which is the common way shots encounter Minecraft hills.
+		net.minecraft.world.phys.Vec3 support = sweep.move(
+				box, new net.minecraft.world.phys.Vec3(0.0, -NEAR_GROUND_PROBE, 0.0));
+		if (support.y <= -NEAR_GROUND_PROBE + EPSILON) {
+			return null;
+		}
+
+		net.minecraft.world.phys.Vec3 up =
+				sweep.move(box, new net.minecraft.world.phys.Vec3(0.0, MAX_STEP_UP, 0.0));
+		if (up.y <= EPSILON) {
+			return null;
+		}
+
+		AABB raised = box.move(0.0, up.y, 0.0);
+		net.minecraft.world.phys.Vec3 horizontalRequest =
+				new net.minecraft.world.phys.Vec3(requested.x, 0.0, requested.z);
+		net.minecraft.world.phys.Vec3 horizontal = sweep.move(raised, horizontalRequest);
+		double normalProgress = blocked.x * blocked.x + blocked.z * blocked.z;
+		double stepProgress = horizontal.x * horizontal.x + horizontal.z * horizontal.z;
+		if (stepProgress <= normalProgress + EPSILON) {
+			return null;
+		}
+
+		AABB advanced = raised.move(horizontal);
+		net.minecraft.world.phys.Vec3 down = sweep.move(
+				advanced, new net.minecraft.world.phys.Vec3(0.0, requested.y - up.y, 0.0));
+		double rise = up.y + down.y;
+		if (rise <= EPSILON || rise > MAX_STEP_UP + EPSILON) {
+			return null;
+		}
+		return new net.minecraft.world.phys.Vec3(horizontal.x, rise, horizontal.z);
+	}
+
+	@FunctionalInterface
+	interface CollisionSweep {
+		net.minecraft.world.phys.Vec3 move(
+				AABB box, net.minecraft.world.phys.Vec3 requested);
 	}
 
 	@Override

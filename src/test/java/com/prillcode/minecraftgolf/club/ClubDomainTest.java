@@ -89,25 +89,27 @@ class ClubDomainTest {
 	@Test
 	void rejectsBlankIdAndName() {
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition(" ", "Driver", 82, 1.9, 12, 0.8, false, 3.0));
+				() -> new ClubDefinition(" ", "Driver", 82, 1.9, 0.4, 12, 0.8, false, 3.0));
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("driver", "", 82, 1.9, 12, 0.8, false, 3.0));
+				() -> new ClubDefinition("driver", "", 82, 1.9, 0.4, 12, 0.8, false, 3.0));
 	}
 
 	@Test
 	void rejectsBadSpeedAndAngle() {
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("x", "X", 82, 0.0, 12, 0.8, false, 3.0));
+				() -> new ClubDefinition("x", "X", 82, 0.0, 0.4, 12, 0.8, false, 3.0));
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("x", "X", 82, 1.9, 95.0, 0.8, false, 3.0));
+				() -> new ClubDefinition("x", "X", 82, 1.9, -0.1, 12, 0.8, false, 3.0));
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("x", "X", 82, 1.9, -1.0, 0.8, false, 3.0));
+				() -> new ClubDefinition("x", "X", 82, 1.9, 0.4, 95.0, 0.8, false, 3.0));
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+				() -> new ClubDefinition("x", "X", 82, 1.9, 0.4, -1.0, 0.8, false, 3.0));
 	}
 
 	@Test
 	void rejectsNegativeMeleeDamage() {
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("x", "X", 82, 1.9, 12, 0.8, false, -1.0));
+				() -> new ClubDefinition("x", "X", 82, 1.9, 0.4, 12, 0.8, false, -1.0));
 	}
 
 	@Test
@@ -126,10 +128,8 @@ class ClubDomainTest {
 		assertNotNull(v);
 		assertEquals(0.0, v.x(), 1e-9);
 		assertTrue(v.z() > 0.0, "expected +Z for yaw 0: " + v);
-		double expected = GolfClubs.DRIVER.fullPowerSpeed() * Math.cos(Math.toRadians(12));
-		assertEquals(expected, v.z(), 1e-9);
-		// up component from loft
-		assertTrue(v.y() > 0.0, "driver should launch up");
+		assertEquals(GolfClubs.DRIVER.fullPowerHorizontalSpeed(), v.z(), 1e-9);
+		assertEquals(GolfClubs.DRIVER.fullPowerUpwardSpeed(), v.y(), 1e-9);
 	}
 
 	@Test
@@ -155,7 +155,7 @@ class ClubDomainTest {
 
 	@Test
 	void speedIsCappedAtCeilingNotAbove() {
-		ClubDefinition tooFast = new ClubDefinition("t", "T", 999, 50.0, 12, 0.8, false, 1.0);
+		ClubDefinition tooFast = new ClubDefinition("t", "T", 999, 50.0, 1.0, 12, 0.8, false, 1.0);
 		Vec3 v = ShotResolver.initialVelocity(tooFast, 0.0, 0.0, MAX_SPEED);
 		assertNotNull(v);
 		assertTrue(v.length() <= MAX_SPEED + 1e-9, "speed exceeds ceiling: " + v.length());
