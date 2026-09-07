@@ -55,7 +55,12 @@ advanced lies.
   flat-ground full-power carry and raised apex targets. The second in-world pass
   accepted the 150/125/100/85/60/42/16-block targets for now.
 - The resting ball billboard was corrected to center on the physics position;
-  previously it rendered one radius too high and appeared to float.
+  previously it rendered one radius too high and appeared to float. Manual
+  testing confirmed the corrected ball now sits on the ground.
+- Inc4 is complete and manually accepted: after a finalized shot, a client-only
+  third-person camera follows the authoritative ball, tracks its heading, and
+  restores the prior camera on rest, rejection, removal, disconnect, timeout,
+  or sneak cancel.
 
 ## Verification notes
 - Headless: `./gradlew test` — Inc1 carries the deterministic shot calculations.

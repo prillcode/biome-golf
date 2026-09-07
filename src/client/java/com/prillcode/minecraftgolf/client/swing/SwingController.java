@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 
+import com.prillcode.minecraftgolf.client.camera.PostShotCamera;
 import com.prillcode.minecraftgolf.club.ClubDefinition;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.item.GolfClubItem;
@@ -33,6 +34,8 @@ public final class SwingController {
 		SENT
 	}
 
+	private final PostShotCamera postShotCamera;
+
 	private Phase phase = Phase.IDLE;
 	private GolfBallEntity targetBall;
 	private ClubDefinition club;
@@ -41,6 +44,10 @@ public final class SwingController {
 	private float lockedAccuracy = 0.5f;
 	private String notice = "";
 	private int noticeTicks;
+
+	public SwingController(PostShotCamera postShotCamera) {
+		this.postShotCamera = postShotCamera;
+	}
 
 	public void tick(Minecraft client) {
 		if (client.player == null || client.level == null) {
@@ -138,6 +145,7 @@ public final class SwingController {
 			return;
 		}
 		ClientPlayNetworking.send(payload);
+		postShotCamera.follow(client, targetBall);
 		phase = Phase.SENT;
 		phaseTicks = 0;
 	}
@@ -246,6 +254,9 @@ public final class SwingController {
 	}
 
 	public String stateText() {
+		if (postShotCamera.isFollowing()) {
+			return "Following - sneak to return";
+		}
 		if (noticeTicks > 0) {
 			return notice;
 		}
