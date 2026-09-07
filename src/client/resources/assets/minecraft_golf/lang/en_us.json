@@ -1,0 +1,11 @@
+{
+  "item.minecraft_golf.club_driver": "Driver",
+  "item.minecraft_golf.club_fairway_wood": "Fairway Wood",
+  "item.minecraft_golf.club_long_iron": "Long Iron",
+  "item.minecraft_golf.club_mid_iron": "Mid Iron",
+  "item.minecraft_golf.club_short_iron": "Short Iron",
+  "item.minecraft_golf.club_wedge": "Wedge",
+  "item.minecraft_golf.club_putter": "Putter",
+
+  "itemGroup.minecraft_golf.clubs": "Minecraft Golf — Clubs"
+}

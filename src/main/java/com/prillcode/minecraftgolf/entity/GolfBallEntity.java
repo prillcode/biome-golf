@@ -52,6 +52,14 @@ public class GolfBallEntity extends Entity {
 	private static final String NBT_VZ = "golf_vz";
 	private static final String NBT_GROUNDED = "golf_grounded";
 	private static final String NBT_RESTING = "golf_resting";
+	private static final String NBT_OWNER = "golf_owner"; // owner player UUID, or "" when unowned
+
+	/**
+	 * Owner player UUID or {@code null} while the ball is unclaimed.
+	 * A player can only strike a ball they own (M2, ARCH §12); a resting ball is
+	 * claimed by whoever first launches it. Persisted to NBT between loads.
+	 */
+	private java.util.UUID ownerUuid;
 
 	private final GolfBlockSurfaceResolver surfaceResolver = new GolfBlockSurfaceResolver();
 	private final MinecraftBallCollisionWorld collisionWorld;
@@ -146,6 +154,24 @@ public class GolfBallEntity extends Entity {
 		return state != null && state.resting();
 	}
 
+	/** Owner player UUID, or {@code null} when the ball is unclaimed. */
+	public java.util.UUID owner() {
+		return ownerUuid;
+	}
+
+	/** Claims (or reassigns) the ball to a player. Server-side only. */
+	public void setOwner(java.util.UUID playerUuid) {
+		if (level().isClientSide()) {
+			return;
+		}
+		this.ownerUuid = playerUuid;
+	}
+
+	/** Whether the given player may strike this ball (owns it, or it is unclaimed). */
+	public boolean canBeStruckBy(java.util.UUID playerUuid) {
+		return playerUuid != null && (ownerUuid == null || ownerUuid.equals(playerUuid));
+	}
+
 	/** Convenience: ball center as Minecraft coordinates. */
 	public net.minecraft.world.phys.Vec3 ballCenter() {
 		Vec3 c = state == null ? currentCenter() : state.position();
@@ -207,6 +233,8 @@ public class GolfBallEntity extends Entity {
 				input.getDoubleOr(NBT_VZ, 0.0));
 		savedGrounded = input.getBooleanOr(NBT_GROUNDED, false);
 		savedResting = input.getBooleanOr(NBT_RESTING, false);
+		String owner = input.getStringOr(NBT_OWNER, "");
+		ownerUuid = (owner == null || owner.isEmpty()) ? null : java.util.UUID.fromString(owner);
 	}
 
 	@Override
@@ -223,5 +251,6 @@ public class GolfBallEntity extends Entity {
 		output.putDouble(NBT_VZ, v.z());
 		output.putBoolean(NBT_GROUNDED, state.grounded());
 		output.putBoolean(NBT_RESTING, state.resting());
+		output.putString(NBT_OWNER, ownerUuid == null ? "" : ownerUuid.toString());
 	}
 }

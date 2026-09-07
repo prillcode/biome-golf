@@ -23,20 +23,20 @@ import java.util.stream.Collectors;
  */
 public final class GolfClubs {
 
-	/** Driver: longest club, low-loft/fast full-power carry. */
-	public static final ClubDefinition DRIVER = club("driver", "Driver", 82.0, 1.95, 12.0, 0.80, false);
+	/** Driver: longest club, low-loft/fast full-power carry. Heavy, high melee damage (PRD §9). */
+	public static final ClubDefinition DRIVER = club("driver", "Driver", 82.0, 1.95, 12.0, 0.80, false, 5.0);
 	/** Fairway Wood: long but a touch higher/softer than the driver. */
-	public static final ClubDefinition FAIRWAY_WOOD = club("fairway_wood", "Fairway Wood", 66.0, 1.72, 14.0, 0.82, false);
+	public static final ClubDefinition FAIRWAY_WOOD = club("fairway_wood", "Fairway Wood", 66.0, 1.72, 14.0, 0.82, false, 4.0);
 	/** Long Iron. */
-	public static final ClubDefinition LONG_IRON = club("long_iron", "Long Iron", 46.0, 1.52, 16.0, 0.86, false);
+	public static final ClubDefinition LONG_IRON = club("long_iron", "Long Iron", 46.0, 1.52, 16.0, 0.86, false, 3.5);
 	/** Mid Iron. */
-	public static final ClubDefinition MID_IRON = club("mid_iron", "Mid Iron", 33.0, 1.36, 20.0, 0.90, false);
+	public static final ClubDefinition MID_IRON = club("mid_iron", "Mid Iron", 33.0, 1.36, 20.0, 0.90, false, 3.0);
 	/** Short Iron: higher loft, shorter carry. */
-	public static final ClubDefinition SHORT_IRON = club("short_iron", "Short Iron", 22.0, 1.22, 26.0, 0.94, false);
+	public static final ClubDefinition SHORT_IRON = club("short_iron", "Short Iron", 22.0, 1.22, 26.0, 0.94, false, 2.75);
 	/** Wedge: high loft, short low-trajectory high-spin feel. */
-	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 13.0, 1.12, 34.0, 0.96, false);
-	/** Putter: roll-dominant, near-zero launch, shortest range. */
-	public static final ClubDefinition PUTTER = club("putter", "Putter", 7.0, 1.05, 0.5, 1.00, true);
+	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 13.0, 1.12, 34.0, 0.96, false, 2.5);
+	/** Putter: roll-dominant, near-zero launch, shortest range. Lowest melee damage. */
+	public static final ClubDefinition PUTTER = club("putter", "Putter", 7.0, 1.05, 0.5, 1.00, true, 1.0);
 
 	/** Ordered MVP club set (roughly longest first for inventory/HUD ordering). */
 	public static final List<ClubDefinition> ALL = List.of(
@@ -50,8 +50,8 @@ public final class GolfClubs {
 	}
 
 	private static ClubDefinition club(String id, String name, double carry, double speed,
-			double angle, double sensitivity, boolean putting) {
-		return new ClubDefinition(id, name, carry, speed, angle, sensitivity, putting);
+			double angle, double sensitivity, boolean putting, double melee) {
+		return new ClubDefinition(id, name, carry, speed, angle, sensitivity, putting, melee);
 	}
 
 	/** Look up a club by its stable {@code id}. */

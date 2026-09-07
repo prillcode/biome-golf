@@ -23,6 +23,7 @@ import java.util.Objects;
  * @param launchAngleDegrees   full-power launch angle above horizontal
  * @param accuracySensitivity  how strongly a unit of aim/power error shifts aim; higher = tighter (M3+)
  * @param putting              true for the putter (roll-dominant trajectory, no loft)
+ * @param meleeDamage          extra flat attack damage dealt when swung as a weapon (ARCH §12, PRD §9)
  */
 public record ClubDefinition(
 		String id,
@@ -31,7 +32,8 @@ public record ClubDefinition(
 		double fullPowerSpeed,
 		double launchAngleDegrees,
 		double accuracySensitivity,
-		boolean putting) {
+		boolean putting,
+		double meleeDamage) {
 
 	public ClubDefinition {
 		Objects.requireNonNull(id, "id");
@@ -53,6 +55,9 @@ public record ClubDefinition(
 		}
 		if (accuracySensitivity < 0.0) {
 			throw new IllegalArgumentException("accuracySensitivity must be >= 0: " + accuracySensitivity);
+		}
+		if (meleeDamage < 0.0) {
+			throw new IllegalArgumentException("meleeDamage must be >= 0: " + meleeDamage);
 		}
 	}
 

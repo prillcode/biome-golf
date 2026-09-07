@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.prillcode.minecraftgolf.command.GolfDevCommands;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
+import com.prillcode.minecraftgolf.item.GolfItems;
 
 public class MinecraftGolf implements ModInitializer {
 	public static final String MOD_ID = "minecraft_golf";
@@ -28,6 +29,10 @@ public class MinecraftGolf implements ModInitializer {
 		LOGGER.info("Registered entity {} as {}",
 				EntityType.getKey(type),
 				type.toShortString());
+
+		// M2 club items: seven Minecraft items backed by ClubDefinition data.
+		GolfItems.registerAll();
+		LOGGER.info("Registered {} golf club items", GolfItems.CLUB_ITEMS.size());
 
 		// Developer launch and test controls (M001-S03). Server-side only; the
 		// command tree is op-gated and consumes only server-authoritative state.
