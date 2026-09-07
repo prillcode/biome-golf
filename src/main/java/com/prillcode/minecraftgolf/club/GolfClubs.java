@@ -33,10 +33,10 @@ public final class GolfClubs {
 	public static final ClubDefinition MID_IRON = club("mid_iron", "Mid Iron", 33.0, 1.36, 20.0, 0.90, false, 3.0);
 	/** Short Iron: higher loft, shorter carry. */
 	public static final ClubDefinition SHORT_IRON = club("short_iron", "Short Iron", 22.0, 1.22, 26.0, 0.94, false, 2.75);
-	/** Wedge: high loft, short low-trajectory high-spin feel. */
-	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 13.0, 1.12, 34.0, 0.96, false, 2.5);
-	/** Putter: roll-dominant, near-zero launch, shortest range. Lowest melee damage. */
-	public static final ClubDefinition PUTTER = club("putter", "Putter", 7.0, 1.05, 0.5, 1.00, true, 1.0);
+	/** Wedge: high loft for a soft, high arc over a short hop (feedback: should fly high & stop). */
+	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 13.0, 1.18, 46.0, 0.96, false, 2.5);
+	/** Putter: roll-dominant, lowest speed so even a full-power putt is a gentle roll (feedback). */
+	public static final ClubDefinition PUTTER = club("putter", "Putter", 7.0, 0.45, 1.5, 1.00, true, 1.0);
 
 	/** Ordered MVP club set (roughly longest first for inventory/HUD ordering). */
 	public static final List<ClubDefinition> ALL = List.of(
