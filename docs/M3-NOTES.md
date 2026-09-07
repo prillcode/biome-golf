@@ -65,6 +65,10 @@ advanced lies.
   is within one block beneath the ball, including the upward phase just after a
   bounce. Genuinely airborne hits, two-block sheer faces, and ground bounce
   remain unchanged. The second in-world hill test accepted this behavior.
+- A client-only, configurable `B` key provides the approved op-only practice
+  shortcut by submitting the existing `golf spawn` command. The command remains
+  server-authoritative and keeps its gamemaster permission check. Manual key and
+  Controls-screen verification remain before commit.
 
 ## Verification notes
 - Headless: `./gradlew test` — Inc1 carries the deterministic shot calculations.
