@@ -132,7 +132,7 @@ The host operating system should not affect the Fabric server architecture.
 | Milestone | Name | Status |
 |---|---|---|
 | M0 | Project Setup | Complete |
-| M1 | Golf Ball Physics | Next |
+| M1 | Golf Ball Physics | Server-verified; human visual sign-off pending (see docs/M1-CLOSEOUT.md) |
 | M2 | Clubs and Shot Execution | Not Started |
 | M3 | Three-Click Swing and HUD | Not Started |
 | M4 | Holes, Cups, Boundaries, and Scoring | Not Started |
@@ -1144,16 +1144,8 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-The project is currently in pre-repository planning.
+The repository is built (M0 baseline committed to `main`). M1 (Golf Ball Physics)
+code is merged to `main` and server-verified; a human visual sign-off remains — see
+`docs/M1-CLOSEOUT.md`. After that sign-off the next execution target is:
 
-Completed planning artifacts:
-
-- `docs/PRD.md`
-- `docs/ARCHITECTURE.md`
-- `docs/MILESTONES.md`
-
-The next execution target is:
-
-> **M0 — Project Setup**
-
-The first local agent session should create the repository foundation and complete M0 without implementing golf gameplay.
+> **M2 — Clubs and Shot Execution**

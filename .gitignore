@@ -32,6 +32,8 @@ replay_*.log
 
 # Docker dev-server data (named volume is used for persistent data; any bind data is disposable)
 dev-server/data/
+dev-server/mods/*.jar
+!dev-server/mods/.gitkeep
 
 # Background-shell / local harness state
 .bg-shell/
