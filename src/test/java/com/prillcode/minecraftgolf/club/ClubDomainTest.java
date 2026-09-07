@@ -89,19 +89,30 @@ class ClubDomainTest {
 	@Test
 	void rejectsBlankIdAndName() {
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition(" ", "Driver", 82, 1.9, 12, 0.8, false));
+				() -> new ClubDefinition(" ", "Driver", 82, 1.9, 12, 0.8, false, 3.0));
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("driver", "", 82, 1.9, 12, 0.8, false));
+				() -> new ClubDefinition("driver", "", 82, 1.9, 12, 0.8, false, 3.0));
 	}
 
 	@Test
 	void rejectsBadSpeedAndAngle() {
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("x", "X", 82, 0.0, 12, 0.8, false));
+				() -> new ClubDefinition("x", "X", 82, 0.0, 12, 0.8, false, 3.0));
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("x", "X", 82, 1.9, 95.0, 0.8, false));
+				() -> new ClubDefinition("x", "X", 82, 1.9, 95.0, 0.8, false, 3.0));
 		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
-				() -> new ClubDefinition("x", "X", 82, 1.9, -1.0, 0.8, false));
+				() -> new ClubDefinition("x", "X", 82, 1.9, -1.0, 0.8, false, 3.0));
+	}
+
+	@Test
+	void rejectsNegativeMeleeDamage() {
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+				() -> new ClubDefinition("x", "X", 82, 1.9, 12, 0.8, false, -1.0));
+	}
+
+	@Test
+	void driverMeleeOutdamagesPutter() {
+		assertTrue(GolfClubs.DRIVER.meleeDamage() > GolfClubs.PUTTER.meleeDamage());
 	}
 
 	// ------------------------------------------------------------------
@@ -144,7 +155,7 @@ class ClubDomainTest {
 
 	@Test
 	void speedIsCappedAtCeilingNotAbove() {
-		ClubDefinition tooFast = new ClubDefinition("t", "T", 999, 50.0, 12, 0.8, false);
+		ClubDefinition tooFast = new ClubDefinition("t", "T", 999, 50.0, 12, 0.8, false, 1.0);
 		Vec3 v = ShotResolver.initialVelocity(tooFast, 0.0, 0.0, MAX_SPEED);
 		assertNotNull(v);
 		assertTrue(v.length() <= MAX_SPEED + 1e-9, "speed exceeds ceiling: " + v.length());
