@@ -57,10 +57,12 @@ public final class GolfBallEntityRenderer extends EntityRenderer<GolfBallEntity,
 	}
 
 	private static void submitBallQuad(PoseStack.Pose pose, VertexConsumer vertices, int packedLight) {
-		vertex(vertices, pose, -RADIUS, 0.0F, 0.0F, 1.0F, packedLight);
-		vertex(vertices, pose, RADIUS, 0.0F, 1.0F, 1.0F, packedLight);
-		vertex(vertices, pose, RADIUS, RADIUS * 2.0F, 1.0F, 0.0F, packedLight);
-		vertex(vertices, pose, -RADIUS, RADIUS * 2.0F, 0.0F, 0.0F, packedLight);
+		// Entity/physics position is the ball center, not its feet. Center the
+		// billboard on that origin so a resting ball visually touches the surface.
+		vertex(vertices, pose, -RADIUS, -RADIUS, 0.0F, 1.0F, packedLight);
+		vertex(vertices, pose, RADIUS, -RADIUS, 1.0F, 1.0F, packedLight);
+		vertex(vertices, pose, RADIUS, RADIUS, 1.0F, 0.0F, packedLight);
+		vertex(vertices, pose, -RADIUS, RADIUS, 0.0F, 0.0F, packedLight);
 	}
 
 	private static void vertex(

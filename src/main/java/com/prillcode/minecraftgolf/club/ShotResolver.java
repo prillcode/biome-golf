@@ -18,7 +18,8 @@ import com.prillcode.minecraftgolf.golf.Vec3;
  *       clockwise from above (east = -90).</li>
  *   <li>{@code aimPitchDegrees} — Minecraft pitch; 0 level, positive down.</li>
  * </ul>
- * The club's {@code launchAngleDegrees} governs the vertical component (putter ~0).
+ * The club's independently tuned horizontal/upward components govern trajectory;
+ * display loft is metadata only (putter upward speed remains near zero).
  * {@code aimPitchDegrees &gt; 45} is rejected as a non-legal (staring-at-feet) shot.</p>
  *
  * <p>Power and accuracy model:
@@ -66,14 +67,14 @@ public final class ShotResolver {
 		power = legalPower(power);
 		accuracy = legalAccuracy(accuracy);
 
-		double speed = club.fullPowerSpeed() * power;
+		double horizontal = club.fullPowerHorizontalSpeed() * power;
+		double up = club.fullPowerUpwardSpeed() * power;
+		double speed = Math.hypot(horizontal, up);
 		if (speed > maxSpeed) {
-			speed = maxSpeed;
+			double clampScale = maxSpeed / speed;
+			horizontal *= clampScale;
+			up *= clampScale;
 		}
-
-		double launchRad = Math.toRadians(club.launchAngleDegrees());
-		double horizontal = speed * Math.cos(launchRad);
-		double up = speed * Math.sin(launchRad);
 
 		// Lateral angular deviation from the accuracy click. miss magnitude 0..1,
 		// 0 = perfect (2a-1 == 0). Full-miss fan is scaled by club forgiveness:

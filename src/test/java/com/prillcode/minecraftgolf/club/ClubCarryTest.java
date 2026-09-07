@@ -1,5 +1,6 @@
 package com.prillcode.minecraftgolf.club;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,28 @@ class ClubCarryTest {
 	}
 
 	// Feel invariants that correspond to the manual-test feedback.
+
+	@Test
+	void catalogCarryMatchesFlatNormalRangeTargets() {
+		for (ClubDefinition club : GolfClubs.ALL) {
+			Drive shot = drive(club);
+			assertEquals(club.nominalCarry(), shot.carry(), 1.0,
+					club.id() + " flat-range carry " + shot.carry());
+		}
+	}
+
+	@Test
+	void raisedArcProgressionMatchesTuningTargets() {
+		assertEquals(6.0, drive(GolfClubs.DRIVER).peak(), 0.15);
+		assertEquals(7.0, drive(GolfClubs.FAIRWAY_WOOD).peak(), 0.15);
+		assertEquals(8.0, drive(GolfClubs.LONG_IRON).peak(), 0.15);
+		assertEquals(9.0, drive(GolfClubs.MID_IRON).peak(), 0.15);
+		assertEquals(10.0, drive(GolfClubs.SHORT_IRON).peak(), 0.15);
+		assertEquals(10.5, drive(GolfClubs.WEDGE).peak(), 0.15);
+		assertTrue(Math.abs(drive(GolfClubs.WEDGE).peak()
+				- drive(GolfClubs.SHORT_IRON).peak()) <= 0.75,
+				"short iron and wedge should remain visually close");
+	}
 
 	@Test
 	void driverCarriesFarthest() {

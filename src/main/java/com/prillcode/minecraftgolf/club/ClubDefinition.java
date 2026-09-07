@@ -13,14 +13,16 @@ import java.util.Objects;
  * string ({@code driver}, {@code wedge}, ...).</p>
  *
  * <p>Units follow the physics core: distance/speed in blocks and blocks/tick
- * (20 ticks/sec run by the M1 {@code BallPhysics}); {@code launchAngleDegrees}
- * is the full-power vertical launch angle above horizontal.</p>
+ * (20 ticks/sec run by the M1 {@code BallPhysics}). Display loft is catalog
+ * metadata; horizontal and upward launch components independently control the
+ * actual trajectory so playtest carry and apex can be tuned separately.</p>
  *
  * @param id                   stable lowercase key, e.g. {@code "driver"}
  * @param displayName          user-facing label e.g. {@code "Driver"}
  * @param nominalCarry         intended full-power carry on flat normal ground, blocks
- * @param fullPowerSpeed       horizontal launch speed at full power, blocks/tick
- * @param launchAngleDegrees   full-power launch angle above horizontal
+ * @param fullPowerHorizontalSpeed horizontal launch speed at full power, blocks/tick
+ * @param fullPowerUpwardSpeed upward launch speed at full power, blocks/tick
+ * @param displayLoftDegrees   player-facing club loft metadata; does not drive physics
  * @param accuracySensitivity  how strongly a unit of aim/power error shifts aim; higher = tighter (M3+)
  * @param putting              true for the putter (roll-dominant trajectory, no loft)
  * @param meleeDamage          extra flat attack damage dealt when swung as a weapon (ARCH §12, PRD §9)
@@ -29,8 +31,9 @@ public record ClubDefinition(
 		String id,
 		String displayName,
 		double nominalCarry,
-		double fullPowerSpeed,
-		double launchAngleDegrees,
+		double fullPowerHorizontalSpeed,
+		double fullPowerUpwardSpeed,
+		double displayLoftDegrees,
 		double accuracySensitivity,
 		boolean putting,
 		double meleeDamage) {
@@ -44,14 +47,20 @@ public record ClubDefinition(
 		if (displayName.isEmpty() || displayName.isBlank()) {
 			throw new IllegalArgumentException("club displayName must not be blank");
 		}
-		if (fullPowerSpeed <= 0.0) {
-			throw new IllegalArgumentException("fullPowerSpeed must be > 0: " + fullPowerSpeed);
+		if (fullPowerHorizontalSpeed <= 0.0) {
+			throw new IllegalArgumentException(
+					"fullPowerHorizontalSpeed must be > 0: " + fullPowerHorizontalSpeed);
+		}
+		if (fullPowerUpwardSpeed < 0.0) {
+			throw new IllegalArgumentException(
+					"fullPowerUpwardSpeed must be >= 0: " + fullPowerUpwardSpeed);
 		}
 		if (nominalCarry < 0.0) {
 			throw new IllegalArgumentException("nominalCarry must be >= 0: " + nominalCarry);
 		}
-		if (launchAngleDegrees < 0.0 || launchAngleDegrees > 90.0) {
-			throw new IllegalArgumentException("launchAngleDegrees must be within [0,90]: " + launchAngleDegrees);
+		if (displayLoftDegrees < 0.0 || displayLoftDegrees > 90.0) {
+			throw new IllegalArgumentException(
+					"displayLoftDegrees must be within [0,90]: " + displayLoftDegrees);
 		}
 		if (accuracySensitivity < 0.0) {
 			throw new IllegalArgumentException("accuracySensitivity must be >= 0: " + accuracySensitivity);
@@ -61,9 +70,14 @@ public record ClubDefinition(
 		}
 	}
 
+	/** Magnitude of the full-power launch vector. */
+	public double fullPowerSpeed() {
+		return Math.hypot(fullPowerHorizontalSpeed, fullPowerUpwardSpeed);
+	}
+
 	/** A club whose full-power speed would exceed the physics launch ceiling is a configuration bug. */
 	public boolean exceedsMaxSpeed(double maxLaunchSpeed) {
-		return fullPowerSpeed > maxLaunchSpeed;
+		return fullPowerSpeed() > maxLaunchSpeed;
 	}
 
 	@Override

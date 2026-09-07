@@ -40,6 +40,23 @@ advanced lies.
   verification (client leak scan, Docker boot, manual three-click feel +
   partial-power + good/poor timing).
 
+## Current implementation state
+- Inc1 and Inc2 are complete and committed on this branch.
+- Inc3 is implemented locally: real use actions drive a client-only three-stage
+  controller, the HUD shows club/carry, power, accuracy zone, and shot state,
+  and only the third click sends `ShotRequestPayload`.
+- Resting/owner values are tracker-synchronized as client selection hints. The
+  server still re-validates them and remains the sole launch authority.
+- Inc3 compiles, all 90 tests pass, clean build passes, Loom client reaches mod
+  initialization, and Loom dedicated server boots on an alternate local port.
+- Manual testing confirmed the three-click feel across the club set. The HUD was
+  moved to the lower-right above the hotbar after overlap feedback.
+- Playtest tuning now decouples display loft from physics and independently pins
+  flat-ground full-power carry and raised apex targets. The second in-world pass
+  accepted the 150/125/100/85/60/42/16-block targets for now.
+- The resting ball billboard was corrected to center on the physics position;
+  previously it rendered one radius too high and appeared to float.
+
 ## Verification notes
 - Headless: `./gradlew test` — Inc1 carries the deterministic shot calculations.
 - Dedicated server: Inc2 boots the mod, payload receiver registered, no client

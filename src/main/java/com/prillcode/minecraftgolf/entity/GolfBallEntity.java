@@ -2,6 +2,8 @@ package com.prillcode.minecraftgolf.entity;
 
 import org.slf4j.Logger;
 
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -47,6 +49,11 @@ public class GolfBallEntity extends Entity {
 
 	private static final PhysicsConfig PHYSICS_CONFIG = PhysicsConfig.DEFAULT;
 
+	private static final EntityDataAccessor<Boolean> DATA_RESTING =
+			SynchedEntityData.defineId(GolfBallEntity.class, EntityDataSerializers.BOOLEAN);
+	private static final EntityDataAccessor<String> DATA_OWNER =
+			SynchedEntityData.defineId(GolfBallEntity.class, EntityDataSerializers.STRING);
+
 	private static final String NBT_VX = "golf_vx";
 	private static final String NBT_VY = "golf_vy";
 	private static final String NBT_VZ = "golf_vz";
@@ -77,8 +84,10 @@ public class GolfBallEntity extends Entity {
 
 	@Override
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
-		// No synced fields: position is driven by the entity tracker and all
-		// authoritative state lives server-side.
+		// Position remains tracker-driven. These two read-only client hints let the
+		// swing UI select a legal candidate; the server still re-validates both.
+		builder.define(DATA_RESTING, false);
+		builder.define(DATA_OWNER, "");
 	}
 
 	@Override
@@ -122,6 +131,7 @@ public class GolfBallEntity extends Entity {
 			state = next;
 			applyPosition(state.position());
 			if (state.resting()) {
+				entityData.set(DATA_RESTING, true);
 				LOGGER.info("Golf ball {} came to rest at {}", getId(), fmt(state.position()));
 			}
 		}
@@ -141,6 +151,7 @@ public class GolfBallEntity extends Entity {
 		}
 		Vec3 clamped = BallPhysics.clampLaunch(velocity, PHYSICS_CONFIG);
 		state = BallState.launched(state.position(), clamped);
+		entityData.set(DATA_RESTING, false);
 		applyPosition(state.position());
 		LOGGER.info("Golf ball {} launched at {} v={}", getId(), fmt(state.position()), fmt(state.velocity()));
 	}
@@ -151,12 +162,25 @@ public class GolfBallEntity extends Entity {
 	}
 
 	public boolean isResting() {
-		return state != null && state.resting();
+		return level().isClientSide()
+				? entityData.get(DATA_RESTING)
+				: state != null && state.resting();
 	}
 
 	/** Owner player UUID, or {@code null} when the ball is unclaimed. */
 	public java.util.UUID owner() {
-		return ownerUuid;
+		if (!level().isClientSide()) {
+			return ownerUuid;
+		}
+		String encoded = entityData.get(DATA_OWNER);
+		if (encoded.isEmpty()) {
+			return null;
+		}
+		try {
+			return java.util.UUID.fromString(encoded);
+		} catch (IllegalArgumentException malformed) {
+			return null;
+		}
 	}
 
 	/** Claims (or reassigns) the ball to a player. Server-side only. */
@@ -165,6 +189,7 @@ public class GolfBallEntity extends Entity {
 			return;
 		}
 		this.ownerUuid = playerUuid;
+		entityData.set(DATA_OWNER, playerUuid == null ? "" : playerUuid.toString());
 	}
 
 	/** Whether the given player may strike this ball (owns it, or it is unclaimed). */
@@ -197,6 +222,8 @@ public class GolfBallEntity extends Entity {
 						getId(), fmt(center));
 			}
 		}
+		entityData.set(DATA_RESTING, state.resting());
+		entityData.set(DATA_OWNER, ownerUuid == null ? "" : ownerUuid.toString());
 		initialized = true;
 	}
 

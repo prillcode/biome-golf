@@ -23,20 +23,20 @@ import java.util.stream.Collectors;
  */
 public final class GolfClubs {
 
-	/** Driver: longest club, low-loft/fast full-power carry. Heavy, high melee damage (PRD §9). */
-	public static final ClubDefinition DRIVER = club("driver", "Driver", 82.0, 1.95, 12.0, 0.80, false, 5.0);
-	/** Fairway Wood: long but a touch higher/softer than the driver. */
-	public static final ClubDefinition FAIRWAY_WOOD = club("fairway_wood", "Fairway Wood", 66.0, 1.72, 14.0, 0.82, false, 4.0);
+	/** Driver: longest carry and the baseline raised flight. Heavy, high melee damage (PRD §9). */
+	public static final ClubDefinition DRIVER = club("driver", "Driver", 150.0, 2.6370, 0.8960, 10.0, 0.80, false, 5.0);
+	/** Fairway Wood: long with a slightly higher apex than the driver. */
+	public static final ClubDefinition FAIRWAY_WOOD = club("fairway_wood", "Fairway Wood", 125.0, 2.1790, 0.9719, 16.0, 0.82, false, 4.0);
 	/** Long Iron. */
-	public static final ClubDefinition LONG_IRON = club("long_iron", "Long Iron", 46.0, 1.52, 16.0, 0.86, false, 3.5);
+	public static final ClubDefinition LONG_IRON = club("long_iron", "Long Iron", 100.0, 1.6752, 1.0440, 22.0, 0.86, false, 3.5);
 	/** Mid Iron. */
-	public static final ClubDefinition MID_IRON = club("mid_iron", "Mid Iron", 33.0, 1.36, 20.0, 0.90, false, 3.0);
-	/** Short Iron: higher loft, shorter carry. */
-	public static final ClubDefinition SHORT_IRON = club("short_iron", "Short Iron", 22.0, 1.22, 26.0, 0.94, false, 2.75);
-	/** Wedge: high loft for a soft, high arc over a short hop (feedback: should fly high & stop). */
-	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 13.0, 1.18, 46.0, 0.96, false, 2.5);
-	/** Putter: roll-dominant, lowest speed so even a full-power putt is a gentle roll (feedback). */
-	public static final ClubDefinition PUTTER = club("putter", "Putter", 7.0, 0.45, 1.5, 1.00, true, 1.0);
+	public static final ClubDefinition MID_IRON = club("mid_iron", "Mid Iron", 85.0, 1.4120, 1.1114, 36.0, 0.90, false, 3.0);
+	/** Short Iron: high flight, compacted close to the wedge. */
+	public static final ClubDefinition SHORT_IRON = club("short_iron", "Short Iron", 60.0, 0.9730, 1.1776, 42.0, 0.94, false, 2.75);
+	/** Wedge: highest flight, with an apex close to the short iron. */
+	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 42.0, 0.6801, 1.2096, 50.0, 0.96, false, 2.5);
+	/** Putter: full strength spans approximately the planned largest green. */
+	public static final ClubDefinition PUTTER = club("putter", "Putter", 16.0, 0.6655, 0.0120, 2.0, 1.00, true, 1.0);
 
 	/** Ordered MVP club set (roughly longest first for inventory/HUD ordering). */
 	public static final List<ClubDefinition> ALL = List.of(
@@ -49,9 +49,11 @@ public final class GolfClubs {
 	private GolfClubs() {
 	}
 
-	private static ClubDefinition club(String id, String name, double carry, double speed,
-			double angle, double sensitivity, boolean putting, double melee) {
-		return new ClubDefinition(id, name, carry, speed, angle, sensitivity, putting, melee);
+	private static ClubDefinition club(String id, String name, double carry,
+			double horizontalSpeed, double upwardSpeed, double displayLoft,
+			double sensitivity, boolean putting, double melee) {
+		return new ClubDefinition(id, name, carry, horizontalSpeed, upwardSpeed,
+				displayLoft, sensitivity, putting, melee);
 	}
 
 	/** Look up a club by its stable {@code id}. */
