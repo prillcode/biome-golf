@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
+import com.prillcode.minecraftgolf.server.ActiveHoleService;
 
 /**
  * Wire-up for the M3 shot-request payload (ARCH §20 — typed custom payload;
@@ -56,6 +57,9 @@ public final class ShotNetworking {
 
 		if (outcome != ShotOutcome.SUCCESS) {
 			player.sendSystemMessage(Component.literal(describeFailure(outcome)), true);
+		}
+		if (outcome == ShotOutcome.MISSING_ACTIVE_BALL) {
+			ActiveHoleService.instance().notifyMissingBall(player);
 		}
 		// On success the client sees the live server-authoritative entity motion.
 	}

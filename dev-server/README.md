@@ -75,14 +75,31 @@ Persistent state is useful for repeatable gameplay, but it can retain stale enti
 
 ## Prepared practice area
 
-M4.5 uses the default ocean site as the bounded development-hole location:
+M4.5 uses a fixed 16-block practice hole at the world origin:
 
-- tee: `(0.5, 63.25, 0.5)`
-- cup: `(16.5, 63.25, 0.5)`
+| Point | Entity position | Supporting/special block |
+|-------|----------------|--------------------------|
+| Tee   | `(0.5, 63.25, 0.5)`  | grass floor at `(0, 62, 0)` |
+| Cup   | `(16.5, 63.25, 0.5)` | cup block at `(16, 63, 0)` |
 
-The intended development setup is an explicit, idempotent grass practice platform over that unobstructed water area. Setup must be limited to the known practice footprint; normal server startup must not repeatedly rewrite arbitrary terrain or erase player changes.
+After the server is healthy, run the preparation script once (or any time the platform needs restoring):
 
-Until the setup automation is implemented, a newly generated world may leave these fixed coordinates in water or unsafe terrain. Starting a hole successfully is therefore not proof that the site is playable.
+```bash
+./scripts/dev-server-prepare-hole.sh
+```
+
+The script:
+1. Waits for the container to report `healthy` (polls every 10 s, max 5 min).
+2. Verifies that RCON commands are available.
+3. Force-loads only the chunks intersecting the bounded practice footprint, so setup also works before a player visits the origin.
+4. Clears the air column `X[-2..18] Y[63..80] Z[-3..3]` — removes water and obstructions.
+5. Places `minecraft:grass_block` at `X[-2..18] Y=62 Z[-3..3]` (147 blocks, `replace` mode).
+6. Places `minecraft_golf:golf_cup` at `(16, 63, 0)`, matching the server's cup-position calculation.
+7. Verifies the four corner/key blocks with `execute if block` and exits non-zero on any mismatch.
+
+**Idempotent**: re-running the script overwrites only the defined footprint and leaves everything outside it unchanged. It is not called on normal server startup.
+
+**Physics note**: `grass_block` resolves to `SurfaceDefinition.NORMAL` (fairway baseline). The floor surface top is at Y=63; ball entity centers rest at Y=63.25 (0.25-radius ball). The cup capture ellipsoid is ±0.34 XZ × ±0.45 Y centred on `(16.5, 63.25, 0.5)`.
 
 ## Configuration
 

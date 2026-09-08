@@ -30,6 +30,8 @@ import com.prillcode.minecraftgolf.hole.PlayerHoleSession;
 import com.prillcode.minecraftgolf.hole.PlayerHoleState;
 import com.prillcode.minecraftgolf.item.GolfClubItem;
 import com.prillcode.minecraftgolf.item.GolfItems;
+import com.prillcode.minecraftgolf.net.HoleStateNetworking;
+import com.prillcode.minecraftgolf.net.HoleStatePayload;
 
 /** Server-authoritative lifecycle for the one configured M4 hole. */
 public final class ActiveHoleService {
@@ -94,6 +96,7 @@ public final class ActiveHoleService {
 		discardAssignedBall(player, session.orElseThrow());
 		MinecraftGolf.LOGGER.info("{} abandoned hole {}",
 			player.getName().getString(), session.orElseThrow().state().hole().id());
+		HoleStateNetworking.send(player, HoleStatePayload.practice(configuredHole()));
 		return new StartResult(true, "[golf] hole abandoned; practice shots are available");
 	}
 
@@ -104,6 +107,11 @@ public final class ActiveHoleService {
 		if (!definition.dimension().equals(currentDimension)) {
 			return new StartResult(false, "[golf] hole " + definition.number() + " is in "
 				+ definition.dimension() + "; you are in " + currentDimension);
+		}
+		Optional<String> terrainIssue = validateTerrain(level, definition);
+		if (terrainIssue.isPresent()) {
+			return new StartResult(false, "[golf] unsafe configured hole: " + terrainIssue.orElseThrow()
+				+ "; prepare the terrain or update config/minecraft_golf/hole.json");
 		}
 
 		BlockPos cupBlockPos = BlockPos.containing(
@@ -132,6 +140,11 @@ public final class ActiveHoleService {
 		MinecraftGolf.LOGGER.info("{} {} hole {} with ball {} at tee {}; granted {} missing clubs",
 			player.getName().getString(), restart ? "restarted" : "started",
 			definition.id(), ball.getUUID(), definition.tee(), grantedClubs);
+		PlayerHoleState startedState = lifecycle.session(player.getUUID())
+			.map(PlayerHoleSession::state).orElse(null);
+		if (startedState != null) {
+			HoleStateNetworking.send(player, HoleStatePayload.active(startedState));
+		}
 		String equipment = grantedClubs == 0 ? "" : " | granted " + grantedClubs + " missing clubs";
 		return new StartResult(true, "[golf] Hole " + definition.number() + " — Par "
 			+ definition.par() + " | Double Par + 2 limit " + definition.strokeLimit() + equipment);
@@ -184,6 +197,9 @@ public final class ActiveHoleService {
 			+ updated.hole().strokeLimit() + " | " + formatToPar(updated.scoreToPar())), true);
 		if (updated.isComplete()) {
 			sendCompletion(player, updated);
+			HoleStateNetworking.send(player, HoleStatePayload.complete(updated));
+		} else {
+			HoleStateNetworking.send(player, HoleStatePayload.active(updated));
 		}
 		return updated;
 	}
@@ -236,6 +252,7 @@ public final class ActiveHoleService {
 		ServerPlayer player = ball.level().getServer().getPlayerList().getPlayer(owner);
 		if (player != null) {
 			sendCompletion(player, completed);
+			HoleStateNetworking.send(player, HoleStatePayload.complete(completed));
 		}
 		MinecraftGolf.LOGGER.info("Player {} holed out hole {} in {} strokes",
 			owner, completed.hole().id(), completed.strokes());
@@ -254,6 +271,9 @@ public final class ActiveHoleService {
 				+ " | " + updated.strokes() + "/" + updated.hole().strokeLimit()));
 			if (updated.isComplete()) {
 				sendCompletion(player, updated);
+				HoleStateNetworking.send(player, HoleStatePayload.complete(updated));
+			} else {
+				HoleStateNetworking.send(player, HoleStatePayload.active(updated));
 			}
 		}
 		MinecraftGolf.LOGGER.info("Applied {} penalty to player {} on hole {}; recovered ball {} to {}",
@@ -294,7 +314,37 @@ public final class ActiveHoleService {
 			ball.discard();
 		}
 		sendCompletion(player, updated);
+		HoleStateNetworking.send(player, HoleStatePayload.complete(updated));
 		return new StartResult(true, "[golf] Pick Up Ball — score recorded as " + updated.strokes());
+	}
+
+	/** Sends a MISSING_BALL snapshot to the player if they have an active in-progress session. */
+	public void notifyMissingBall(ServerPlayer player) {
+		lifecycle.session(player.getUUID()).ifPresent(session -> {
+			if (!session.state().isComplete()) {
+				HoleStateNetworking.send(player, HoleStatePayload.missingBall(session.state()));
+			}
+		});
+	}
+
+	/**
+	 * Sends the appropriate hole-state snapshot for the joining/reconnecting player,
+	 * covering all four phases including missing-ball detection.
+	 */
+	public void sendReconnectSnapshot(ServerPlayer player) {
+		PlayerHoleSession session = lifecycle.session(player.getUUID()).orElse(null);
+		if (session == null) {
+			HoleStateNetworking.send(player, HoleStatePayload.practice(configuredHole()));
+			return;
+		}
+		PlayerHoleState state = session.state();
+		if (state.isComplete()) {
+			HoleStateNetworking.send(player, HoleStatePayload.complete(state));
+		} else if (assignedBall(player, session.ballUuid()).isEmpty()) {
+			HoleStateNetworking.send(player, HoleStatePayload.missingBall(state));
+		} else {
+			HoleStateNetworking.send(player, HoleStatePayload.active(state));
+		}
 	}
 
 	private PlayerHoleSession requiredSession(UUID playerId, UUID ballId) {
@@ -303,6 +353,30 @@ public final class ActiveHoleService {
 			throw new IllegalStateException("accepted scoring shot has no matching active session");
 		}
 		return session;
+	}
+
+	private static Optional<String> validateTerrain(ServerLevel level, HoleDefinition definition) {
+		Optional<String> teeIssue = validatePoint(level, "tee", definition.tee());
+		if (teeIssue.isPresent()) {
+			return teeIssue;
+		}
+		return validatePoint(level, "cup", definition.cup());
+	}
+
+	private static Optional<String> validatePoint(ServerLevel level, String label, Vec3 point) {
+		BlockPos occupied = BlockPos.containing(point.x(), point.y(), point.z());
+		BlockPos support = BlockPos.containing(
+			point.x(), point.y() - GolfBallEntity.BALL_RADIUS - 0.01, point.z());
+		if (!level.isLoaded(occupied) || !level.isLoaded(support)) {
+			return Optional.of(label + " chunks are not loaded near " + point);
+		}
+		if (!level.getFluidState(occupied).isEmpty()) {
+			return Optional.of(label + " position " + point + " is submerged");
+		}
+		if (level.getBlockState(support).getCollisionShape(level, support).isEmpty()) {
+			return Optional.of(label + " has no solid support at " + support.toShortString());
+		}
+		return Optional.empty();
 	}
 
 	private static int grantMissingClubs(ServerPlayer player) {
