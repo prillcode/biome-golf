@@ -32,7 +32,12 @@ public final class HoleLifecycle {
 
 	public enum StartOutcome {
 		STARTED,
-		RESTARTED
+		ALREADY_ACTIVE
+	}
+
+	public enum RestartOutcome {
+		RESTARTED,
+		NO_ACTIVE_HOLE
 	}
 
 	public enum AbandonOutcome {
@@ -44,12 +49,24 @@ public final class HoleLifecycle {
 
 	public StartOutcome start(UUID playerId, HoleDefinition hole, UUID ballId) {
 		Objects.requireNonNull(playerId, "playerId");
-		PlayerHoleSession replacement = PlayerHoleSession.start(
-			Objects.requireNonNull(hole, "hole"),
-			Objects.requireNonNull(ballId, "ballId"));
-		return sessions.put(playerId, replacement) == null
-			? StartOutcome.STARTED
-			: StartOutcome.RESTARTED;
+		Objects.requireNonNull(hole, "hole");
+		Objects.requireNonNull(ballId, "ballId");
+		if (sessions.containsKey(playerId)) {
+			return StartOutcome.ALREADY_ACTIVE;
+		}
+		sessions.put(playerId, PlayerHoleSession.start(hole, ballId));
+		return StartOutcome.STARTED;
+	}
+
+	public RestartOutcome restart(UUID playerId, HoleDefinition hole, UUID ballId) {
+		Objects.requireNonNull(playerId, "playerId");
+		Objects.requireNonNull(hole, "hole");
+		Objects.requireNonNull(ballId, "ballId");
+		if (!sessions.containsKey(playerId)) {
+			return RestartOutcome.NO_ACTIVE_HOLE;
+		}
+		sessions.put(playerId, PlayerHoleSession.start(hole, ballId));
+		return RestartOutcome.RESTARTED;
 	}
 
 	public AbandonOutcome abandon(UUID playerId) {

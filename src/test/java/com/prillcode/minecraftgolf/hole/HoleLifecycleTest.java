@@ -71,6 +71,22 @@ class HoleLifecycleTest {
 	}
 
 	@Test
+	void startDoesNotReplaceAnExistingAttempt() {
+		HoleLifecycle lifecycle = new HoleLifecycle();
+		UUID originalBall = UUID.randomUUID();
+		lifecycle.start(PLAYER_ID, HOLE, originalBall);
+		lifecycle.update(
+			PLAYER_ID,
+			lifecycle.session(PLAYER_ID).orElseThrow().recordAcceptedShot(HOLE.tee()));
+
+		assertEquals(
+			HoleLifecycle.StartOutcome.ALREADY_ACTIVE,
+			lifecycle.start(PLAYER_ID, HOLE, UUID.randomUUID()));
+		assertEquals(originalBall, lifecycle.session(PLAYER_ID).orElseThrow().ballUuid());
+		assertEquals(1, lifecycle.session(PLAYER_ID).orElseThrow().state().strokes());
+	}
+
+	@Test
 	void restartReplacesBallAndResetsScoreWithoutLeakingOldState() {
 		HoleLifecycle lifecycle = new HoleLifecycle();
 		UUID originalBall = UUID.randomUUID();
@@ -81,13 +97,23 @@ class HoleLifecycleTest {
 			lifecycle.session(PLAYER_ID).orElseThrow().recordAcceptedShot(HOLE.tee()));
 
 		assertEquals(
-			HoleLifecycle.StartOutcome.RESTARTED,
-			lifecycle.start(PLAYER_ID, HOLE, replacementBall));
+			HoleLifecycle.RestartOutcome.RESTARTED,
+			lifecycle.restart(PLAYER_ID, HOLE, replacementBall));
 
 		PlayerHoleSession restarted = lifecycle.session(PLAYER_ID).orElseThrow();
 		assertEquals(0, restarted.state().strokes());
 		assertEquals(replacementBall, restarted.ballUuid());
 		assertNotEquals(originalBall, restarted.ballUuid());
+	}
+
+	@Test
+	void restartRequiresAnExistingAttempt() {
+		HoleLifecycle lifecycle = new HoleLifecycle();
+
+		assertEquals(
+			HoleLifecycle.RestartOutcome.NO_ACTIVE_HOLE,
+			lifecycle.restart(PLAYER_ID, HOLE, UUID.randomUUID()));
+		assertTrue(lifecycle.session(PLAYER_ID).isEmpty());
 	}
 
 	@Test

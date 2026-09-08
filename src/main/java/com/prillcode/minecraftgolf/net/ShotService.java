@@ -59,9 +59,11 @@ public final class ShotService {
 		}
 
 		ShotPermission holePermission = ActiveHoleService.instance().shotPermission(player, ball);
-		if (holePermission == ShotPermission.WRONG_BALL
-			|| holePermission == ShotPermission.MISSING_BALL) {
+		if (holePermission == ShotPermission.WRONG_BALL) {
 			return ShotOutcome.NOT_ACTIVE_BALL;
+		}
+		if (holePermission == ShotPermission.MISSING_BALL) {
+			return ShotOutcome.MISSING_ACTIVE_BALL;
 		}
 		if (holePermission == ShotPermission.HOLE_COMPLETE) {
 			return ShotOutcome.HOLE_COMPLETE;

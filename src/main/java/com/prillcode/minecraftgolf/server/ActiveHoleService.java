@@ -15,6 +15,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.item.ItemStack;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.block.GolfBlocks;
@@ -27,6 +28,8 @@ import com.prillcode.minecraftgolf.hole.HoleLifecycle;
 import com.prillcode.minecraftgolf.hole.PenaltyType;
 import com.prillcode.minecraftgolf.hole.PlayerHoleSession;
 import com.prillcode.minecraftgolf.hole.PlayerHoleState;
+import com.prillcode.minecraftgolf.item.GolfClubItem;
+import com.prillcode.minecraftgolf.item.GolfItems;
 
 /** Server-authoritative lifecycle for the one configured M4 hole. */
 public final class ActiveHoleService {
@@ -68,6 +71,33 @@ public final class ActiveHoleService {
 	}
 
 	public StartResult start(ServerPlayer player) {
+		if (lifecycle.session(player.getUUID()).isPresent()) {
+			return new StartResult(false,
+				"[golf] a hole attempt already exists; use /golf hole restart or /golf hole abandon");
+		}
+		return createAttempt(player, false);
+	}
+
+	public StartResult restart(ServerPlayer player) {
+		if (lifecycle.session(player.getUUID()).isEmpty()) {
+			return new StartResult(false, "[golf] no hole attempt to restart; use /golf hole start");
+		}
+		return createAttempt(player, true);
+	}
+
+	public StartResult abandon(ServerPlayer player) {
+		Optional<PlayerHoleSession> session = lifecycle.session(player.getUUID());
+		if (session.isEmpty()) {
+			return new StartResult(false, "[golf] no hole attempt to abandon");
+		}
+		lifecycle.abandon(player.getUUID());
+		discardAssignedBall(player, session.orElseThrow());
+		MinecraftGolf.LOGGER.info("{} abandoned hole {}",
+			player.getName().getString(), session.orElseThrow().state().hole().id());
+		return new StartResult(true, "[golf] hole abandoned; practice shots are available");
+	}
+
+	private StartResult createAttempt(ServerPlayer player, boolean restart) {
 		HoleDefinition definition = configuredHole();
 		ServerLevel level = player.level();
 		String currentDimension = level.dimension().identifier().toString();
@@ -76,7 +106,6 @@ public final class ActiveHoleService {
 				+ definition.dimension() + "; you are in " + currentDimension);
 		}
 
-		removePreviousBall(level, player.getUUID());
 		BlockPos cupBlockPos = BlockPos.containing(
 			definition.cup().x(), definition.cup().y() - GolfBallEntity.BALL_RADIUS, definition.cup().z());
 		level.setBlockAndUpdate(cupBlockPos, GolfBlocks.GOLF_CUP.defaultBlockState());
@@ -91,27 +120,40 @@ public final class ActiveHoleService {
 			return new StartResult(false, "[golf] failed to add the tee ball to the world");
 		}
 
-		lifecycle.start(player.getUUID(), definition, ball.getUUID());
+		Optional<PlayerHoleSession> previous = lifecycle.session(player.getUUID());
+		if (restart) {
+			lifecycle.restart(player.getUUID(), definition, ball.getUUID());
+			previous.ifPresent(session -> discardAssignedBall(player, session));
+		} else {
+			lifecycle.start(player.getUUID(), definition, ball.getUUID());
+		}
 		player.teleportTo(definition.tee().x(), definition.tee().y() + 1.0, definition.tee().z() + 2.0);
-		MinecraftGolf.LOGGER.info("{} started hole {} with ball {} at tee {}",
-			player.getName().getString(), definition.id(), ball.getUUID(), definition.tee());
+		int grantedClubs = grantMissingClubs(player);
+		MinecraftGolf.LOGGER.info("{} {} hole {} with ball {} at tee {}; granted {} missing clubs",
+			player.getName().getString(), restart ? "restarted" : "started",
+			definition.id(), ball.getUUID(), definition.tee(), grantedClubs);
+		String equipment = grantedClubs == 0 ? "" : " | granted " + grantedClubs + " missing clubs";
 		return new StartResult(true, "[golf] Hole " + definition.number() + " — Par "
-			+ definition.par() + " | Double Par + 2 limit " + definition.strokeLimit());
+			+ definition.par() + " | Double Par + 2 limit " + definition.strokeLimit() + equipment);
 	}
 
 	public Optional<PlayerHoleState> state(UUID playerId) {
 		return lifecycle.session(playerId).map(PlayerHoleSession::state);
 	}
 
-	public String status(UUID playerId) {
-		Optional<PlayerHoleSession> currentSession = lifecycle.session(playerId);
+	public String status(ServerPlayer player) {
+		Optional<PlayerHoleSession> currentSession = lifecycle.session(player.getUUID());
 		if (currentSession.isEmpty()) {
 			HoleDefinition definition = configuredHole();
 			return "[golf] no active hole | configured Hole " + definition.number()
-				+ " Par " + definition.par();
+				+ " Par " + definition.par() + " | practice shots available";
 		}
-		PlayerHoleState state = currentSession.orElseThrow().state();
+		PlayerHoleSession session = currentSession.orElseThrow();
+		PlayerHoleState state = session.state();
 		String result = state.isComplete() ? " | COMPLETE: " + state.completionReason() : "";
+		if (!state.isComplete() && assignedBall(player, session.ballUuid()).isEmpty()) {
+			result = " | RECOVERY NEEDED: assigned ball is missing; use /golf hole restart";
+		}
 		String relativeScore = state.strokes() == 0 ? "No strokes yet" : formatToPar(state.scoreToPar());
 		return "[golf] Hole " + state.hole().number() + " | strokes " + state.strokes()
 			+ "/" + state.hole().strokeLimit() + " | " + relativeScore + result;
@@ -120,7 +162,7 @@ public final class ActiveHoleService {
 	public ShotPermission shotPermission(ServerPlayer player, GolfBallEntity ball) {
 		Optional<PlayerHoleSession> session = lifecycle.session(player.getUUID());
 		boolean assignedBallPresent = session
-			.map(current -> player.level().getEntity(current.ballUuid()) != null)
+			.map(current -> assignedBall(player, current.ballUuid()).isPresent())
 			.orElse(false);
 		return switch (lifecycle.shotPermission(
 			player.getUUID(), ball.getUUID(), assignedBallPresent)) {
@@ -263,17 +305,34 @@ public final class ActiveHoleService {
 		return session;
 	}
 
-	private void removePreviousBall(ServerLevel level, UUID playerId) {
-		PlayerHoleSession previous = lifecycle.session(playerId).orElse(null);
-		lifecycle.abandon(playerId);
-		if (previous == null) {
-			return;
+	private static int grantMissingClubs(ServerPlayer player) {
+		int granted = 0;
+		for (GolfClubItem club : GolfItems.CLUB_ITEMS.values()) {
+			ItemStack stack = new ItemStack(club);
+			if (player.getInventory().contains(stack)) {
+				continue;
+			}
+			if (!player.getInventory().add(stack)) {
+				player.drop(stack, false);
+			}
+			granted++;
 		}
-		Entity entity = level.getEntity(previous.ballUuid());
-		overspeedCupEntries.remove(previous.ballUuid());
-		if (entity != null) {
-			entity.discard();
+		return granted;
+	}
+
+	private void discardAssignedBall(ServerPlayer player, PlayerHoleSession session) {
+		overspeedCupEntries.remove(session.ballUuid());
+		assignedBall(player, session.ballUuid()).ifPresent(Entity::discard);
+	}
+
+	private static Optional<Entity> assignedBall(ServerPlayer player, UUID ballUuid) {
+		for (ServerLevel level : player.level().getServer().getAllLevels()) {
+			Entity entity = level.getEntity(ballUuid);
+			if (entity != null) {
+				return Optional.of(entity);
+			}
 		}
+		return Optional.empty();
 	}
 
 	private static void sendCompletion(ServerPlayer player, PlayerHoleState state) {
