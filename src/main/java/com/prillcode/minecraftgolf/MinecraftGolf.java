@@ -70,6 +70,6 @@ public class MinecraftGolf implements ModInitializer {
 
 		// S03: send the current hole-state snapshot to each player on join/reconnect.
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-			ActiveHoleService.instance().sendReconnectSnapshot(handler.getPlayer()));
+			ActiveHoleService.instance().sendCurrentSnapshot(handler.getPlayer()));
 	}
 }

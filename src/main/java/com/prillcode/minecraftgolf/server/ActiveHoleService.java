@@ -155,6 +155,7 @@ public final class ActiveHoleService {
 	}
 
 	public String status(ServerPlayer player) {
+		sendCurrentSnapshot(player);
 		Optional<PlayerHoleSession> currentSession = lifecycle.session(player.getUUID());
 		if (currentSession.isEmpty()) {
 			HoleDefinition definition = configuredHole();
@@ -328,10 +329,10 @@ public final class ActiveHoleService {
 	}
 
 	/**
-	 * Sends the appropriate hole-state snapshot for the joining/reconnecting player,
-	 * covering all four phases including missing-ball detection.
+	 * Sends the player's current authoritative hole-state snapshot, covering all four
+	 * phases including missing-ball detection. Used for join and explicit status refresh.
 	 */
-	public void sendReconnectSnapshot(ServerPlayer player) {
+	public void sendCurrentSnapshot(ServerPlayer player) {
 		PlayerHoleSession session = lifecycle.session(player.getUUID()).orElse(null);
 		if (session == null) {
 			HoleStateNetworking.send(player, HoleStatePayload.practice(configuredHole()));
