@@ -14,6 +14,11 @@ services:
       ONLINE_MODE: "true"
       MOTD: "Minecraft Golf dev server"
       MODRINTH_PROJECTS: "fabric-api"
+      RCON_CMDS_STARTUP: |-
+        time set day
+        gamerule minecraft:advance_time false
+        gamerule minecraft:advance_weather false
+        weather clear
     volumes:
       - minecraft-golf-data:/data
       - ./mods:/mods:ro

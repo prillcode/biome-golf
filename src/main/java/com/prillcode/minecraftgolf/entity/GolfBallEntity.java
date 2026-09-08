@@ -19,6 +19,7 @@ import com.prillcode.minecraftgolf.ball.BallPhysics;
 import com.prillcode.minecraftgolf.ball.BallState;
 import com.prillcode.minecraftgolf.ball.PhysicsConfig;
 import com.prillcode.minecraftgolf.golf.Vec3;
+import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.world.GolfBlockSurfaceResolver;
 import com.prillcode.minecraftgolf.world.MinecraftBallCollisionWorld;
 
@@ -126,14 +127,16 @@ public class GolfBallEntity extends Entity {
 			return;
 		}
 
+		Vec3 previousPosition = state.position();
 		BallState next = BallPhysics.step(state, PHYSICS_CONFIG, collisionWorld);
 		if (!next.equals(state)) {
 			state = next;
 			applyPosition(state.position());
-			if (state.resting()) {
-				entityData.set(DATA_RESTING, true);
-				LOGGER.info("Golf ball {} came to rest at {}", getId(), fmt(state.position()));
-			}
+		}
+		ActiveHoleService.instance().onBallMoved(this, previousPosition, next.position());
+		if (state.resting()) {
+			entityData.set(DATA_RESTING, true);
+			LOGGER.info("Golf ball {} came to rest at {}", getId(), fmt(state.position()));
 		}
 	}
 
@@ -154,6 +157,18 @@ public class GolfBallEntity extends Entity {
 		entityData.set(DATA_RESTING, false);
 		applyPosition(state.position());
 		LOGGER.info("Golf ball {} launched at {} v={}", getId(), fmt(state.position()), fmt(state.velocity()));
+	}
+
+	/** Places the server-owned ball at rest, used by tee and penalty recovery. */
+	public void placeAtRest(Vec3 position) {
+		if (level().isClientSide()) {
+			return;
+		}
+		state = BallState.atRest(position);
+		initialized = true;
+		entityData.set(DATA_RESTING, true);
+		applyPosition(position);
+		LOGGER.info("Golf ball {} placed at rest at {}", getId(), fmt(position));
 	}
 
 	/** Current authoritative state, or null before the first server tick. */

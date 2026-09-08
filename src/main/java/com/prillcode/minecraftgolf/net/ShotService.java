@@ -16,6 +16,8 @@ import com.prillcode.minecraftgolf.club.ShotResolver;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.item.GolfClubItem;
+import com.prillcode.minecraftgolf.server.ActiveHoleService;
+import com.prillcode.minecraftgolf.server.ActiveHoleService.ShotPermission;
 
 /**
  * Server-side authoritative shot execution (M3, ARCH §8.2/§16): validates a
@@ -26,6 +28,8 @@ import com.prillcode.minecraftgolf.item.GolfClubItem;
  * outcome control).
  */
 public final class ShotService {
+
+	private static final double MAX_STRIKE_DISTANCE_SQ = 6.0 * 6.0;
 
 	private ShotService() {
 	}
@@ -50,6 +54,17 @@ public final class ShotService {
 		if (!ball.isResting()) {
 			return ShotOutcome.BALL_MOVING;
 		}
+		if (player.distanceToSqr(ball) > MAX_STRIKE_DISTANCE_SQ) {
+			return ShotOutcome.BALL_TOO_FAR;
+		}
+
+		ShotPermission holePermission = ActiveHoleService.instance().shotPermission(player, ball);
+		if (holePermission == ShotPermission.WRONG_BALL) {
+			return ShotOutcome.NOT_ACTIVE_BALL;
+		}
+		if (holePermission == ShotPermission.HOLE_COMPLETE) {
+			return ShotOutcome.HOLE_COMPLETE;
+		}
 
 		ClubDefinition club = heldClub(player);
 		if (club == null) {
@@ -70,7 +85,13 @@ public final class ShotService {
 		if (ball.owner() == null) {
 			ball.setOwner(me);
 		}
+		Vec3 shotOrigin = ball.ballState() == null
+				? new Vec3(ball.position().x, ball.position().y, ball.position().z)
+				: ball.ballState().position();
 		ball.launch(velocity);
+		if (holePermission == ShotPermission.SCORING) {
+			ActiveHoleService.instance().recordAcceptedShot(player, ball, shotOrigin);
+		}
 		MinecraftGolf.LOGGER.info("{} shot via {} power={} acc={} (wind-free) launched v={}",
 				player.getName().getString(), club.id(), p, a, velocity);
 		return ShotOutcome.SUCCESS;

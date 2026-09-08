@@ -65,8 +65,11 @@ public final class ShotNetworking {
 			case BALL_NOT_FOUND -> "[golf] that golf ball is not here";
 			case NOT_YOUR_BALL -> "[golf] that golf ball belongs to another player";
 			case BALL_MOVING -> "[golf] wait for the ball to stop";
+			case BALL_TOO_FAR -> "[golf] walk closer to the ball before taking the next shot";
 			case NO_CLUB -> "[golf] hold a golf club to take a shot";
 			case AIM_NOT_LEGAL -> "[golf] aim level with the ground";
+			case NOT_ACTIVE_BALL -> "[golf] use the ball assigned by /golf hole start";
+			case HOLE_COMPLETE -> "[golf] this hole is complete; start again to replay";
 			case SUCCESS, UNKNOWN -> "";
 		};
 	}
