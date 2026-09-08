@@ -35,8 +35,8 @@ public final class GolfClubs {
 	public static final ClubDefinition SHORT_IRON = club("short_iron", "Short Iron", 60.0, 0.9730, 1.1776, 42.0, 0.94, false, 2.75);
 	/** Wedge: highest flight, with an apex close to the short iron. */
 	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 42.0, 0.6801, 1.2096, 50.0, 0.96, false, 2.5);
-	/** Putter: full strength spans approximately the planned largest green. */
-	public static final ClubDefinition PUTTER = club("putter", "Putter", 16.0, 0.6655, 0.0120, 2.0, 1.00, true, 1.0);
+	/** Putter: full strength has reserve beyond a typical 16-block green. */
+	public static final ClubDefinition PUTTER = club("putter", "Putter", 22.0, 0.8905, 0.0120, 2.0, 1.00, true, 1.0);
 
 	/** Ordered MVP club set (roughly longest first for inventory/HUD ordering). */
 	public static final List<ClubDefinition> ALL = List.of(

@@ -73,24 +73,27 @@ public final class GolfDevCommands {
 	private static void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher,
 			CommandBuildContext registryAccess, CommandSelection environment) {
 		dispatcher.register(Commands.literal("golf")
-				.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 				.then(Commands.literal("spawn")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(GolfDevCommands::spawnAtExecutor)
 						.then(Commands.argument("x", DoubleArgumentType.doubleArg())
 								.then(Commands.argument("y", DoubleArgumentType.doubleArg())
 										.then(Commands.argument("z", DoubleArgumentType.doubleArg())
 												.executes(GolfDevCommands::spawnAtExplicit)))))
 				.then(Commands.literal("launch")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.then(Commands.argument("forward", DoubleArgumentType.doubleArg())
 								.then(Commands.argument("up", DoubleArgumentType.doubleArg())
 										.executes(GolfDevCommands::launchNearest)
 										.then(Commands.argument("id", IntegerArgumentType.integer())
 												.executes(GolfDevCommands::launchById)))))
 				.then(Commands.literal("inspect")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(GolfDevCommands::inspectNearest)
 						.then(Commands.argument("id", IntegerArgumentType.integer())
 								.executes(GolfDevCommands::inspectById)))
 				.then(Commands.literal("clear")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(GolfDevCommands::clearAll)));
 		MinecraftGolf.LOGGER.info("Registered /golf dev command group (spawn, launch, inspect, clear)");
 	}

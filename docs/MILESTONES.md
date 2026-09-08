@@ -135,8 +135,8 @@ The host operating system should not affect the Fabric server architecture.
 | M1 | Golf Ball Physics | Complete (see docs/M1-CLOSEOUT.md) |
 | M2 | Clubs and Shot Execution | Complete (see docs/M2-NOTES.md) |
 | M3 | Three-Click Swing and HUD | Complete (see docs/M3-CLOSEOUT.md) |
-| M4 | Holes, Cups, Boundaries, and Scoring | Next |
-| M5 | Multiplayer Ready Golf | Not Started |
+| M4 | Holes, Cups, Boundaries, and Scoring | Complete (see docs/M4-CLOSEOUT.md) |
+| M5 | Multiplayer Ready Golf | Next |
 | M6 | Three-Hole MVP Course | Not Started |
 | M7 | MVP Hardening and Family Playtest | Not Started |
 | M8 | V1 Gameplay Enhancements | Deferred |
@@ -738,7 +738,7 @@ Implement:
 - simplified playable boundary
 - water penalty
 - out-of-bounds penalty
-- Double Par default stroke limit
+- Double Par + 2 default stroke limit
 - Pick Up Ball
 - golf scoring terminology
 - hole-complete state
@@ -773,7 +773,7 @@ A single player must be able to:
 5. physically sink the ball,
 6. receive the correct hole score.
 
-Verify Double Par behavior and Pick Up Ball.
+Verify Double Par + 2 behavior and Pick Up Ball.
 
 ## Non-Goals
 
@@ -920,6 +920,8 @@ Implement:
 - between-hole transition
 - optional teleport-to-next-tee prompt
 - final three-hole scorecard
+
+Playtesting note from M4: returning the follow camera to the stationary player makes travel to the resting ball potentially tedious on full-size holes. During M6 course playtesting, evaluate an optional on-demand teleport-to-ball interaction; do not make automatic teleporting the default without testing its effect on Minecraft traversal.
 
 ## Required Deliverables
 

@@ -836,7 +836,7 @@ Do not count UI attempts, cancelled swings, or rejected network requests.
 Default maximum strokes:
 
 ```text
-par × 2
+(par × 2) + 2
 ```
 
 This should be configurable at the round/course/server level later.
@@ -1098,7 +1098,7 @@ Examples:
 - accuracy deviation,
 - club parameter resolution,
 - scoring,
-- Double Par calculation,
+- Double Par + 2 calculation,
 - round state transitions,
 - penalty application,
 - boundary mathematics,
@@ -1483,7 +1483,7 @@ Success condition:
 - Ready Golf
 - 1–4 player join/start flow
 - stroke counting
-- Double Par
+- Double Par + 2
 - Pick Up
 - hole advancement
 - final scorecard

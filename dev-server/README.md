@@ -47,6 +47,7 @@ Server settings (version, memory, game mode, MOTD, etc.) are in `dev-server/dock
 - `MEMORY` is the JVM heap.
 - `MODE` / `DIFFICULTY` / `MOTD` are gameplay-facing.
 - Fabric API is downloaded automatically from Modrinth through `MODRINTH_PROJECTS`.
+- `RCON_CMDS_STARTUP` fixes the development world at daytime with clear weather so gameplay tests are repeatable. Minecraft 26.2 uses the namespaced `minecraft:advance_time` and `minecraft:advance_weather` gamerules.
 
 ## Notes
 

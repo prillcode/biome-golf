@@ -2,7 +2,7 @@
 
 A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary Minecraft worlds — arcade-realistic, skill-based, and played through real terrain.
 
-> **Current milestone: M4 — Holes, Cups, Boundaries, and Scoring** (M0–M3 are complete)
+> **Current milestone: M5 — Multiplayer Ready Golf** (M0–M4 are complete; see `docs/M4-CLOSEOUT.md`)
 
 ## Project purpose
 

@@ -509,13 +509,13 @@ A final scorecard should appear after the round.
 
 Courses or servers may configure a maximum number of strokes per hole.
 
-The default is **Double Par**.
+The default is **Double Par + 2**.
 
 Examples:
 
-- Par 3 → maximum 6
-- Par 4 → maximum 8
-- Par 5 → maximum 10
+- Par 3 → maximum 8
+- Par 4 → maximum 10
+- Par 5 → maximum 12
 
 Players should also have a simple **Pick Up Ball** action.
 
@@ -690,7 +690,7 @@ The MVP is complete when:
 - walking between shots
 - stroke counting
 - par
-- Double Par default stroke limit
+- Double Par + 2 default stroke limit
 - Pick Up Ball
 - simplified water penalty
 - simplified out-of-bounds penalty

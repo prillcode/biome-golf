@@ -12,10 +12,16 @@ public enum ShotOutcome {
 	NOT_YOUR_BALL,
 	/** The ball is still moving and cannot be struck yet. */
 	BALL_MOVING,
+	/** The player is too far from the ball to strike it. */
+	BALL_TOO_FAR,
 	/** The player is not holding a recognised golf club. */
 	NO_CLUB,
 	/** Aim was too steep (aiming at the ground) to be a legal shot. */
 	AIM_NOT_LEGAL,
+	/** An active hole exists, but this is not its assigned ball. */
+	NOT_ACTIVE_BALL,
+	/** The player's active hole is already complete or capped. */
+	HOLE_COMPLETE,
 	/** Shots off a club the player must be holding, and this is not one. */
 	UNKNOWN,
 	/** Launch executed. */
