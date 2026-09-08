@@ -84,7 +84,7 @@ wait_healthy() {
                 exit 1
                 ;;
         esac
-        (( attempts++ ))
+        attempts=$((attempts + 1))
         printf "      Status: %-12s  (%d/%d, retrying in 10s…)\n" "$health" "$attempts" "$max"
         sleep 10
     done
