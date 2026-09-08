@@ -136,8 +136,8 @@ The host operating system should not affect the Fabric server architecture.
 | M2 | Clubs and Shot Execution | Complete (see docs/M2-NOTES.md) |
 | M3 | Three-Click Swing and HUD | Complete (see docs/M3-CLOSEOUT.md) |
 | M4 | Holes, Cups, Boundaries, and Scoring | Complete (see docs/M4-CLOSEOUT.md) |
-| M4.5 | Single-Player Loop Hardening | In Progress |
-| M5 | Multiplayer Ready Golf | Blocked by M4.5 |
+| M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
+| M5 | Multiplayer Ready Golf | Next |
 | M6 | Three-Hole MVP Course | Not Started |
 | M7 | MVP Hardening and Family Playtest | Not Started |
 | M8 | V1 Gameplay Enhancements | Deferred |
