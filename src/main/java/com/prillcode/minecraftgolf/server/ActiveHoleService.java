@@ -1,8 +1,6 @@
 package com.prillcode.minecraftgolf.server;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +23,7 @@ import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.hole.CupDetector;
 import com.prillcode.minecraftgolf.hole.HoleDefinition;
+import com.prillcode.minecraftgolf.hole.HoleLifecycle;
 import com.prillcode.minecraftgolf.hole.PenaltyType;
 import com.prillcode.minecraftgolf.hole.PlayerHoleSession;
 import com.prillcode.minecraftgolf.hole.PlayerHoleState;
@@ -36,12 +35,13 @@ public final class ActiveHoleService {
 		PRACTICE,
 		SCORING,
 		WRONG_BALL,
-		HOLE_COMPLETE
+		HOLE_COMPLETE,
+		MISSING_BALL
 	}
 
 	private static final ActiveHoleService INSTANCE = new ActiveHoleService();
 
-	private final Map<UUID, PlayerHoleSession> sessions = new HashMap<>();
+	private final HoleLifecycle lifecycle = new HoleLifecycle();
 	private final Set<UUID> overspeedCupEntries = new HashSet<>();
 	private HoleDefinition hole;
 
@@ -54,7 +54,7 @@ public final class ActiveHoleService {
 
 	public void initialize(HoleDefinition configuredHole) {
 		hole = Objects.requireNonNull(configuredHole, "configuredHole");
-		sessions.clear();
+		lifecycle.clear();
 		overspeedCupEntries.clear();
 		MinecraftGolf.LOGGER.info("Loaded hole {} (#{} par {}, Double Par + 2 limit {}) in {}",
 			hole.id(), hole.number(), hole.par(), hole.strokeLimit(), hole.dimension());
@@ -91,7 +91,7 @@ public final class ActiveHoleService {
 			return new StartResult(false, "[golf] failed to add the tee ball to the world");
 		}
 
-		sessions.put(player.getUUID(), PlayerHoleSession.start(definition, ball.getUUID()));
+		lifecycle.start(player.getUUID(), definition, ball.getUUID());
 		player.teleportTo(definition.tee().x(), definition.tee().y() + 1.0, definition.tee().z() + 2.0);
 		MinecraftGolf.LOGGER.info("{} started hole {} with ball {} at tee {}",
 			player.getName().getString(), definition.id(), ball.getUUID(), definition.tee());
@@ -100,18 +100,17 @@ public final class ActiveHoleService {
 	}
 
 	public Optional<PlayerHoleState> state(UUID playerId) {
-		PlayerHoleSession session = sessions.get(playerId);
-		return session == null ? Optional.empty() : Optional.of(session.state());
+		return lifecycle.session(playerId).map(PlayerHoleSession::state);
 	}
 
 	public String status(UUID playerId) {
-		PlayerHoleSession session = sessions.get(playerId);
-		if (session == null) {
+		Optional<PlayerHoleSession> currentSession = lifecycle.session(playerId);
+		if (currentSession.isEmpty()) {
 			HoleDefinition definition = configuredHole();
 			return "[golf] no active hole | configured Hole " + definition.number()
 				+ " Par " + definition.par();
 		}
-		PlayerHoleState state = session.state();
+		PlayerHoleState state = currentSession.orElseThrow().state();
 		String result = state.isComplete() ? " | COMPLETE: " + state.completionReason() : "";
 		String relativeScore = state.strokes() == 0 ? "No strokes yet" : formatToPar(state.scoreToPar());
 		return "[golf] Hole " + state.hole().number() + " | strokes " + state.strokes()
@@ -119,17 +118,18 @@ public final class ActiveHoleService {
 	}
 
 	public ShotPermission shotPermission(ServerPlayer player, GolfBallEntity ball) {
-		PlayerHoleSession session = sessions.get(player.getUUID());
-		if (session == null) {
-			return ShotPermission.PRACTICE;
-		}
-		if (!session.ballUuid().equals(ball.getUUID())) {
-			return ShotPermission.WRONG_BALL;
-		}
-		if (session.state().isComplete()) {
-			return ShotPermission.HOLE_COMPLETE;
-		}
-		return ShotPermission.SCORING;
+		Optional<PlayerHoleSession> session = lifecycle.session(player.getUUID());
+		boolean assignedBallPresent = session
+			.map(current -> player.level().getEntity(current.ballUuid()) != null)
+			.orElse(false);
+		return switch (lifecycle.shotPermission(
+			player.getUUID(), ball.getUUID(), assignedBallPresent)) {
+			case PRACTICE -> ShotPermission.PRACTICE;
+			case SCORING -> ShotPermission.SCORING;
+			case WRONG_BALL -> ShotPermission.WRONG_BALL;
+			case HOLE_COMPLETE -> ShotPermission.HOLE_COMPLETE;
+			case MISSING_BALL -> ShotPermission.MISSING_BALL;
+		};
 	}
 
 	/** Called only after ShotService has performed the authoritative launch. */
@@ -137,7 +137,7 @@ public final class ActiveHoleService {
 		PlayerHoleSession session = requiredSession(player.getUUID(), ball.getUUID());
 		PlayerHoleSession updatedSession = session.recordAcceptedShot(shotOrigin);
 		PlayerHoleState updated = updatedSession.state();
-		sessions.put(player.getUUID(), updatedSession);
+		lifecycle.update(player.getUUID(), updatedSession);
 		player.sendSystemMessage(Component.literal("[golf] Stroke " + updated.strokes() + " of "
 			+ updated.hole().strokeLimit() + " | " + formatToPar(updated.scoreToPar())), true);
 		if (updated.isComplete()) {
@@ -152,7 +152,7 @@ public final class ActiveHoleService {
 		if (owner == null) {
 			return;
 		}
-		PlayerHoleSession session = sessions.get(owner);
+		PlayerHoleSession session = lifecycle.session(owner).orElse(null);
 		if (session == null || session.state().isComplete() || !session.ballUuid().equals(ball.getUUID())) {
 			return;
 		}
@@ -185,7 +185,7 @@ public final class ActiveHoleService {
 
 		PlayerHoleSession completedSession = session.holeOut();
 		PlayerHoleState completed = completedSession.state();
-		sessions.put(owner, completedSession);
+		lifecycle.update(owner, completedSession);
 		overspeedCupEntries.remove(ball.getUUID());
 		ball.placeAtRest(completed.hole().cup());
 		ball.level().playSound(null, BlockPos.containing(completed.hole().cup().x(),
@@ -202,7 +202,7 @@ public final class ActiveHoleService {
 	private void applyPenalty(GolfBallEntity ball, UUID owner, PlayerHoleSession session, PenaltyType penalty) {
 		PlayerHoleSession updatedSession = session.applyPenalty(penalty);
 		PlayerHoleState updated = updatedSession.state();
-		sessions.put(owner, updatedSession);
+		lifecycle.update(owner, updatedSession);
 		overspeedCupEntries.remove(ball.getUUID());
 		ball.placeAtRest(session.lastSafePosition());
 		ServerPlayer player = ball.level().getServer().getPlayerList().getPlayer(owner);
@@ -236,7 +236,7 @@ public final class ActiveHoleService {
 	}
 
 	public StartResult pickUp(ServerPlayer player) {
-		PlayerHoleSession session = sessions.get(player.getUUID());
+		PlayerHoleSession session = lifecycle.session(player.getUUID()).orElse(null);
 		if (session == null) {
 			return new StartResult(false, "[golf] start the configured hole before picking up");
 		}
@@ -245,7 +245,7 @@ public final class ActiveHoleService {
 		}
 		PlayerHoleSession updatedSession = session.pickUp();
 		PlayerHoleState updated = updatedSession.state();
-		sessions.put(player.getUUID(), updatedSession);
+		lifecycle.update(player.getUUID(), updatedSession);
 		Entity ball = player.level().getEntity(session.ballUuid());
 		overspeedCupEntries.remove(session.ballUuid());
 		if (ball != null) {
@@ -256,7 +256,7 @@ public final class ActiveHoleService {
 	}
 
 	private PlayerHoleSession requiredSession(UUID playerId, UUID ballId) {
-		PlayerHoleSession session = sessions.get(playerId);
+		PlayerHoleSession session = lifecycle.session(playerId).orElse(null);
 		if (session == null || !session.ballUuid().equals(ballId)) {
 			throw new IllegalStateException("accepted scoring shot has no matching active session");
 		}
@@ -264,7 +264,8 @@ public final class ActiveHoleService {
 	}
 
 	private void removePreviousBall(ServerLevel level, UUID playerId) {
-		PlayerHoleSession previous = sessions.remove(playerId);
+		PlayerHoleSession previous = lifecycle.session(playerId).orElse(null);
+		lifecycle.abandon(playerId);
 		if (previous == null) {
 			return;
 		}
