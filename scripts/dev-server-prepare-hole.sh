@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Prepare the bounded practice platform on the Docker dev server.
 #
-# Creates an explicit, idempotent grass platform for the default M4.5 hole:
+# Invokes the mod's explicit, idempotent development-hole command, then
+# independently verifies the expected default M4.5 platform:
 #   tee:  entity position (0.5, 63.25, 0.5)  —  floor block at (  0, 62,  0)
 #   cup:  entity position (16.5, 63.25, 0.5) —  cup block at  ( 16, 63,  0)
 #
@@ -69,7 +70,7 @@ check_container() {
 
 wait_healthy() {
     local attempts=0 max=30
-    echo "[1/7] Waiting for server to be healthy..."
+    echo "[1/5] Waiting for server to be healthy..."
     while (( attempts < max )); do
         local health
         health=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER" 2>/dev/null \
@@ -95,7 +96,7 @@ wait_healthy() {
 
 check_rcon() {
     local output
-    echo "[2/7] Checking RCON command access..."
+    echo "[2/5] Checking RCON command access..."
     if ! output=$(rcon "list" 2>&1); then
         echo "ERROR: RCON is not available in '$CONTAINER': $output" >&2
         echo "       Check logs: ./scripts/dev-server-logs.sh" >&2
@@ -110,19 +111,13 @@ check_container
 wait_healthy
 check_rcon
 
-echo "[3/7] Force-loading the bounded practice chunks…"
+echo "[3/5] Force-loading the bounded practice chunks…"
 rcon_run "force-load practice chunks" "forceload add -2 -3 18 3"
 
-echo "[4/7] Clearing air column above platform (X:-2..18, Y:63..80, Z:-3..3)…"
-rcon_run "clear air" "fill -2 63 -3 18 80 3 minecraft:air replace"
+echo "[4/5] Running the mod's bounded development-hole preparation…"
+rcon_run "prepare development hole" "golf dev preparehole"
 
-echo "[5/7] Placing grass floor (X:-2..18, Y:62, Z:-3..3)…"
-rcon_run "grass floor" "fill -2 62 -3 18 62 3 minecraft:grass_block replace"
-
-echo "[6/7] Placing cup block at (16, 63, 0)…"
-rcon_run "cup block" "setblock 16 63 0 minecraft_golf:golf_cup"
-
-echo "[7/7] Verifying key blocks…"
+echo "[5/5] Verifying key blocks…"
 VERIFY_FAILED=0
 verify_block "tee floor"         "0"  "62" "0"  "minecraft:grass_block"
 verify_block "cup block"         "16" "63" "0"  "minecraft_golf:golf_cup"

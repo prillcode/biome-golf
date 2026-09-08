@@ -23,7 +23,7 @@ Minecraft Golf uses both Loom and Docker because they prove different things.
 Recommended hybrid workflow:
 
 1. Run `./gradlew test` and `./gradlew build` for every relevant change.
-2. Use `./gradlew runClient` with **Singleplayer** for rapid client-facing checks.
+2. Use `./gradlew runClient` with a cheats-enabled **Singleplayer** world for rapid client-facing checks. Run `/golf dev preparehole` once to prepare or restore the configured test platform.
 3. Use Docker for dedicated-server integration and final gameplay acceptance after syncing the JAR.
 
 > **Authentication:** the Docker server intentionally uses `online-mode=true`. Loom's `runClient` development identity cannot authenticate to it and reports `Failed to login: Invalid session`. Connect with an authenticated Java Edition client containing matching Fabric Loader, Fabric API, and Minecraft Golf versions. Do not weaken the tracked Docker server's authentication for Loom testing.
@@ -92,12 +92,10 @@ The script:
 1. Waits for the container to report `healthy` (polls every 10 s, max 5 min).
 2. Verifies that RCON commands are available.
 3. Force-loads only the chunks intersecting the bounded practice footprint, so setup also works before a player visits the origin.
-4. Clears the air column `X[-2..18] Y[63..80] Z[-3..3]` — removes water and obstructions.
-5. Places `minecraft:grass_block` at `X[-2..18] Y=62 Z[-3..3]` (147 blocks, `replace` mode).
-6. Places `minecraft_golf:golf_cup` at `(16, 63, 0)`, matching the server's cup-position calculation.
-7. Verifies the four corner/key blocks with `execute if block` and exits non-zero on any mismatch.
+4. Runs the mod's operator-gated `/golf dev preparehole` command. The command derives the platform from the configured tee/cup, clears the bounded air column, lays the grass floor, and places the cup at the authoritative block position.
+5. Independently verifies four corner/key blocks and exits non-zero on any mismatch.
 
-**Idempotent**: re-running the script overwrites only the defined footprint and leaves everything outside it unchanged. It is not called on normal server startup.
+**Idempotent**: re-running either the script or `/golf dev preparehole` overwrites only the derived practice footprint and leaves everything outside it unchanged. Neither is called on normal server startup. The command intentionally rejects sloped tee/cup configurations rather than flattening a larger or ambiguous area.
 
 **Physics note**: `grass_block` resolves to `SurfaceDefinition.NORMAL` (fairway baseline). The floor surface top is at Y=63; ball entity centers rest at Y=63.25 (0.25-radius ball). The cup capture ellipsoid is ±0.34 XZ × ±0.45 Y centred on `(16.5, 63.25, 0.5)`.
 
