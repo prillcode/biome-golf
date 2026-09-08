@@ -40,9 +40,10 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("restart").executes(GolfHoleCommands::restart))
 				.then(Commands.literal("abandon").executes(GolfHoleCommands::abandon))
 				.then(Commands.literal("status").executes(GolfHoleCommands::status)))
+			.then(Commands.literal("practiceball").executes(GolfHoleCommands::dropPracticeBall))
 			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp)));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf hole start|restart|abandon|status and /golf pickup commands");
+			"Registered /golf hole start|restart|abandon|status, /golf practiceball, and /golf pickup commands");
 	}
 
 	private static int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -71,6 +72,12 @@ public final class GolfHoleCommands {
 		context.getSource().sendSuccess(
 			() -> Component.literal(ActiveHoleService.instance().status(player)), false);
 		return 1;
+	}
+
+	private static int dropPracticeBall(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		return sendResult(context, ActiveHoleService.instance().dropPracticeBall(player));
 	}
 
 	private static int pickUp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

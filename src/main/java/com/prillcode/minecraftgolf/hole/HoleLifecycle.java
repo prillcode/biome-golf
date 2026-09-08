@@ -80,6 +80,10 @@ public final class HoleLifecycle {
 		return Optional.ofNullable(sessions.get(Objects.requireNonNull(playerId, "playerId")));
 	}
 
+	public boolean allowsPracticeBall(UUID playerId) {
+		return !sessions.containsKey(Objects.requireNonNull(playerId, "playerId"));
+	}
+
 	public void update(UUID playerId, PlayerHoleSession updatedSession) {
 		Objects.requireNonNull(playerId, "playerId");
 		Objects.requireNonNull(updatedSession, "updatedSession");

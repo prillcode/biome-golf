@@ -37,6 +37,9 @@ import com.prillcode.minecraftgolf.net.HoleStatePayload;
 /** Server-authoritative lifecycle for the one configured M4 hole. */
 public final class ActiveHoleService {
 
+	private static final double PRACTICE_SPAWN_FORWARD = 2.0;
+	private static final double PRACTICE_SPAWN_UP = 1.0;
+
 	public enum ShotPermission {
 		PRACTICE,
 		SCORING,
@@ -79,6 +82,30 @@ public final class ActiveHoleService {
 				"[golf] a hole attempt already exists; use /golf hole restart or /golf hole abandon");
 		}
 		return createAttempt(player, false);
+	}
+
+	public StartResult dropPracticeBall(ServerPlayer player) {
+		if (!lifecycle.allowsPracticeBall(player.getUUID())) {
+			return new StartResult(false,
+				"[golf] finish, restart, or abandon the current hole before dropping a practice ball");
+		}
+		ServerLevel level = player.level();
+		GolfBallEntity ball = GolfBallEntities.GOLF_BALL.create(level, EntitySpawnReason.COMMAND);
+		if (ball == null) {
+			return new StartResult(false, "[golf] failed to create a practice ball");
+		}
+		double yaw = Math.toRadians(player.getYRot());
+		ball.setOwner(player.getUUID());
+		ball.setPos(
+			player.getX() - Math.sin(yaw) * PRACTICE_SPAWN_FORWARD,
+			player.getY() + PRACTICE_SPAWN_UP,
+			player.getZ() + Math.cos(yaw) * PRACTICE_SPAWN_FORWARD);
+		if (!level.addFreshEntity(ball)) {
+			return new StartResult(false, "[golf] failed to add the practice ball to the world");
+		}
+		MinecraftGolf.LOGGER.info("{} dropped player-owned practice ball {}",
+			player.getName().getString(), ball.getUUID());
+		return new StartResult(true, "[golf] dropped a practice ball");
 	}
 
 	public StartResult restart(ServerPlayer player) {

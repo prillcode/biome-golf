@@ -1,6 +1,7 @@
 package com.prillcode.minecraftgolf.hole;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,10 +23,26 @@ class HoleLifecycleTest {
 	void playerWithoutSessionIsInPracticeMode() {
 		HoleLifecycle lifecycle = new HoleLifecycle();
 
+		assertTrue(lifecycle.allowsPracticeBall(PLAYER_ID));
 		assertEquals(HoleLifecycle.Status.PRACTICE, lifecycle.status(PLAYER_ID, false));
 		assertEquals(
 			HoleLifecycle.ShotPermission.PRACTICE,
 			lifecycle.shotPermission(PLAYER_ID, UUID.randomUUID(), false));
+	}
+
+	@Test
+	void practiceBallDropIsBlockedUntilAttemptIsAbandoned() {
+		HoleLifecycle lifecycle = new HoleLifecycle();
+		lifecycle.start(PLAYER_ID, HOLE, UUID.randomUUID());
+
+		assertFalse(lifecycle.allowsPracticeBall(PLAYER_ID));
+
+		PlayerHoleSession completed = lifecycle.session(PLAYER_ID).orElseThrow().pickUp();
+		lifecycle.update(PLAYER_ID, completed);
+		assertFalse(lifecycle.allowsPracticeBall(PLAYER_ID));
+
+		lifecycle.abandon(PLAYER_ID);
+		assertTrue(lifecycle.allowsPracticeBall(PLAYER_ID));
 	}
 
 	@Test
