@@ -16,6 +16,7 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.entity.EntityTypeTest;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.block.GolfBlocks;
@@ -128,26 +129,30 @@ public final class ActiveHoleService {
 			return new StartResult(false, "[golf] failed to add the tee ball to the world");
 		}
 
-		Optional<PlayerHoleSession> previous = lifecycle.session(player.getUUID());
+		int clearedPlayerBalls = discardPlayerOwnedBalls(player, ball.getUUID());
 		if (restart) {
 			lifecycle.restart(player.getUUID(), definition, ball.getUUID());
-			previous.ifPresent(session -> discardAssignedBall(player, session));
 		} else {
 			lifecycle.start(player.getUUID(), definition, ball.getUUID());
 		}
 		player.teleportTo(definition.tee().x(), definition.tee().y() + 1.0, definition.tee().z() + 2.0);
 		int grantedClubs = grantMissingClubs(player);
-		MinecraftGolf.LOGGER.info("{} {} hole {} with ball {} at tee {}; granted {} missing clubs",
+		MinecraftGolf.LOGGER.info(
+			"{} {} hole {} with ball {} at tee {}; cleared {} prior player balls; granted {} missing clubs",
 			player.getName().getString(), restart ? "restarted" : "started",
-			definition.id(), ball.getUUID(), definition.tee(), grantedClubs);
+			definition.id(), ball.getUUID(), definition.tee(), clearedPlayerBalls, grantedClubs);
 		PlayerHoleState startedState = lifecycle.session(player.getUUID())
 			.map(PlayerHoleSession::state).orElse(null);
 		if (startedState != null) {
 			HoleStateNetworking.send(player, HoleStatePayload.active(startedState));
 		}
+		String cleanup = clearedPlayerBalls == 0
+			? ""
+			: " | cleared " + clearedPlayerBalls + " previous player ball(s)";
 		String equipment = grantedClubs == 0 ? "" : " | granted " + grantedClubs + " missing clubs";
 		return new StartResult(true, "[golf] Hole " + definition.number() + " — Par "
-			+ definition.par() + " | Double Par + 2 limit " + definition.strokeLimit() + equipment);
+			+ definition.par() + " | Double Par + 2 limit " + definition.strokeLimit()
+			+ cleanup + equipment);
 	}
 
 	public Optional<PlayerHoleState> state(UUID playerId) {
@@ -393,6 +398,21 @@ public final class ActiveHoleService {
 			granted++;
 		}
 		return granted;
+	}
+
+	private int discardPlayerOwnedBalls(ServerPlayer player, UUID keepBallUuid) {
+		int removed = 0;
+		for (ServerLevel level : player.level().getServer().getAllLevels()) {
+			for (GolfBallEntity ball : level.getEntities(
+				EntityTypeTest.forClass(GolfBallEntity.class),
+				candidate -> player.getUUID().equals(candidate.owner())
+					&& !keepBallUuid.equals(candidate.getUUID()))) {
+				overspeedCupEntries.remove(ball.getUUID());
+				ball.discard();
+				removed++;
+			}
+		}
+		return removed;
 	}
 
 	private void discardAssignedBall(ServerPlayer player, PlayerHoleSession session) {

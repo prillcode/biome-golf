@@ -12,6 +12,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.Commands.CommandSelection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.entity.EntityTypeTest;
 
@@ -169,12 +170,16 @@ public final class GolfDevCommands {
 			return 0;
 		}
 		ball.setPos(x, y, z);
+		if (source.getEntity() instanceof ServerPlayer player) {
+			ball.setOwner(player.getUUID());
+		}
 		if (!level.addFreshEntity(ball)) {
 			source.sendFailure(Component.literal("golf: failed to add golf ball to the level"));
 			return 0;
 		}
+		String ownership = ball.owner() == null ? "unowned" : "owned by " + source.getTextName();
 		String msg = "golf: spawned ball #" + ball.getId() + " at " + fmt(x, y, z)
-				+ " (drops and settles under gravity)";
+				+ " (" + ownership + "; drops and settles under gravity)";
 		MinecraftGolf.LOGGER.info(msg);
 		source.sendSuccess(() -> Component.literal(msg), false);
 		return 1;
