@@ -47,10 +47,10 @@ The slices below are ordered risk-first. Each defines its own goal, deliverables
 
 #### Approved authored subregions
 
-Layout `minecraft_golf:m5_ocean_campus` version 1 may mutate only operations wholly
-contained by these inclusive subregions. The generator preflights every planned block
-before its first write and rejects blocks that are not ocean/air or part of the known
-generated palette.
+Layout `minecraft_golf:m5_ocean_campus` (currently version 3) may mutate only operations wholly
+contained by these inclusive subregions. The command requires development seed
+`-1928790872702396508`; the generator then preflights every planned block before its
+first write and rejects stateful blocks (containers, signs, and other block entities).
 
 | Region | X | Y | Z |
 |---|---:|---:|---:|
@@ -103,6 +103,7 @@ the full boxes. Unlisted space in the overall campus envelope remains untouched.
 - **Deliverables:** Club-distance and travel-pacing findings; camera restoration on short and long shots; penalty/Pick Up/cap/restart/abandon/missing-ball recovery across the course.
 - **Verification:** Manual `runClient` gameplay; Docker integration; record findings.
 - **Exit criteria:** Full-sized holes feel playable and readable; walking travel is acceptable or an on-demand travel-to-ball interaction is explicitly evaluated and accepted/rejected.
+- **Recorded playtest finding:** Non-putter shots currently roll too far after landing. Tune landing/ground behavior in S8 while preserving the accepted Putter feel and distinct putting behavior.
 
 ### S9 — Loom, Docker, documentation, and manual acceptance
 

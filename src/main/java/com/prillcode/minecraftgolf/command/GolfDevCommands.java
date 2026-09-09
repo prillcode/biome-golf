@@ -129,6 +129,12 @@ public final class GolfDevCommands {
 				+ "; command source is in " + currentDimension));
 			return 0;
 		}
+		if (level.getSeed() != M5DevelopmentLayout.DEVELOPMENT_SEED) {
+			source.sendFailure(Component.literal("[golf] course preparation rejected: world seed "
+				+ level.getSeed() + " is not the approved development seed "
+				+ M5DevelopmentLayout.DEVELOPMENT_SEED + "; no blocks were changed."));
+			return 0;
+		}
 		try {
 			DevelopmentCourseGenerator.GenerationResult result = DevelopmentCourseGenerator.prepare(
 				plan, new MinecraftDevelopmentCourseWorld(level, plan));

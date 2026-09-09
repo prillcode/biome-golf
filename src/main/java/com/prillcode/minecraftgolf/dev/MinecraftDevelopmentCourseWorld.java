@@ -8,6 +8,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import com.prillcode.minecraftgolf.block.GolfBlocks;
+
 /** Dedicated-server-safe adapter from the pure generation plan to a loaded level. */
 public final class MinecraftDevelopmentCourseWorld implements DevelopmentCourseGenerator.WorldAccess {
 
@@ -20,14 +22,9 @@ public final class MinecraftDevelopmentCourseWorld implements DevelopmentCourseG
 
 	@Override
 	public boolean canReplace(BlockPoint point, LayoutBlock desired, Set<LayoutBlock> generatedPalette) {
-		BlockState current = level.getBlockState(pos(point));
-		if (current.isAir() || current.is(Blocks.WATER) || current.is(Blocks.SEAGRASS)
-				|| current.is(Blocks.TALL_SEAGRASS) || current.is(Blocks.KELP)
-				|| current.is(Blocks.KELP_PLANT)) {
-			return true;
-		}
-		return generatedPalette.stream().map(MinecraftDevelopmentCourseWorld::block)
-			.anyMatch(current::is);
+		// The command layer has already required the exact disposable development
+		// seed. Preserve stateful/operator-authored blocks as a second safety gate.
+		return level.getBlockEntity(pos(point)) == null;
 	}
 
 	@Override
@@ -59,6 +56,14 @@ public final class MinecraftDevelopmentCourseWorld implements DevelopmentCourseG
 		return switch (block) {
 			case AIR -> Blocks.AIR;
 			case GRASS_BLOCK -> Blocks.GRASS_BLOCK;
+			case DIRT -> Blocks.DIRT;
+			case SAND -> Blocks.SAND;
+			case WATER -> Blocks.WATER;
+			case ICE -> Blocks.ICE;
+			case SLIME_BLOCK -> Blocks.SLIME_BLOCK;
+			case GOLD_BLOCK -> Blocks.GOLD_BLOCK;
+			case TARGET -> Blocks.TARGET;
+			case GOLF_CUP -> GolfBlocks.GOLF_CUP;
 		};
 	}
 }

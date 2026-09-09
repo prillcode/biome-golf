@@ -19,7 +19,7 @@ public final class DevelopmentCourseGenerator {
 		for (Map.Entry<BlockPoint, LayoutBlock> entry : desired.entrySet()) {
 			if (!world.canReplace(entry.getKey(), entry.getValue(), palette)) {
 				throw new UnsafeTerrainException(entry.getKey(),
-					"unsafe block in authored footprint; expected ocean/air or layout palette");
+					"unsafe stateful block in authored footprint");
 			}
 		}
 

@@ -8,6 +8,7 @@ services:
       EULA: "TRUE"
       TYPE: FABRIC
       VERSION: "26.2"
+      SEED: "-1928790872702396508"
       MEMORY: "4G"
       MODE: creative
       DIFFICULTY: peaceful

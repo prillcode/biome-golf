@@ -19,12 +19,30 @@ class DevelopmentCourseGeneratorTest {
 		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
 
 		assertEquals("minecraft_golf:m5_ocean_campus", plan.identity().id());
-		assertEquals(1, plan.identity().version());
+		assertEquals(3, plan.identity().version());
 		assertEquals(new BlockPoint(-320, 48, -256), plan.campusEnvelope().min());
 		assertEquals(new BlockPoint(448, 112, 512), plan.campusEnvelope().max());
 		assertEquals(4, plan.authoredRegions().size());
 		assertTrue(plan.desiredBlocks().keySet().stream().allMatch(plan::isInsideAuthoredRegion));
 		assertTrue(plan.desiredBlocks().keySet().stream().allMatch(plan.campusEnvelope()::contains));
+	}
+
+	@Test
+	void practiceRangeContainsEveryRequiredTrainingSurfaceAndTarget() {
+		Map<BlockPoint, LayoutBlock> blocks = M5DevelopmentLayout.plan().desiredBlocks();
+
+		assertEquals(LayoutBlock.GOLD_BLOCK, blocks.get(new BlockPoint(-246, 62, -200)));
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(-246, 63, -202)));
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(-196, 63, -202)));
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(-146, 63, -202)));
+		assertEquals(LayoutBlock.TARGET, blocks.get(new BlockPoint(-105, 65, -202)));
+		assertEquals(LayoutBlock.SAND, blocks.get(new BlockPoint(-228, 62, -144)));
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(-228, 63, -144)));
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(-112, 63, -158)));
+		assertEquals(LayoutBlock.DIRT, blocks.get(new BlockPoint(-158, 62, -150)));
+		assertEquals(LayoutBlock.WATER, blocks.get(new BlockPoint(-270, 62, -92)));
+		assertEquals(LayoutBlock.ICE, blocks.get(new BlockPoint(-160, 62, -92)));
+		assertEquals(LayoutBlock.SLIME_BLOCK, blocks.get(new BlockPoint(-160, 62, -68)));
 	}
 
 	@Test
