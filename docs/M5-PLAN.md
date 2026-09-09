@@ -47,7 +47,7 @@ The slices below are ordered risk-first. Each defines its own goal, deliverables
 
 #### Approved authored subregions
 
-Layout `minecraft_golf:m5_ocean_campus` (currently version 3) may mutate only operations wholly
+Layout `minecraft_golf:m5_ocean_campus` (currently version 4) may mutate only operations wholly
 contained by these inclusive subregions. The command requires development seed
 `-1928790872702396508`; the generator then preflights every planned block before its
 first write and rejects stateful blocks (containers, signs, and other block entities).

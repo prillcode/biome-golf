@@ -19,12 +19,29 @@ class DevelopmentCourseGeneratorTest {
 		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
 
 		assertEquals("minecraft_golf:m5_ocean_campus", plan.identity().id());
-		assertEquals(3, plan.identity().version());
+		assertEquals(4, plan.identity().version());
 		assertEquals(new BlockPoint(-320, 48, -256), plan.campusEnvelope().min());
 		assertEquals(new BlockPoint(448, 112, 512), plan.campusEnvelope().max());
 		assertEquals(4, plan.authoredRegions().size());
 		assertTrue(plan.desiredBlocks().keySet().stream().allMatch(plan::isInsideAuthoredRegion));
 		assertTrue(plan.desiredBlocks().keySet().stream().allMatch(plan.campusEnvelope()::contains));
+	}
+
+	@Test
+	void holeOneMatchesParFourMetadataAndContainsRiskRewardLandmarks() {
+		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
+		Map<BlockPoint, LayoutBlock> blocks = plan.desiredBlocks();
+		var hole = M5DevelopmentCourse.definition().hole(1);
+
+		assertEquals(4, hole.par());
+		assertEquals(new BlockPoint(-32, 62, -160), floorBelow(hole.tee()));
+		assertEquals(LayoutBlock.GRASS_BLOCK, blocks.get(floorBelow(hole.tee())));
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(184, 63, -160)));
+		assertEquals(LayoutBlock.WATER, blocks.get(new BlockPoint(70, 62, -168)));
+		assertEquals(LayoutBlock.GRASS_BLOCK, blocks.get(new BlockPoint(70, 62, -150)));
+		assertEquals(LayoutBlock.SAND, blocks.get(new BlockPoint(160, 62, -152)));
+		assertTrue(hole.boundary().contains(hole.tee()));
+		assertTrue(hole.boundary().contains(hole.cup()));
 	}
 
 	@Test
@@ -90,6 +107,11 @@ class DevelopmentCourseGeneratorTest {
 
 	private static BlockVolume volume(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
 		return new BlockVolume(new BlockPoint(minX, minY, minZ), new BlockPoint(maxX, maxY, maxZ));
+	}
+
+	private static BlockPoint floorBelow(com.prillcode.minecraftgolf.golf.Vec3 position) {
+		return new BlockPoint((int) Math.floor(position.x()),
+			(int) Math.floor(position.y() - 0.25 - 0.01), (int) Math.floor(position.z()));
 	}
 
 	private static final class FakeWorld implements DevelopmentCourseGenerator.WorldAccess {

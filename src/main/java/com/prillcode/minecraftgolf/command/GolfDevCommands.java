@@ -6,12 +6,14 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.core.BlockPos;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.Commands.CommandSelection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.entity.EntityTypeTest;
 
@@ -22,6 +24,7 @@ import com.prillcode.minecraftgolf.dev.DevelopmentHoleBuilder.Layout;
 import com.prillcode.minecraftgolf.dev.DevelopmentCourseGenerator;
 import com.prillcode.minecraftgolf.dev.DevelopmentCoursePlan;
 import com.prillcode.minecraftgolf.dev.M5DevelopmentLayout;
+import com.prillcode.minecraftgolf.dev.M5DevelopmentCourse;
 import com.prillcode.minecraftgolf.dev.MinecraftDevelopmentCourseWorld;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
@@ -43,6 +46,7 @@ import com.prillcode.minecraftgolf.server.ActiveHoleService;
  * /golf clear                            remove every loaded golf ball
  * /golf dev preparehole                  explicitly prepare the configured flat test hole
  * /golf dev preparecourse                explicitly prepare the bounded M5 ocean campus
+ * /golf dev testhole &lt;1-3&gt;              select a generated hole for lifecycle testing
  * </pre>
  *
  * <p>Commands mutate only server-authoritative state (ARCHITECTURE.md §2.1):
@@ -110,9 +114,35 @@ public final class GolfDevCommands {
 						.then(Commands.literal("preparehole")
 								.executes(GolfDevCommands::prepareHole))
 						.then(Commands.literal("preparecourse")
-								.executes(GolfDevCommands::prepareCourse))));
+								.executes(GolfDevCommands::prepareCourse))
+						.then(Commands.literal("testhole")
+								.then(Commands.argument("hole", IntegerArgumentType.integer(1, 3))
+									.executes(GolfDevCommands::selectTestHole)))));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf developer commands (spawn, launch, inspect, clear, dev preparehole, dev preparecourse)");
+			"Registered /golf developer commands (spawn, launch, inspect, clear, dev preparehole, dev preparecourse, dev testhole)");
+	}
+
+	private static int selectTestHole(CommandContext<CommandSourceStack> ctx) {
+		int number = IntegerArgumentType.getInteger(ctx, "hole");
+		HoleDefinition hole = M5DevelopmentCourse.definition().hole(number);
+		ServerLevel level = ctx.getSource().getLevel();
+		loadPointChunk(level, hole.tee());
+		loadPointChunk(level, hole.cup());
+		if (ctx.getSource().getEntity() instanceof ServerPlayer player) {
+			player.teleportTo(
+				(hole.tee().x() + hole.cup().x()) / 2.0,
+				Math.max(hole.tee().y(), hole.cup().y()) + 1.0,
+				(hole.tee().z() + hole.cup().z()) / 2.0);
+		}
+		ActiveHoleService.instance().initialize(hole);
+		ctx.getSource().sendSuccess(() -> Component.literal("[golf] selected generated Hole "
+			+ hole.number() + " — Par " + hole.par() + "; use /golf hole start"), true);
+		return 1;
+	}
+
+	private static void loadPointChunk(ServerLevel level, Vec3 point) {
+		BlockPos block = BlockPos.containing(point.x(), point.y(), point.z());
+		level.getChunk(block.getX() >> 4, block.getZ() >> 4);
 	}
 
 	// ------------------------------------------------------------------

@@ -10,7 +10,7 @@ public final class M5DevelopmentLayout {
 
 	public static final long DEVELOPMENT_SEED = -1928790872702396508L;
 	public static final GeneratedLayoutIdentity IDENTITY =
-		new GeneratedLayoutIdentity("minecraft_golf:m5_ocean_campus", 3);
+		new GeneratedLayoutIdentity("minecraft_golf:m5_ocean_campus", 4);
 	public static final BlockVolume CAMPUS_ENVELOPE = volume(-320, 48, -256, 448, 112, 512);
 
 	private M5DevelopmentLayout() {
@@ -25,10 +25,27 @@ public final class M5DevelopmentLayout {
 
 		List<LayoutOperation> operations = new ArrayList<>();
 		operations.addAll(practiceRange());
-		// Small pads reserve the hole layout origins before S4-S6 add their geometry.
-		operations.addAll(List.of(marker(-48, -224), marker(-48, -64), marker(-48, 96)));
+		operations.addAll(holeOne());
+		// Small pads reserve the remaining hole layout origins before S5-S6.
+		operations.addAll(List.of(marker(-48, -64), marker(-48, 96)));
 		return new DevelopmentCoursePlan(IDENTITY, "minecraft:overworld", CAMPUS_ENVELOPE,
 			regions, operations);
+	}
+
+	private static List<LayoutOperation> holeOne() {
+		List<LayoutOperation> operations = new ArrayList<>();
+		// Broad rough, narrower fairway, and a generous green at the far end.
+		operations.add(fill(-40, 63, -190, 200, 82, -130, LayoutBlock.AIR));
+		operations.add(fill(-40, 62, -190, 200, 62, -130, LayoutBlock.DIRT));
+		operations.add(fill(-40, 62, -174, 170, 62, -146, LayoutBlock.GRASS_BLOCK));
+		operations.add(fill(170, 62, -176, 200, 62, -144, LayoutBlock.GRASS_BLOCK));
+
+		// Water pinches the left landing side; the right fairway remains a safe route.
+		operations.add(fill(50, 62, -174, 90, 62, -160, LayoutBlock.WATER));
+		// Greenside bunker catches an aggressive approach that leaks right.
+		operations.add(fill(148, 62, -158, 170, 62, -146, LayoutBlock.SAND));
+		operations.add(fill(184, 63, -160, 184, 63, -160, LayoutBlock.GOLF_CUP));
+		return operations;
 	}
 
 	private static List<LayoutOperation> practiceRange() {
