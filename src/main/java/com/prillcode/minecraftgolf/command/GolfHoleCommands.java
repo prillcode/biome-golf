@@ -35,6 +35,12 @@ public final class GolfHoleCommands {
 	private static void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher,
 			CommandBuildContext registryAccess, CommandSelection environment) {
 		dispatcher.register(Commands.literal("golf")
+			.then(Commands.literal("round")
+				.then(Commands.literal("create").executes(GolfHoleCommands::createRound))
+				.then(Commands.literal("join").executes(GolfHoleCommands::joinRound))
+				.then(Commands.literal("start").executes(GolfHoleCommands::startRound))
+				.then(Commands.literal("leave").executes(GolfHoleCommands::leaveRound))
+				.then(Commands.literal("status").executes(GolfHoleCommands::roundStatus)))
 			.then(Commands.literal("hole")
 				.then(Commands.literal("start").executes(GolfHoleCommands::start))
 				.then(Commands.literal("restart").executes(GolfHoleCommands::restart))
@@ -44,7 +50,7 @@ public final class GolfHoleCommands {
 			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp))
 			.then(Commands.literal("nexthole").executes(GolfHoleCommands::nextHole)));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf hole start|restart|abandon|status, /golf practiceball, /golf pickup, and /golf nexthole commands");
+			"Registered Ready Golf round, hole lifecycle, practice ball, Pick Up, and next-hole commands");
 	}
 
 	private static int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -55,6 +61,33 @@ public final class GolfHoleCommands {
 			return 0;
 		}
 		context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
+		return 1;
+	}
+
+	private static int createRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().createRound(
+			context.getSource().getPlayerOrException()));
+	}
+
+	private static int joinRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().joinRound(
+			context.getSource().getPlayerOrException()));
+	}
+
+	private static int startRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().startRound(
+			context.getSource().getPlayerOrException()));
+	}
+
+	private static int leaveRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().leaveRound(
+			context.getSource().getPlayerOrException()));
+	}
+
+	private static int roundStatus(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		context.getSource().sendSuccess(
+			() -> Component.literal(ActiveHoleService.instance().roundStatus(player)), false);
 		return 1;
 	}
 

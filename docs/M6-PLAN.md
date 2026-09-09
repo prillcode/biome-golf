@@ -131,7 +131,8 @@ Each slice must pass its verification before the next begins. Stop and document 
 - Each client receives only its own hole/HUD snapshot and camera follows only its selected owned ball.
 - All clients observe all loaded golf balls through normal entity synchronization.
 - If necessary for understandable testing, add only minimal owner identification using already synchronized owner data; do not expand into the deferred cosmetic ball system.
-- The magenta/black first-person club defect is investigated only if it blocks multiplayer acceptance; otherwise record it unchanged for M7.
+- Repair the Minecraft 26.2 item-definition/resource path responsible for the magenta/black club artifacts. A vanilla tool model may be used briefly as a diagnostic fallback, but is not the intended presentation.
+- Replace the one shared placeholder with seven distinct Minecraft-style 2D club sprites and verify inventory, first-person, third-person, and dropped-item presentation. Custom 3D Blockbench club models remain deferred unless later playtesting justifies them.
 
 **Verification:** two Loom clients or one Loom client plus another compatible client on a dedicated server; execute overlapping long shots, short shots, penalties, rests, and camera returns.
 
