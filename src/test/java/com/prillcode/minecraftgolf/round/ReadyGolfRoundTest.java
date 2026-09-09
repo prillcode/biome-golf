@@ -64,6 +64,8 @@ class ReadyGolfRoundTest {
 		round = holeOut(round, PLAYER_ONE);
 
 		assertFalse(round.allActiveTerminal());
+		assertEquals(2, round.activeParticipantCount());
+		assertEquals(1, round.terminalActiveParticipantCount());
 		ReadyGolfRound blocked = round;
 		assertThrows(IllegalStateException.class, () -> blocked.advanceNextHole(0));
 		assertEquals(0, blocked.currentHoleIndex());
@@ -138,6 +140,20 @@ class ReadyGolfRoundTest {
 		assertEquals(1, state(round, PLAYER_ONE).currentHoleIndex());
 		ReadyGolfRound advanced = round;
 		assertThrows(IllegalStateException.class, () -> advanced.reconnect(PLAYER_TWO));
+	}
+
+	@Test
+	void withdrawalReevaluatesBarrierWithoutChangingRemainingScore() {
+		ReadyGolfRound round = holeOut(playingRound(), PLAYER_ONE);
+		PlayerCourseState completed = state(round, PLAYER_ONE);
+
+		round = round.withdraw(PLAYER_TWO);
+
+		assertTrue(round.allActiveTerminal());
+		assertEquals(1, round.activeParticipantCount());
+		assertEquals(1, round.terminalActiveParticipantCount());
+		assertEquals(completed, state(round, PLAYER_ONE));
+		assertEquals(ParticipantStatus.WITHDRAWN, participant(round, PLAYER_TWO).status());
 	}
 
 	@Test

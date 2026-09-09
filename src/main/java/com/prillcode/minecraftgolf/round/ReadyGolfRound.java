@@ -173,6 +173,22 @@ public record ReadyGolfRound(
 			&& active.stream().allMatch(participant -> participant.courseState().currentHole().isComplete());
 	}
 
+	public long activeParticipantCount() {
+		return participants.stream()
+			.filter(participant -> participant.status() == ParticipantStatus.ACTIVE)
+			.count();
+	}
+
+	public long terminalActiveParticipantCount() {
+		if (phase != RoundPhase.PLAYING) {
+			return 0;
+		}
+		return participants.stream()
+			.filter(participant -> participant.status() == ParticipantStatus.ACTIVE)
+			.filter(participant -> participant.courseState().currentHole().isComplete())
+			.count();
+	}
+
 	public Optional<UUID> coordinatorId() {
 		if (phase != RoundPhase.LOBBY) {
 			return Optional.empty();
