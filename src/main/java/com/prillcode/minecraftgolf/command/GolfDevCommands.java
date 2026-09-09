@@ -171,7 +171,7 @@ public final class GolfDevCommands {
 			source.sendSuccess(() -> Component.literal("[golf] prepared " + plan.identity().id()
 				+ " v" + plan.identity().version() + ": " + result.plannedBlocks()
 				+ " planned blocks, " + result.changedBlocks() + " changed; campus envelope "
-				+ "X[-320..448] Y[48..112] Z[-256..512]"), true);
+				+ "X[-640..448] Y[32..192] Z[-256..640]"), true);
 			return 1;
 		} catch (DevelopmentCourseGenerator.UnsafeTerrainException exception) {
 			source.sendFailure(Component.literal("[golf] course preparation rejected: "

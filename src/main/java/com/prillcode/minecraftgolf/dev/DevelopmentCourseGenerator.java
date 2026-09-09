@@ -1,5 +1,6 @@
 package com.prillcode.minecraftgolf.dev;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -13,8 +14,18 @@ public final class DevelopmentCourseGenerator {
 	public static GenerationResult prepare(DevelopmentCoursePlan plan, WorldAccess world) {
 		Objects.requireNonNull(plan, "plan");
 		Objects.requireNonNull(world, "world");
-		Map<BlockPoint, LayoutBlock> desired = plan.desiredBlocks();
-		Set<LayoutBlock> palette = Set.copyOf(desired.values());
+		Map<BlockPoint, LayoutBlock> desired = new LinkedHashMap<>();
+		for (LayoutOperation operation : plan.operations()) {
+			operation.volume().points().forEach(point -> {
+				if (operation.replacementRule() == ReplacementRule.ALWAYS
+						|| world.matchesReplacementRule(point, operation.replacementRule())) {
+					desired.put(point, operation.block());
+				}
+			});
+		}
+		Set<LayoutBlock> palette = plan.operations().stream()
+			.map(LayoutOperation::block)
+			.collect(java.util.stream.Collectors.toUnmodifiableSet());
 
 		for (Map.Entry<BlockPoint, LayoutBlock> entry : desired.entrySet()) {
 			if (!world.canReplace(entry.getKey(), entry.getValue(), palette)) {
@@ -34,6 +45,8 @@ public final class DevelopmentCourseGenerator {
 	}
 
 	public interface WorldAccess {
+		boolean matchesReplacementRule(BlockPoint point, ReplacementRule replacementRule);
+
 		boolean canReplace(BlockPoint point, LayoutBlock desired, Set<LayoutBlock> generatedPalette);
 
 		boolean matches(BlockPoint point, LayoutBlock desired);

@@ -1,6 +1,6 @@
 # M5 — Single-Player Course Experience: Bounded Plan
 
-**Status:** Approved planning document (GSD decision D018). The product roadmap revision lives in `docs/MILESTONES.md`.
+**Status:** Complete. See `docs/M5-CLOSEOUT.md`. The product roadmap revision lives in `docs/MILESTONES.md`.
 
 This is a **bounded, risk-first** plan for M5. It deliberately does not turn the milestone into an open-ended "perfect single-player forever" effort. Slice scope and verification evidence must stay clear; slices may be combined only when their risks and proof remain unambiguous.
 
@@ -13,9 +13,9 @@ Prove the full-sized, single-player golf course loop — practice range, exactly
 - **Server authority.** Course state, ball position, shot results, and scoring remain server-owned. Clients send intent and display authoritative snapshots.
 - **Client/server separation.** No `net.minecraft.client` imports under `src/main`; client-only code stays under `src/client`.
 - **No general procedural generator.** Use deterministic, authored, versioned generation behind an explicit operator command.
-- **No automatic teleport-to-ball.** Only a separately accepted on-demand interaction may replace it.
+- **Accepted automatic next-shot travel.** Playtesting found chat-driven travel too clumsy. After an active owned ball comes to a natural rest, the server automatically moves the player to a validated safe standing position near it. Penalty recovery, hole completion, missing/moving balls, and cross-dimension state never trigger travel.
 - **No terrain mutation outside the declared footprint.** Exact bounds must be documented before any terrain is rewritten.
-- **Approved fixed ocean campus.** The development layout uses the Docker world's known disposable ocean area with overall envelope `X[-320..448]`, `Y[48..112]`, `Z[-256..512]` (769 × 65 × 769 blocks). This includes tuning headroom beyond the current 150-block Driver carry and avoids cramping the par 5. Generation mutates only explicitly declared authored subregions inside that envelope, not the entire envelope. `/golf dev preparecourse` must preflight the target and reject unsafe/non-development terrain. Loom Singleplayer testing uses the documented Docker world seed `-1928790872702396508`.
+- **Approved fixed development campus.** The development layout uses the Docker world's known seed-specific ocean practice area and natural coastal forest with overall envelope `X[-640..448]`, `Y[32..192]`, `Z[-256..640]`. Generation mutates only explicitly declared authored subregions inside that envelope, not the entire envelope. The scored holes preserve natural trees, slopes, caves, shorelines, and water except for reviewed tee/green overlays and targeted legacy-flat cleanup. `/golf dev preparecourse` must preflight the target and reject unsafe/non-development terrain. Loom Singleplayer testing uses the documented Docker world seed `-1928790872702396508`.
 - **Preserve M4.5 contracts.** Start/restart/abandon/status/Pick Up remain safe; practice balls are player-owned and only allowed outside a hole attempt; operator `/golf spawn` remains an unowned debug tool; HUD stays driven by typed server snapshots; accepted cup speed, Putter tuning, penalties, stroke cap, and camera restoration are preserved.
 
 ## Bounded slices
@@ -47,7 +47,7 @@ The slices below are ordered risk-first. Each defines its own goal, deliverables
 
 #### Approved authored subregions
 
-Layout `minecraft_golf:m5_ocean_campus` (currently version 4) may mutate only operations wholly
+Layout `minecraft_golf:m5_ocean_campus` (currently version 11) may mutate only operations wholly
 contained by these inclusive subregions. The command requires development seed
 `-1928790872702396508`; the generator then preflights every planned block before its
 first write and rejects stateful blocks (containers, signs, and other block entities).
@@ -55,9 +55,11 @@ first write and rejects stateful blocks (containers, signs, and other block enti
 | Region | X | Y | Z |
 |---|---:|---:|---:|
 | Practice range | `[-304..-80]` | `[62..96]` | `[-224..32]` |
-| Hole 1 — par 4 | `[-48..208]` | `[62..96]` | `[-224..-96]` |
-| Hole 2 — par 3 | `[-48..160]` | `[62..96]` | `[-64..64]` |
-| Hole 3 — par 5 | `[-48..432]` | `[62..96]` | `[96..496]` |
+| Legacy flat Hole 1 cleanup | `[-48..208]` | `[62..96]` | `[-224..-96]` |
+| Legacy flat Hole 2 cleanup | `[-48..160]` | `[62..96]` | `[-64..64]` |
+| Natural Hole 1 — par 4 | `[-384..-176]` | `[48..128]` | `[384..528]` |
+| Natural Hole 2 — par 3 | `[-384..-256]` | `[48..128]` | `[384..464]` |
+| Natural Hole 3 — par 5 | `[-400..-176]` | `[32..128]` | `[384..528]` |
 
 These are permissions for reviewed authored operations, not instructions to rewrite
 the full boxes. Unlisted space in the overall campus envelope remains untouched.
@@ -93,17 +95,19 @@ the full boxes. Unlisted space in the overall campus envelope remains untouched.
 ### S7 — Single-player transitions, HUD, replay, and recovery
 
 - **Goal:** Wire course sequencing into the server lifecycle and client HUD, with replay/reset and safe recovery.
-- **Deliverables:** Start course, current-hole state, next-tee transition, three-hole cumulative scorecard, final completion, replay/reset without stale balls or scores, safe recovery from missing balls or interrupted state, and clear HUD state throughout the round.
+- **Deliverables:** Start course, current-hole state, a server-authoritative `/golf nexthole` action with a clickable completion prompt, next-tee transition, three-hole cumulative scorecard, final completion, replay/reset without stale balls or scores, safe recovery from missing balls or interrupted state, and clear HUD state throughout the round.
 - **Verification:** `./gradlew clean test build`; Loom client HUD/resource/camera checks.
 - **Exit criteria:** A player can play all three holes back-to-back, see accurate per-hole and cumulative score, and replay without stale state.
 
 ### S8 — Physics, club, and travel tuning across full-sized holes
 
 - **Goal:** Tune club distances, physics, camera, and pacing across realistic hole lengths.
-- **Deliverables:** Club-distance and travel-pacing findings; camera restoration on short and long shots; penalty/Pick Up/cap/restart/abandon/missing-ball recovery across the course.
+- **Deliverables:** Club-distance and travel-pacing findings; automatic server-authoritative safe travel after natural ball rest; camera restoration on short and long shots; penalty/Pick Up/cap/restart/abandon/missing-ball recovery across the course.
 - **Verification:** Manual `runClient` gameplay; Docker integration; record findings.
-- **Exit criteria:** Full-sized holes feel playable and readable; walking travel is acceptable or an on-demand travel-to-ball interaction is explicitly evaluated and accepted/rejected.
-- **Recorded playtest finding:** Non-putter shots currently roll too far after landing. Tune landing/ground behavior in S8 while preserving the accepted Putter feel and distinct putting behavior.
+- **Exit criteria:** Full-sized holes feel playable and readable; automatic next-shot travel improves pacing without triggering for penalties, completion, or invalid ball state.
+- **Recorded playtest finding:** Non-putter shots currently fly too low and roll too far after landing, especially Driver, Fairway Wood, and Long Iron. In S8, raise every non-Putter trajectory while preserving full-power carry distance, reduce post-landing rollout, and preserve the accepted Putter feel and distinct putting behavior.
+- **Accepted tuning baseline:** Full-power non-Putter range targets now measure carry at first landing (150/125/100/85/60/42 blocks), use progressively higher 14–24 block apex targets, and carry a server-selected lofted-shot landing profile that limits horizontal landing energy and rollout without changing global `NORMAL`/green friction. Putter retains the standard profile and its existing surface-driven roll.
+- **Manual acceptance finding:** All clubs feel substantially better, with readable higher flights and controlled rollout; the player completed all three holes successfully. The Hole 3 par 5 currently plays short—a well-hit Driver left roughly a half-Wedge approach and enabled an eagle—but its route and overall playability are accepted for M5. Defer further length adjustment and slightly greater Driver/Fairway Wood rollout relative to irons to later playtest tuning.
 
 ### S9 — Loom, Docker, documentation, and manual acceptance
 
@@ -114,11 +118,13 @@ the full boxes. Unlisted space in the overall campus envelope remains untouched.
 
 ## Travel-to-ball evaluation (check-in)
 
-Travel across full-sized holes may be tedious. This is an **explicit, on-demand, server-authoritative** evaluation — never automatic teleport-after-every-shot.
+Full-course playtesting established that chat-driven travel interrupts shot flow. The accepted M5 behavior is **automatic, server-authoritative next-shot travel**.
 
-- Requires a deliberate player action.
-- Preserves Minecraft traversal as a meaningful part of play.
-- If it requires a material UX decision, prepare options and ask the user rather than silently choosing.
+- Trigger only when physics naturally brings the active, player-owned ball to rest.
+- Search for a safe supported standing position near the authoritative ball before moving the player.
+- Never trigger from tee placement, penalty recovery, hole completion, missing/moving balls, or cross-dimension state.
+- If no safe destination exists, leave the player in place and provide actionable feedback.
+- Preserve ordinary Minecraft traversal outside active shot-to-shot course play.
 
 ## Check-in points
 
@@ -132,11 +138,11 @@ Pause and consult the user when:
 
 ## Non-goals (do not build in M5)
 
-Multiplayer players, Ready Golf concurrency, shared multiplayer round state, traditional turns, scramble or other game modes, matchmaking, public-server infrastructure, arbitrary course generation, course-authoring UI, persistent global statistics, a large course library, wind, cinematic camera, and automatic teleport-to-ball.
+Multiplayer players, Ready Golf concurrency, shared multiplayer round state, traditional turns, scramble or other game modes, matchmaking, public-server infrastructure, arbitrary course generation, course-authoring UI, persistent global statistics, a large course library, wind, and cinematic camera.
 
 ## Preserved M4.5 contracts
 
-Gameplay state and scoring remain server-owned; clients send intent and display authoritative snapshots; no `net.minecraft.client` imports under `src/main`; start/restart/abandon/status/Pick Up remain safe; player-owned practice balls are allowed only outside a hole attempt; starting/restarting clears only that player's prior balls; operator `/golf spawn` remains an unowned debugging tool; missing-ball recovery remains actionable; the HUD remains driven by typed server snapshots; existing development-hole preparation remains explicit and idempotent; automatic teleport-to-ball remains out of scope unless replaced by a separately accepted on-demand interaction; accepted cup speed, Putter tuning, penalties, stroke cap, and camera restoration behavior are preserved.
+Gameplay state and scoring remain server-owned; clients send intent and display authoritative snapshots; no `net.minecraft.client` imports under `src/main`; start/restart/abandon/status/Pick Up remain safe; player-owned practice balls are allowed only outside a hole attempt; starting/restarting clears only that player's prior balls; operator `/golf spawn` remains an unowned debugging tool; missing-ball recovery remains actionable; the HUD remains driven by typed server snapshots; existing development-hole preparation remains explicit and idempotent; accepted cup speed, Putter tuning, penalties, stroke cap, and camera restoration behavior are preserved. M5's accepted automatic next-shot travel supersedes only the prior no-automatic-teleport constraint.
 
 ## GSD note
 

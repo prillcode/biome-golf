@@ -19,7 +19,7 @@ import com.prillcode.minecraftgolf.golf.Vec3;
  */
 class ClubDomainTest {
 
-	private static final double MAX_SPEED = PhysicsConfig.DEFAULT.maxLaunchSpeed(); // 4.0
+	private static final double MAX_SPEED = PhysicsConfig.DEFAULT.maxLaunchSpeed(); // 5.0
 
 	// ------------------------------------------------------------------
 	// GolfClubs catalog invariants

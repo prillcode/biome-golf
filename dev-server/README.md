@@ -23,7 +23,7 @@ Minecraft Golf uses both Loom and Docker because they prove different things.
 Recommended hybrid workflow:
 
 1. Run `./gradlew test` and `./gradlew build` for every relevant change.
-2. Use `./gradlew runClient` with a cheats-enabled **Singleplayer** world for rapid client-facing checks. Run `/golf dev preparehole` once to prepare or restore the configured test platform.
+2. Use `./gradlew runClient` with a cheats-enabled **Singleplayer** world using seed `-1928790872702396508` for rapid client-facing checks. Run `/golf dev preparecourse` once to prepare or restore the M5 campus.
 3. Use Docker for dedicated-server integration and final gameplay acceptance after syncing the JAR.
 
 > **Authentication:** the Docker server intentionally uses `online-mode=true`. Loom's `runClient` development identity cannot authenticate to it and reports `Failed to login: Invalid session`. Connect with an authenticated Java Edition client containing matching Fabric Loader, Fabric API, and Minecraft Golf versions. Do not weaken the tracked Docker server's authentication for Loom testing.
@@ -74,6 +74,29 @@ To find the host's LAN IP: `ip addr` on Linux, `ipconfig` on Windows.
 Persistent state is useful for repeatable gameplay, but it can retain stale entities or configuration. Prefer a normal restart for code changes and use reset only when the test explicitly requires a clean world.
 
 ## Prepared practice area
+
+### M5 three-hole campus
+
+The scored M5 course and separate practice range use layout
+`minecraft_golf:m5_ocean_campus` v11 on seed `-1928790872702396508`. Preparation
+is explicit, seed-gated, two-phase, and bounded by the overall envelope
+`X[-640..448]`, `Y[32..192]`, `Z[-256..640]`; only the authored subregions in
+`docs/M5-PLAN.md` are eligible for mutation.
+
+```text
+/golf dev preparecourse
+/golf hole start
+/golf nexthole
+```
+
+Prepare the layout, start Hole 1 normally, and use the clickable completion action
+or `/golf nexthole` after Holes 1 and 2. Hole 3 automatically finalizes and prints
+the scorecard. `/golf dev testhole <1|2|3>` is an
+operator-only isolated-hole tool and does not exercise sequencing or the final
+scorecard. Repeating `preparecourse` after the vegetation cleanup has settled must
+report zero changed blocks.
+
+### M4.5 legacy practice hole
 
 M4.5 uses a fixed 16-block practice hole at the world origin:
 

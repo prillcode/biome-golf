@@ -60,7 +60,7 @@ public record PhysicsConfig(
 			0.60,   // restitution: lively golf-ball bounce on normal ground
 			0.08,   // bounceFloorSpeed: below this vertical impact speed the ball rolls
 			0.03,   // stopSpeed: 0.6 blocks/second threshold to count as stopped
-			4.0,    // maxLaunchSpeed: 80 blocks/second ceiling for any launch
+			5.0,    // maxLaunchSpeed: headroom for the raised 150-block Driver flight
 			0.5,    // maxStepDistance: half-block sweep granularity
 			16      // maxSubsteps: 4 blocks/tick / 0.5 = 8 typical worst case; cap with headroom
 	);

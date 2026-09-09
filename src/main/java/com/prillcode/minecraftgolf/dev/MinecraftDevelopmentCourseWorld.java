@@ -3,6 +3,7 @@ package com.prillcode.minecraftgolf.dev;
 import java.util.Set;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -18,6 +19,15 @@ public final class MinecraftDevelopmentCourseWorld implements DevelopmentCourseG
 	public MinecraftDevelopmentCourseWorld(ServerLevel level, DevelopmentCoursePlan plan) {
 		this.level = level;
 		loadChunks(plan);
+	}
+
+	@Override
+	public boolean matchesReplacementRule(BlockPoint point, ReplacementRule replacementRule) {
+		if (replacementRule == ReplacementRule.ALWAYS) {
+			return true;
+		}
+		BlockState state = level.getBlockState(pos(point));
+		return state.is(BlockTags.LOGS) || state.is(BlockTags.LEAVES);
 	}
 
 	@Override
@@ -62,6 +72,10 @@ public final class MinecraftDevelopmentCourseWorld implements DevelopmentCourseG
 			case ICE -> Blocks.ICE;
 			case SLIME_BLOCK -> Blocks.SLIME_BLOCK;
 			case GOLD_BLOCK -> Blocks.GOLD_BLOCK;
+			case BLUE_CONCRETE -> Blocks.CONCRETE.blue();
+			case YELLOW_CONCRETE -> Blocks.CONCRETE.yellow();
+			case BLACK_CONCRETE -> Blocks.CONCRETE.black();
+			case GREEN_WOOL -> Blocks.WOOL.green();
 			case TARGET -> Blocks.TARGET;
 			case GOLF_CUP -> GolfBlocks.GOLF_CUP;
 		};

@@ -45,7 +45,9 @@ public record DevelopmentCoursePlan(
 	public Map<BlockPoint, LayoutBlock> desiredBlocks() {
 		Map<BlockPoint, LayoutBlock> desired = new LinkedHashMap<>();
 		for (LayoutOperation operation : operations) {
-			operation.volume().points().forEach(point -> desired.put(point, operation.block()));
+			if (operation.replacementRule() == ReplacementRule.ALWAYS) {
+				operation.volume().points().forEach(point -> desired.put(point, operation.block()));
+			}
 		}
 		return Collections.unmodifiableMap(desired);
 	}

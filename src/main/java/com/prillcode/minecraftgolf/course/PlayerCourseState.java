@@ -82,8 +82,22 @@ public record PlayerCourseState(
 		return start(course);
 	}
 
+	/** Restarts only the current hole while preserving earlier finalized scores. */
+	public PlayerCourseState restartCurrentHole() {
+		requireInProgress();
+		return new PlayerCourseState(course, currentHoleIndex, completedHoles,
+			PlayerHoleState.start(course.holes().get(currentHoleIndex)), CourseStatus.IN_PROGRESS);
+	}
+
 	public boolean isComplete() {
 		return status == CourseStatus.COMPLETE;
+	}
+
+	/** True when the last authored hole is terminal but not yet folded into the scorecard. */
+	public boolean isFinalHoleTerminal() {
+		return !isComplete()
+			&& currentHoleIndex == course.holes().size() - 1
+			&& currentHole.isComplete();
 	}
 
 	public int completedStrokes() {

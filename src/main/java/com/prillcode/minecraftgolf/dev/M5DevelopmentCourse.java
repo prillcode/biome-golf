@@ -23,14 +23,14 @@ public final class M5DevelopmentCourse {
 			M5DevelopmentLayout.IDENTITY,
 			List.of(
 				hole("minecraft_golf:m5_hole_1", 1, 4,
-					new Vec3(-31.5, 63.25, -159.5), new Vec3(184.5, 63.25, -159.5),
-					volume(-48, 48, -224, 208, 112, -96), 0.0),
+					new Vec3(-206.5, 75.25, 494.5), new Vec3(-354.5, 71.25, 416.5),
+					volume(-384, 48, 384, -176, 128, 528), 118.0),
 				hole("minecraft_golf:m5_hole_2", 2, 3,
-					new Vec3(-15.5, 63.25, 0.5), new Vec3(48.5, 63.25, 0.5),
-					volume(-48, 48, -64, 160, 112, 64), 0.0),
+					new Vec3(-367.5, 71.25, 416.5), new Vec3(-321.5, 71.25, 405.5),
+					volume(-384, 48, 384, -256, 128, 464), -103.0),
 				hole("minecraft_golf:m5_hole_3", 3, 5,
-					new Vec3(-31.5, 63.25, 144.5), new Vec3(400.5, 71.25, 448.5),
-					volume(-48, 48, 96, 432, 112, 496), -35.0)));
+					new Vec3(-365.5, 70.25, 490.5), new Vec3(-206.5, 71.25, 426.5),
+					volume(-400, 32, 384, -176, 128, 528), -112.0)));
 	}
 
 	private static HoleDefinition hole(

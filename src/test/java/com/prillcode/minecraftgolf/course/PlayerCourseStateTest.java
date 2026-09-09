@@ -57,6 +57,34 @@ class PlayerCourseStateTest {
 	}
 
 	@Test
+	void restartingCurrentHolePreservesCompletedScoresButClearsCurrentStrokes() {
+		PlayerCourseState state = PlayerCourseState.start(course());
+		state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut()).advance();
+		state = state.updateCurrentHole(state.currentHole().recordAcceptedShot());
+
+		PlayerCourseState restarted = state.restartCurrentHole();
+
+		assertEquals(1, restarted.completedHoles().size());
+		assertEquals(1, restarted.completedStrokes());
+		assertEquals(2, restarted.currentHole().hole().number());
+		assertEquals(0, restarted.currentHole().strokes());
+	}
+
+	@Test
+	void identifiesTerminalFinalHoleForAutomaticCourseCompletion() {
+		PlayerCourseState state = PlayerCourseState.start(course());
+		for (int hole = 1; hole < 3; hole++) {
+			state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut()).advance();
+		}
+		assertFalse(state.isFinalHoleTerminal());
+
+		state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut());
+
+		assertTrue(state.isFinalHoleTerminal());
+		assertTrue(state.advance().isComplete());
+	}
+
+	@Test
 	void rejectsWrongHoleAndScoreRegressionUpdates() {
 		PlayerCourseState state = PlayerCourseState.start(course());
 		PlayerHoleState otherHole = PlayerHoleState.start(course().hole(2));

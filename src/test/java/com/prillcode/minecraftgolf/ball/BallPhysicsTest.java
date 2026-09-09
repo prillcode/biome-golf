@@ -271,6 +271,26 @@ class BallPhysicsTest {
 	}
 
 	@Test
+	void loftedClubProfileAddsRollResistanceWithoutChangingSurfaceDefinitions() {
+		BallState state = new BallState(Vec3.of(0, 0, 0), Vec3.of(2, 0, 0), true, false);
+		BallState next = BallPhysics.step(state, coarse(),
+			new FloorWorld(SurfaceDefinition.NORMAL), ShotPhysicsProfile.LOFTED_CLUB);
+
+		assertEquals(2.0 * 0.95 * 0.82, next.velocity().x(), TOL);
+		assertEquals(0.95, SurfaceDefinition.NORMAL.rollingFriction(), TOL);
+	}
+
+	@Test
+	void loftedClubProfileRemovesHorizontalEnergyAtLanding() {
+		BallState state = new BallState(Vec3.of(0, 0.05, 0), Vec3.of(2, -2, 0), false, false);
+		BallState next = BallPhysics.step(state, coarse(),
+			new FloorWorld(SurfaceDefinition.NORMAL), ShotPhysicsProfile.LOFTED_CLUB);
+
+		assertEquals(2.0 * 0.25, next.velocity().x(), TOL);
+		assertEquals(2.06 * 0.6, next.velocity().y(), TOL);
+	}
+
+	@Test
 	void iceRollsFartherThanNormalGround() {
 		double ice = rollingOn(SurfaceDefinition.ICE, 2.0).velocity().x();
 		double normal = rollingOn(SurfaceDefinition.NORMAL, 2.0).velocity().x();

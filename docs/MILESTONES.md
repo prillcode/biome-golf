@@ -137,7 +137,7 @@ The host operating system should not affect the Fabric server architecture.
 | M3 | Three-Click Swing and HUD | Complete (see docs/M3-CLOSEOUT.md) |
 | M4 | Holes, Cups, Boundaries, and Scoring | Complete (see docs/M4-CLOSEOUT.md) |
 | M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
-| M5 | Single-Player Course Experience | In Progress |
+| M5 | Single-Player Course Experience | Complete (see docs/M5-CLOSEOUT.md) |
 | M6 | Multiplayer Ready Golf | Not Started |
 | M7 | MVP Hardening and Family Playtest | Not Started |
 | M8 | V1 Gameplay Enhancements | Deferred |
@@ -932,19 +932,17 @@ Implement:
 
 This milestone is single-player only, but state must remain server-authoritative and structurally suitable for later per-player multiplayer ownership.
 
-### Travel evaluation
+### Next-shot travel
 
-Full-sized holes may make walking from the stationary player position to the resting ball tedious. During M5, evaluate an explicit optional on-demand travel-to-ball interaction.
+Full-sized-hole playtesting found manual walking and chat-driven travel too tedious. After an active owned ball naturally stops, automatically move the player to a server-validated safe standing position near the ball.
 
 Constraints:
 
-- do not automatically teleport after every shot
-- preserve Minecraft traversal as a meaningful part of play
 - keep the server authoritative
-- require a deliberate player action
-- test whether it improves pacing before accepting it permanently
-
-If this requires a material UX decision, prepare options and ask the user rather than silently choosing.
+- trigger only from natural physics rest, never tee placement, penalties, or completion
+- reject missing, moving, unowned, completed, or cross-dimension ball state
+- leave the player in place with actionable feedback when no safe destination exists
+- preserve ordinary Minecraft traversal outside active shot-to-shot course play
 
 ## Required Deliverables
 
@@ -956,7 +954,7 @@ If this requires a material UX decision, prepare options and ask the user rather
 - final three-hole scorecard
 - replay/reset behavior
 - safe recovery from missing balls or interrupted state
-- evaluation of optional on-demand travel-to-ball behavior
+- automatic server-authoritative safe travel after natural ball rest
 - explicit operator course-generation command with documented bounds
 
 ## Verification
@@ -996,7 +994,6 @@ Do not implement:
 - persistent global statistics
 - a large course library
 - wind or cinematic camera
-- automatic teleport-to-ball
 
 ## Exit Criteria
 
@@ -1190,6 +1187,8 @@ Potential features:
 - cinematic ball camera
 - approximate landing-area indicator
 - optional teleport-to-ball
+- optional water-hazard recovery choice: safe shoreline drop near the entry point or stroke-and-distance re-hit; true out-of-bounds remains stroke-and-distance only
+- optional chip-shot mode for Wedge and Short Iron, producing a low flight with controlled putt-like rollout
 - improved ball identification
 - expanded club set
 - richer sounds and particles
@@ -1277,10 +1276,10 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M4.5 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
-`docs/M4-CLOSEOUT.md`, and `docs/M4.5-CLOSEOUT.md`). The current milestone is:
+M0–M5 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
+`docs/M4-CLOSEOUT.md`, `docs/M4.5-CLOSEOUT.md`, and `docs/M5-CLOSEOUT.md`). The current milestone is:
 
-> **M5 — Single-Player Course Experience**
+> **M6 — Multiplayer Ready Golf**
 
-See `docs/M5-PLAN.md` for the bounded plan. After M5, the next milestone is
-**M6 — Multiplayer Ready Golf**, applied to the already-proven three-hole course.
+M6 applies multiplayer concurrency to the proven three-hole M5 course. Do not begin
+M7 hardening until M6's Ready Golf verification and exit criteria pass.

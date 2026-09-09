@@ -33,6 +33,9 @@ class HoleStatePayloadTest {
 		assertEquals(0, p.strokes());
 		assertEquals(0, p.penaltyCount());
 		assertEquals(0, p.scoreToPar());
+		assertEquals(90.0, p.cupX());
+		assertEquals(90.0, p.cupZ());
+		assertEquals(-1, p.distanceToCupBlocks());
 		assertNull(p.completionReason());
 		assertNull(p.scoreTerm());
 	}
@@ -48,8 +51,28 @@ class HoleStatePayloadTest {
 		assertEquals(2, p.strokes());
 		assertEquals(0, p.penaltyCount());
 		assertEquals(-2, p.scoreToPar());
+		assertEquals(113, p.distanceToCupBlocks());
 		assertNull(p.completionReason());
 		assertNull(p.scoreTerm());
+	}
+
+	@Test
+	void activeSnapshot_measuresHorizontalDistanceFromAuthoritativeBallPosition() {
+		PlayerHoleState state = PlayerHoleState.start(PAR_FOUR);
+
+		HoleStatePayload p = HoleStatePayload.active(state, new Vec3(87.0, 20.0, 86.0));
+
+		assertEquals(5, p.distanceToCupBlocks());
+	}
+
+	@Test
+	void courseTotalsAreAuthoritativeSnapshotValues() {
+		HoleStatePayload p = HoleStatePayload.active(PlayerHoleState.start(PAR_FOUR))
+			.withCourseTotals(7, 7, 12);
+
+		assertEquals(7, p.courseStrokes());
+		assertEquals(7, p.courseParPlayed());
+		assertEquals(12, p.courseTotalPar());
 	}
 
 	@Test

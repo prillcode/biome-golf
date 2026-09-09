@@ -54,7 +54,7 @@ public class MinecraftGolfClient implements ClientModInitializer {
 		// S03: clear stale display state on disconnect.
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> HoleHudState.clear());
 
-		// S03: hole HUD panel — rendered top-left, separate from the swing HUD (bottom-right).
+		// S03: hole HUD panel — rendered top-left, separate from the swing HUD (top-right).
 		HudElementRegistry.addLast(
 				Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_hud"),
 				HoleHud::render);

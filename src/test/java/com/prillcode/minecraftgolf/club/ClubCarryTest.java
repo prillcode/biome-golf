@@ -10,6 +10,7 @@ import com.prillcode.minecraftgolf.ball.BallPhysics;
 import com.prillcode.minecraftgolf.ball.BallState;
 import com.prillcode.minecraftgolf.ball.CollisionResult;
 import com.prillcode.minecraftgolf.ball.PhysicsConfig;
+import com.prillcode.minecraftgolf.ball.ShotPhysicsProfile;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
 
@@ -27,6 +28,7 @@ class ClubCarryTest {
 	/** Flat floor at y=0 over the whole plane, chosen surface. */
 	static final class FlatNormal implements BallCollisionWorld {
 		private final SurfaceDefinition surface;
+		private Double firstLanding;
 
 		FlatNormal(SurfaceDefinition surface) {
 			this.surface = surface;
@@ -36,6 +38,9 @@ class ClubCarryTest {
 		public CollisionResult move(Vec3 from, Vec3 delta) {
 			Vec3 end = from.add(delta);
 			if (end.y() < 0.0) {
+				if (firstLanding == null) {
+					firstLanding = end.z();
+				}
 				return CollisionResult.hit(new Vec3(end.x(), 0.0, end.z()), Vec3.of(0, 1, 0));
 			}
 			return CollisionResult.moved(end);
@@ -48,7 +53,7 @@ class ClubCarryTest {
 	}
 
 	/** Result of one flat-range drive: initial velocity, horizontal carry, apex height, ticks stepped. */
-	record Drive(Vec3 velocity, double carry, double peak, int ticks) {
+	record Drive(Vec3 velocity, double carry, double totalDistance, double peak, int ticks) {
 	}
 
 	private static Drive drive(ClubDefinition club) {
@@ -63,7 +68,10 @@ class ClubCarryTest {
 		double peak = startY;
 		int ticks = 0;
 		while (ticks < 2400) {
-			BallState next = BallPhysics.step(state, CFG, world);
+			ShotPhysicsProfile profile = club.putting()
+				? ShotPhysicsProfile.STANDARD
+				: ShotPhysicsProfile.LOFTED_CLUB;
+			BallState next = BallPhysics.step(state, CFG, world, profile);
 			if (next.equals(state)) {
 				break; // no change (e.g. resting)
 			}
@@ -74,7 +82,9 @@ class ClubCarryTest {
 				break;
 			}
 		}
-		return new Drive(v, Math.max(0.0, state.position().z()), peak - startY, ticks);
+		double carry = world.firstLanding == null ? state.position().z() : world.firstLanding;
+		return new Drive(v, Math.max(0.0, carry), Math.max(0.0, state.position().z()),
+			peak - startY, ticks);
 	}
 
 	// Feel invariants that correspond to the manual-test feedback.
@@ -83,22 +93,36 @@ class ClubCarryTest {
 	void catalogCarryMatchesFlatNormalRangeTargets() {
 		for (ClubDefinition club : GolfClubs.ALL) {
 			Drive shot = drive(club);
-			assertEquals(club.nominalCarry(), shot.carry(), 1.0,
-					club.id() + " flat-range carry " + shot.carry());
+			double measured = club.putting() ? shot.totalDistance() : shot.carry();
+			assertEquals(club.nominalCarry(), measured, 1.0,
+					club.id() + " flat-range distance " + measured);
 		}
 	}
 
 	@Test
 	void raisedArcProgressionMatchesTuningTargets() {
-		assertEquals(6.0, drive(GolfClubs.DRIVER).peak(), 0.15);
-		assertEquals(7.0, drive(GolfClubs.FAIRWAY_WOOD).peak(), 0.15);
-		assertEquals(8.0, drive(GolfClubs.LONG_IRON).peak(), 0.15);
-		assertEquals(9.0, drive(GolfClubs.MID_IRON).peak(), 0.15);
-		assertEquals(10.0, drive(GolfClubs.SHORT_IRON).peak(), 0.15);
-		assertEquals(10.5, drive(GolfClubs.WEDGE).peak(), 0.15);
+		assertEquals(14.0, drive(GolfClubs.DRIVER).peak(), 0.3);
+		assertEquals(16.0, drive(GolfClubs.FAIRWAY_WOOD).peak(), 0.3);
+		assertEquals(18.0, drive(GolfClubs.LONG_IRON).peak(), 0.3);
+		assertEquals(20.0, drive(GolfClubs.MID_IRON).peak(), 0.3);
+		assertEquals(22.0, drive(GolfClubs.SHORT_IRON).peak(), 0.3);
+		assertEquals(24.0, drive(GolfClubs.WEDGE).peak(), 0.3);
 		assertTrue(Math.abs(drive(GolfClubs.WEDGE).peak()
-				- drive(GolfClubs.SHORT_IRON).peak()) <= 0.75,
-				"short iron and wedge should remain visually close");
+				- drive(GolfClubs.SHORT_IRON).peak()) <= 2.5,
+				"short iron and wedge should remain in the same high-flight family");
+	}
+
+	@Test
+	void loftedClubsHaveSharplyLimitedRollout() {
+		for (ClubDefinition club : GolfClubs.ALL) {
+			if (club.putting()) {
+				continue;
+			}
+			Drive shot = drive(club);
+			double rollout = shot.totalDistance() - shot.carry();
+			assertTrue(rollout <= club.nominalCarry() * 0.15,
+				club.id() + " rollout should stay under 15% of carry: " + rollout);
+		}
 	}
 
 	@Test
@@ -117,12 +141,12 @@ class ClubCarryTest {
 	void putterIsGentleAndLow() {
 		Drive putt = drive(GolfClubs.PUTTER);
 		assertTrue(putt.peak() < 0.5, "putter should not fly: peak " + putt.peak());
-		assertTrue(putt.carry() < drive(GolfClubs.SHORT_IRON).carry(),
-				"putter carry " + putt.carry() + " should be less than the shortest iron");
+		assertTrue(putt.totalDistance() < drive(GolfClubs.SHORT_IRON).carry(),
+				"putter distance " + putt.totalDistance() + " should be less than the shortest iron");
 		// Feedback: putter full-power felt too hard; it must stay clearly under the
 		// wedge's energy so a right-click putt is not a rocket.
-		assertTrue(putt.carry() * 1.6 < drive(GolfClubs.WEDGE).carry(),
-				"putter carry " + putt.carry() + " too close to wedge energy " + drive(GolfClubs.WEDGE).carry());
+		assertTrue(putt.totalDistance() * 1.6 < drive(GolfClubs.WEDGE).carry(),
+				"putter distance " + putt.totalDistance() + " too close to wedge energy " + drive(GolfClubs.WEDGE).carry());
 	}
 
 	@Test

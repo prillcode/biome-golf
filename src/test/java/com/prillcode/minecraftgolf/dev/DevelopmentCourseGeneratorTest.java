@@ -19,27 +19,100 @@ class DevelopmentCourseGeneratorTest {
 		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
 
 		assertEquals("minecraft_golf:m5_ocean_campus", plan.identity().id());
-		assertEquals(4, plan.identity().version());
-		assertEquals(new BlockPoint(-320, 48, -256), plan.campusEnvelope().min());
-		assertEquals(new BlockPoint(448, 112, 512), plan.campusEnvelope().max());
-		assertEquals(4, plan.authoredRegions().size());
+		assertEquals(11, plan.identity().version());
+		assertEquals(new BlockPoint(-640, 32, -256), plan.campusEnvelope().min());
+		assertEquals(new BlockPoint(448, 192, 640), plan.campusEnvelope().max());
+		assertEquals(6, plan.authoredRegions().size());
+		assertTrue(plan.operations().stream()
+			.allMatch(operation -> plan.campusEnvelope().contains(operation.volume())));
 		assertTrue(plan.desiredBlocks().keySet().stream().allMatch(plan::isInsideAuthoredRegion));
 		assertTrue(plan.desiredBlocks().keySet().stream().allMatch(plan.campusEnvelope()::contains));
 	}
 
 	@Test
-	void holeOneMatchesParFourMetadataAndContainsRiskRewardLandmarks() {
+	void everyFixedHoleHasPairedBlueTeeMarkers() {
+		Map<BlockPoint, LayoutBlock> blocks = M5DevelopmentLayout.plan().desiredBlocks();
+
+		for (BlockPoint marker : List.of(
+			new BlockPoint(-205, 74, 491), new BlockPoint(-209, 74, 497),
+			new BlockPoint(-369, 70, 413), new BlockPoint(-369, 70, 420),
+			new BlockPoint(-368, 69, 494), new BlockPoint(-370, 69, 488)
+		)) {
+			assertEquals(LayoutBlock.BLUE_CONCRETE, blocks.get(marker));
+		}
+	}
+
+	@Test
+	void holeOneUsesMinimalOverlaysOnTheApprovedNaturalRoute() {
 		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
 		Map<BlockPoint, LayoutBlock> blocks = plan.desiredBlocks();
 		var hole = M5DevelopmentCourse.definition().hole(1);
 
 		assertEquals(4, hole.par());
-		assertEquals(new BlockPoint(-32, 62, -160), floorBelow(hole.tee()));
-		assertEquals(LayoutBlock.GRASS_BLOCK, blocks.get(floorBelow(hole.tee())));
-		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(184, 63, -160)));
-		assertEquals(LayoutBlock.WATER, blocks.get(new BlockPoint(70, 62, -168)));
-		assertEquals(LayoutBlock.GRASS_BLOCK, blocks.get(new BlockPoint(70, 62, -150)));
-		assertEquals(LayoutBlock.SAND, blocks.get(new BlockPoint(160, 62, -152)));
+		assertEquals(new BlockPoint(-207, 74, 494), floorBelow(hole.tee()));
+		assertEquals(LayoutBlock.GREEN_WOOL, blocks.get(floorBelow(hole.tee())));
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(-355, 71, 416)));
+		assertEquals(LayoutBlock.GREEN_WOOL, blocks.get(new BlockPoint(-360, 70, 416)));
+		assertTrue(!blocks.containsKey(new BlockPoint(-360, 70, 411)),
+			"the Hole 1 green should use an authored non-rectangular outline");
+		assertEquals(LayoutBlock.BLACK_CONCRETE, blocks.get(new BlockPoint(-274, 69, 439)));
+		assertEquals(LayoutBlock.YELLOW_CONCRETE, blocks.get(new BlockPoint(-286, 74, 463)));
+		assertTrue(!blocks.containsKey(new BlockPoint(-280, 60, 433)),
+			"the natural ravine terrain below the route must remain untouched");
+		assertTrue(hole.boundary().contains(hole.tee()));
+		assertTrue(hole.boundary().contains(hole.cup()));
+	}
+
+	@Test
+	void holeTwoTeeBoxIsSeparateFromHoleOneCup() {
+		var course = M5DevelopmentCourse.definition();
+		var holeOneCup = course.hole(1).cup();
+		var holeTwo = course.hole(2);
+		var holeTwoTee = holeTwo.tee();
+		Map<BlockPoint, LayoutBlock> blocks = M5DevelopmentLayout.plan().desiredBlocks();
+
+		assertTrue(!holeOneCup.equals(holeTwoTee));
+		assertEquals(new BlockPoint(-368, 70, 416), floorBelow(holeTwoTee));
+		assertEquals(LayoutBlock.GREEN_WOOL, blocks.get(floorBelow(holeTwoTee)));
+		assertEquals(LayoutBlock.GREEN_WOOL, blocks.get(new BlockPoint(-355, 70, 413)));
+		assertEquals(LayoutBlock.GREEN_WOOL, blocks.get(new BlockPoint(-355, 70, 420)));
+		assertEquals(3, holeTwo.par());
+		assertEquals(new BlockPoint(-322, 70, 405), floorBelow(holeTwo.cup()));
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(-322, 71, 405)));
+		assertEquals(LayoutBlock.GREEN_WOOL, blocks.get(new BlockPoint(-329, 70, 405)));
+		assertTrue(!blocks.containsKey(new BlockPoint(-330, 70, 398)),
+			"the Hole 2 green should use an authored non-rectangular outline");
+		assertEquals(LayoutBlock.AIR, blocks.get(new BlockPoint(-280, 70, 433)));
+	}
+
+	@Test
+	void holeThreeProvidesTwoNaturalRoutesAndAGuardedSupportedGreen() {
+		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
+		Map<BlockPoint, LayoutBlock> blocks = plan.desiredBlocks();
+		var hole = M5DevelopmentCourse.definition().hole(3);
+
+		assertEquals(LayoutBlock.GREEN_WOOL, blocks.get(new BlockPoint(-366, 69, 490)));
+		for (BlockPoint sightline : List.of(
+			new BlockPoint(-366, 90, 490),
+			new BlockPoint(-298, 90, 462),
+			new BlockPoint(-264, 90, 448),
+			new BlockPoint(-231, 90, 447),
+			new BlockPoint(-231, 90, 434)
+		)) {
+			assertTrue(plan.operations().stream().anyMatch(operation ->
+				operation.volume().contains(sightline)
+					&& operation.block() == LayoutBlock.AIR
+					&& operation.replacementRule() == ReplacementRule.VEGETATION_ONLY));
+		}
+		assertTrue(!blocks.containsKey(new BlockPoint(-298, 60, 462)),
+			"the natural ground below the drive corridor must remain untouched");
+		assertEquals(5, hole.par());
+		assertEquals(LayoutBlock.GOLF_CUP, blocks.get(new BlockPoint(-207, 71, 426)));
+		assertEquals(LayoutBlock.GREEN_WOOL, blocks.get(floorBelow(hole.cup())),
+			"the Hole 3 cup must be supported by the authored green");
+		assertEquals(LayoutBlock.SAND, blocks.get(new BlockPoint(-219, 70, 423)));
+		assertTrue(!blocks.containsKey(new BlockPoint(-215, 70, 416)),
+			"the Hole 3 green should use an authored non-rectangular outline");
 		assertTrue(hole.boundary().contains(hole.tee()));
 		assertTrue(hole.boundary().contains(hole.cup()));
 	}
@@ -81,6 +154,27 @@ class DevelopmentCourseGeneratorTest {
 	}
 
 	@Test
+	void vegetationOnlyOperationClearsTreesButPreservesNaturalGround() {
+		BlockVolume envelope = volume(0, 0, 0, 4, 4, 4);
+		DevelopmentCoursePlan plan = new DevelopmentCoursePlan(
+			M5DevelopmentLayout.IDENTITY, "minecraft:overworld", envelope,
+			List.of(new AuthoredRegion("trees", envelope)),
+			List.of(new LayoutOperation(envelope, LayoutBlock.AIR, ReplacementRule.VEGETATION_ONLY)));
+		FakeWorld world = new FakeWorld();
+		BlockPoint tree = new BlockPoint(2, 2, 2);
+		BlockPoint ground = new BlockPoint(2, 1, 2);
+		world.blocks.put(tree, LayoutBlock.GRASS_BLOCK);
+		world.blocks.put(ground, LayoutBlock.DIRT);
+		world.vegetation.add(tree);
+
+		DevelopmentCourseGenerator.prepare(plan, world);
+
+		assertEquals(LayoutBlock.AIR, world.blocks.get(tree));
+		assertEquals(LayoutBlock.DIRT, world.blocks.get(ground));
+		assertTrue(!world.writes.contains(ground));
+	}
+
+	@Test
 	void unsafePreflightRejectsBeforeWritingAnything() {
 		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
 		FakeWorld world = new FakeWorld();
@@ -118,6 +212,12 @@ class DevelopmentCourseGeneratorTest {
 		private final Map<BlockPoint, LayoutBlock> blocks = new HashMap<>();
 		private final Set<BlockPoint> unsafe = new HashSet<>();
 		private final Set<BlockPoint> writes = new HashSet<>();
+		private final Set<BlockPoint> vegetation = new HashSet<>();
+
+		@Override
+		public boolean matchesReplacementRule(BlockPoint point, ReplacementRule replacementRule) {
+			return replacementRule == ReplacementRule.ALWAYS || vegetation.contains(point);
+		}
 
 		@Override
 		public boolean canReplace(BlockPoint point, LayoutBlock desired, Set<LayoutBlock> generatedPalette) {

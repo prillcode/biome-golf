@@ -24,17 +24,17 @@ import java.util.stream.Collectors;
 public final class GolfClubs {
 
 	/** Driver: longest carry and the baseline raised flight. Heavy, high melee damage (PRD §9). */
-	public static final ClubDefinition DRIVER = club("driver", "Driver", 150.0, 2.6370, 0.8960, 10.0, 0.80, false, 5.0);
+	public static final ClubDefinition DRIVER = club("driver", "Driver", 150.0, 4.2524, 1.4042, 10.0, 0.80, false, 5.0);
 	/** Fairway Wood: long with a slightly higher apex than the driver. */
-	public static final ClubDefinition FAIRWAY_WOOD = club("fairway_wood", "Fairway Wood", 125.0, 2.1790, 0.9719, 16.0, 0.82, false, 4.0);
+	public static final ClubDefinition FAIRWAY_WOOD = club("fairway_wood", "Fairway Wood", 125.0, 3.3623, 1.5074, 16.0, 0.82, false, 4.0);
 	/** Long Iron. */
-	public static final ClubDefinition LONG_IRON = club("long_iron", "Long Iron", 100.0, 1.6752, 1.0440, 22.0, 0.86, false, 3.5);
+	public static final ClubDefinition LONG_IRON = club("long_iron", "Long Iron", 100.0, 2.5759, 1.6052, 22.0, 0.86, false, 3.5);
 	/** Mid Iron. */
-	public static final ClubDefinition MID_IRON = club("mid_iron", "Mid Iron", 85.0, 1.4120, 1.1114, 36.0, 0.90, false, 3.0);
+	public static final ClubDefinition MID_IRON = club("mid_iron", "Mid Iron", 85.0, 2.1028, 1.6984, 36.0, 0.90, false, 3.0);
 	/** Short Iron: high flight, compacted close to the wedge. */
-	public static final ClubDefinition SHORT_IRON = club("short_iron", "Short Iron", 60.0, 0.9730, 1.1776, 42.0, 0.94, false, 2.75);
+	public static final ClubDefinition SHORT_IRON = club("short_iron", "Short Iron", 60.0, 1.4325, 1.7877, 42.0, 0.94, false, 2.75);
 	/** Wedge: highest flight, with an apex close to the short iron. */
-	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 42.0, 0.6801, 1.2096, 50.0, 0.96, false, 2.5);
+	public static final ClubDefinition WEDGE = club("wedge", "Wedge", 42.0, 0.9698, 1.8737, 50.0, 0.96, false, 2.5);
 	/** Putter: full strength has reserve beyond a typical 16-block green. */
 	public static final ClubDefinition PUTTER = club("putter", "Putter", 22.0, 0.8905, 0.0120, 2.0, 1.00, true, 1.0);
 
