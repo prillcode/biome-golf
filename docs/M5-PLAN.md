@@ -45,6 +45,23 @@ The slices below are ordered risk-first. Each defines its own goal, deliverables
 - **Verification:** `./gradlew test`
 - **Exit criteria:** Generation is deterministic, idempotent, versioned, bounded, and verified to preserve terrain outside its footprint.
 
+#### Approved authored subregions
+
+Layout `minecraft_golf:m5_ocean_campus` version 1 may mutate only operations wholly
+contained by these inclusive subregions. The generator preflights every planned block
+before its first write and rejects blocks that are not ocean/air or part of the known
+generated palette.
+
+| Region | X | Y | Z |
+|---|---:|---:|---:|
+| Practice range | `[-304..-80]` | `[62..96]` | `[-224..32]` |
+| Hole 1 — par 4 | `[-48..208]` | `[62..96]` | `[-224..-96]` |
+| Hole 2 — par 3 | `[-48..160]` | `[62..96]` | `[-64..64]` |
+| Hole 3 — par 5 | `[-48..432]` | `[62..96]` | `[96..496]` |
+
+These are permissions for reviewed authored operations, not instructions to rewrite
+the full boxes. Unlisted space in the overall campus envelope remains untouched.
+
 ### S3 — Generated practice range
 
 - **Goal:** Generate one bounded practice range with useful test areas; it is not part of the scored round and remains available outside an active course attempt.

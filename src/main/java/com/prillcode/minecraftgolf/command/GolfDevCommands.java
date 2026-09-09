@@ -19,6 +19,10 @@ import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.ball.BallState;
 import com.prillcode.minecraftgolf.dev.DevelopmentHoleBuilder;
 import com.prillcode.minecraftgolf.dev.DevelopmentHoleBuilder.Layout;
+import com.prillcode.minecraftgolf.dev.DevelopmentCourseGenerator;
+import com.prillcode.minecraftgolf.dev.DevelopmentCoursePlan;
+import com.prillcode.minecraftgolf.dev.M5DevelopmentLayout;
+import com.prillcode.minecraftgolf.dev.MinecraftDevelopmentCourseWorld;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
@@ -38,6 +42,7 @@ import com.prillcode.minecraftgolf.server.ActiveHoleService;
  * /golf inspect [id]                     print BallState of nearest (or given) ball
  * /golf clear                            remove every loaded golf ball
  * /golf dev preparehole                  explicitly prepare the configured flat test hole
+ * /golf dev preparecourse                explicitly prepare the bounded M5 ocean campus
  * </pre>
  *
  * <p>Commands mutate only server-authoritative state (ARCHITECTURE.md §2.1):
@@ -103,9 +108,40 @@ public final class GolfDevCommands {
 				.then(Commands.literal("dev")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.then(Commands.literal("preparehole")
-								.executes(GolfDevCommands::prepareHole))));
+								.executes(GolfDevCommands::prepareHole))
+						.then(Commands.literal("preparecourse")
+								.executes(GolfDevCommands::prepareCourse))));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf developer commands (spawn, launch, inspect, clear, dev preparehole)");
+			"Registered /golf developer commands (spawn, launch, inspect, clear, dev preparehole, dev preparecourse)");
+	}
+
+	// ------------------------------------------------------------------
+	// /golf dev preparecourse
+	// ------------------------------------------------------------------
+
+	private static int prepareCourse(CommandContext<CommandSourceStack> ctx) {
+		CommandSourceStack source = ctx.getSource();
+		ServerLevel level = source.getLevel();
+		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
+		String currentDimension = level.dimension().identifier().toString();
+		if (!plan.dimension().equals(currentDimension)) {
+			source.sendFailure(Component.literal("[golf] M5 course is in " + plan.dimension()
+				+ "; command source is in " + currentDimension));
+			return 0;
+		}
+		try {
+			DevelopmentCourseGenerator.GenerationResult result = DevelopmentCourseGenerator.prepare(
+				plan, new MinecraftDevelopmentCourseWorld(level, plan));
+			source.sendSuccess(() -> Component.literal("[golf] prepared " + plan.identity().id()
+				+ " v" + plan.identity().version() + ": " + result.plannedBlocks()
+				+ " planned blocks, " + result.changedBlocks() + " changed; campus envelope "
+				+ "X[-320..448] Y[48..112] Z[-256..512]"), true);
+			return 1;
+		} catch (DevelopmentCourseGenerator.UnsafeTerrainException exception) {
+			source.sendFailure(Component.literal("[golf] course preparation rejected: "
+				+ exception.getMessage() + ". Use the documented development seed/ocean campus; no blocks were changed."));
+			return 0;
+		}
 	}
 
 	// ------------------------------------------------------------------
