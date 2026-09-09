@@ -28,6 +28,11 @@ public final class BallPhysics {
 	 * </ol>
 	 */
 	public static BallState step(BallState state, PhysicsConfig config, BallCollisionWorld world) {
+		return step(state, config, world, ShotPhysicsProfile.STANDARD);
+	}
+
+	public static BallState step(BallState state, PhysicsConfig config, BallCollisionWorld world,
+			ShotPhysicsProfile shotProfile) {
 		if (state.resting()) {
 			return state;
 		}
@@ -42,7 +47,9 @@ public final class BallPhysics {
 		for (int i = 0; i < substeps; i++) {
 			if (grounded) {
 				SurfaceDefinition surface = world.surfaceAt(position);
-				velocity = velocity.scaleHorizontal(Math.pow(surface.rollingFriction(), dt));
+				double rollingRetention = surface.rollingFriction()
+					* shotProfile.rollingFrictionMultiplier();
+				velocity = velocity.scaleHorizontal(Math.pow(rollingRetention, dt));
 			} else {
 				velocity = velocity.add(new Vec3(0.0, -config.gravity() * dt, 0.0));
 				velocity = velocity.scale(Math.pow(config.airDrag(), dt));
@@ -60,11 +67,11 @@ public final class BallPhysics {
 				if (normal.y() > GROUND_NORMAL_Y && impactSpeed < config.bounceFloorSpeed()) {
 					// Gentle landing: remove normal velocity and roll.
 					grounded = true;
-					velocity = reflected.tangent(normal);
+					velocity = landingTangent(reflected, normal, shotProfile);
 				} else {
 					grounded = false;
 					double restitutionFactor = config.restitution() * surface.bounceMultiplier();
-					Vec3 tangent = reflected.tangent(normal);
+					Vec3 tangent = landingTangent(reflected, normal, shotProfile);
 					Vec3 normalPart = normal.scale(reflected.along(normal) * restitutionFactor);
 					velocity = tangent.add(normalPart);
 				}
@@ -81,6 +88,15 @@ public final class BallPhysics {
 		}
 
 		return new BallState(position, velocity, grounded, false);
+	}
+
+	private static Vec3 landingTangent(
+		Vec3 reflected, Vec3 normal, ShotPhysicsProfile shotProfile
+	) {
+		Vec3 tangent = reflected.tangent(normal);
+		return normal.y() > GROUND_NORMAL_Y
+			? tangent.scaleHorizontal(shotProfile.landingHorizontalRetention())
+			: tangent;
 	}
 
 	/** Caps launch velocity at {@code maxLaunchSpeed} while preserving direction. */

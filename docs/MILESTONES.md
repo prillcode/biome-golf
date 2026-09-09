@@ -137,8 +137,8 @@ The host operating system should not affect the Fabric server architecture.
 | M3 | Three-Click Swing and HUD | Complete (see docs/M3-CLOSEOUT.md) |
 | M4 | Holes, Cups, Boundaries, and Scoring | Complete (see docs/M4-CLOSEOUT.md) |
 | M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
-| M5 | Multiplayer Ready Golf | Next |
-| M6 | Three-Hole MVP Course | Not Started |
+| M5 | Single-Player Course Experience | Complete (see docs/M5-CLOSEOUT.md) |
+| M6 | Multiplayer Ready Golf | Not Started |
 | M7 | MVP Hardening and Family Playtest | Not Started |
 | M8 | V1 Gameplay Enhancements | Deferred |
 | M9 | Course Authoring and Additional Modes | Deferred |
@@ -854,15 +854,175 @@ A player can launch the mod, start and finish the configured hole repeatedly wit
 
 ---
 
-# M5 — Multiplayer Ready Golf
+# M5 — Single-Player Course Experience
 
 ## Goal
 
-Deliver the intended 1–4 player multiplayer experience.
+Prove the complete single-player, full-sized golf course experience — a generated practice range, exactly three authored holes ordered as Hole 1 par 4, Hole 2 par 3, and Hole 3 par 5, course sequencing, between-hole transitions, a final three-hole scorecard, replay/reset, and full gameplay tuning across realistic hole lengths — before multiplayer concurrency multiplies uncertain gameplay.
+
+This milestone replaces the former "Multiplayer Ready Golf" plan, which is moved to M6 and applied only after the single-player course loop is proven (GSD decision D018).
 
 ## Prerequisites
 
 - M4.5 complete
+
+## Scope
+
+### Course domain and configuration
+
+Implement a server-owned course model containing exactly three ordered holes.
+
+Each hole needs:
+
+- stable identifier and number
+- par
+- tee and cup
+- playable boundary
+- generated-layout identity/version
+- transition metadata as needed
+
+Add course-level state for:
+
+- current hole
+- per-hole score
+- cumulative score
+- course completion
+- replay/reset
+
+Keep domain behavior Minecraft-free where practical.
+
+### Deterministic practice range
+
+Generate one bounded practice range containing useful test areas such as:
+
+- tee/driver lane
+- distance markers and targets
+- putting green
+- short-game or wedge target
+- fairway/rough contrast
+- bunker/sand
+- water recovery
+- ice/slime or other Minecraft-native surface lanes where useful
+
+The practice range is not part of the scored three-hole round. Practice remains available outside an active course attempt.
+
+### Three authored generated holes
+
+Generate exactly three intentionally different holes:
+
+- **Hole 1 — Par 4** — driver tee shot, fairway positioning, approach shot, bunker and/or water risk, and ordinary golf scoring flow.
+- **Hole 2 — Par 3** — short iron or wedge accuracy, approach control, putting, and a concise but meaningful hazard decision.
+- **Hole 3 — Par 5** — realistic longer-shot strategy, multiple-shot pacing, elevation or route choice, Minecraft-native terrain/surface interaction, and avoiding excessive empty travel.
+
+The holes should validate the full club set and feel meaningfully different.
+
+### Course progression
+
+Implement:
+
+- start course
+- current-hole state
+- advance only after the current hole is terminal
+- next-tee transition
+- three-hole cumulative scorecard
+- final course completion
+- replay/reset
+- safe recovery from missing balls or interrupted state
+- clear HUD state throughout the round
+
+This milestone is single-player only, but state must remain server-authoritative and structurally suitable for later per-player multiplayer ownership.
+
+### Next-shot travel
+
+Full-sized-hole playtesting found manual walking and chat-driven travel too tedious. After an active owned ball naturally stops, automatically move the player to a server-validated safe standing position near the ball.
+
+Constraints:
+
+- keep the server authoritative
+- trigger only from natural physics rest, never tee placement, penalties, or completion
+- reject missing, moving, unowned, completed, or cross-dimension ball state
+- leave the player in place with actionable feedback when no safe destination exists
+- preserve ordinary Minecraft traversal outside active shot-to-shot course play
+
+## Required Deliverables
+
+- server-owned course model with exactly three ordered holes
+- course-level state (current hole, per-hole score, cumulative score, completion, replay/reset)
+- deterministic generated practice range (not part of the scored round)
+- three authored generated holes ordered par 4, par 3, par 5
+- single-player course sequencing and between-hole transitions
+- final three-hole scorecard
+- replay/reset behavior
+- safe recovery from missing balls or interrupted state
+- automatic server-authoritative safe travel after natural ball rest
+- explicit operator course-generation command with documented bounds
+
+## Verification
+
+- `./gradlew test`
+- `./gradlew clean test build`
+- no `net.minecraft.client` imports under `src/main`
+- focused unit tests for course state, sequencing, scoring, and layout calculations
+- tests for malformed course configuration and invalid transitions
+- tests for deterministic generation plans
+- tests proving outside-footprint preservation where practical
+- Loom dedicated-server boot and registration logs
+- Loom client startup, HUD, resource, and camera checks
+- Docker JAR identity and healthy server
+- repeated course preparation proving idempotence
+- Docker daytime and paused time/weather verification
+- manual practice-range validation
+- manual completion of Hole 1 par 4, Hole 2 par 3, and Hole 3 par 5
+- scorecard and replay validation
+- club-distance and travel-pacing findings
+- camera restoration on short and long shots
+- penalty, Pick Up, cap, restart, abandon, and missing-ball recovery across the course
+
+## Non-Goals
+
+Do not implement:
+
+- multiplayer players
+- Ready Golf concurrency
+- shared multiplayer round state
+- traditional turns
+- scramble or other game modes
+- matchmaking
+- public-server infrastructure
+- arbitrary course generation
+- course-authoring UI
+- persistent global statistics
+- a large course library
+- wind or cinematic camera
+
+## Exit Criteria
+
+M5 is complete only when one player can:
+
+1. explicitly generate or restore the bounded development course,
+2. use the practice range,
+3. start the three-hole course,
+4. complete Hole 1 (par 4),
+5. transition to and complete Hole 2 (par 3),
+6. transition to and complete Hole 3 (par 5),
+7. receive an accurate per-hole and cumulative scorecard,
+8. recover safely from expected lifecycle failures,
+9. replay the course without stale balls or scores,
+10. complete the experience using documented controls without developer intervention.
+
+The generated layout must also prove deterministic output, idempotent rebuild, documented version and bounds, no changes outside the declared footprint, valid tee/cup support, intended surfaces and hazards, and safe Docker reset/rebuild behavior.
+
+---
+
+# M6 — Multiplayer Ready Golf
+
+## Goal
+
+Deliver the intended 1–4 player multiplayer experience, applied to the already-proven three-hole single-player course built in M5.
+
+## Prerequisites
+
+- M5 complete
 
 ## Scope
 
@@ -887,7 +1047,9 @@ The hole advances only when every golfer has:
 - holed out, or
 - completed via Pick Up / stroke cap.
 
-Implement between-hole coordination sufficient for MVP.
+Implement between-hole coordination sufficient for MVP, applied to the three-hole course proven in M5.
+
+The three-hole course itself is built in M5; M6 adds only the multiplayer concurrency layer on top of that proven course.
 
 ## Required Deliverables
 
@@ -898,7 +1060,7 @@ Implement between-hole coordination sufficient for MVP.
 - hole completion synchronization
 - per-player score state
 - multiplayer hole results
-- next-hole transition
+- next-hole transition across the three-hole course
 
 ## Verification
 
@@ -927,103 +1089,7 @@ Do not implement:
 
 ## Exit Criteria
 
-Up to four golfers can complete the same hole using Ready Golf without state corruption or forced turn-taking.
-
----
-
-# M6 — Three-Hole MVP Course
-
-## Goal
-
-Assemble all completed systems into the PRD-defined MVP experience.
-
-## Prerequisites
-
-- M5 complete
-
-## Scope
-
-Create or configure a three-hole development/test course.
-
-The course should intentionally exercise different mechanics.
-
-Suggested examples:
-
-### Hole 1 — Basic Golf
-
-Simple terrain validating:
-
-- tee shot
-- iron/wedge approach
-- putting
-- normal scoring
-
-### Hole 2 — Terrain Interaction
-
-Include:
-
-- elevation
-- sand
-- water
-- boundary risk
-
-### Hole 3 — Minecraft Golf
-
-Include unusual Minecraft-native interactions such as:
-
-- wall bank shot
-- ice
-- slime
-- cave/cliff/structure interaction
-
-Implement:
-
-- course-level hole ordering
-- between-hole transition
-- optional teleport-to-next-tee prompt
-- final three-hole scorecard
-
-Playtesting note from M4: returning the follow camera to the stationary player makes travel to the resting ball potentially tedious on full-size holes. During M6 course playtesting, evaluate an optional on-demand teleport-to-ball interaction; do not make automatic teleporting the default without testing its effect on Minecraft traversal.
-
-## Required Deliverables
-
-- three configured holes
-- course definition
-- hole sequencing
-- next-tee transition
-- final scorecard
-- complete multiplayer round
-
-## Verification
-
-Four-player target test:
-
-1. join server,
-2. start course,
-3. play Hole 1,
-4. advance,
-5. play Hole 2,
-6. advance,
-7. play Hole 3,
-8. receive final scorecard.
-
-The course must be completable using only documented gameplay controls.
-
-## Non-Goals
-
-Do not implement:
-
-- course-authoring commands
-- wind
-- cinematic camera
-- scramble
-- progression
-- cosmetics
-- large content library
-
-## Exit Criteria
-
-The PRD's three-hole multiplayer MVP definition is satisfied end-to-end.
+Up to four golfers can complete the proven three-hole course using Ready Golf without state corruption or forced turn-taking.
 
 ---
 
@@ -1121,6 +1187,8 @@ Potential features:
 - cinematic ball camera
 - approximate landing-area indicator
 - optional teleport-to-ball
+- optional water-hazard recovery choice: safe shoreline drop near the entry point or stroke-and-distance re-hit; true out-of-bounds remains stroke-and-distance only
+- optional chip-shot mode for Wedge and Short Iron, producing a low flight with controlled putt-like rollout
 - improved ball identification
 - expanded club set
 - richer sounds and particles
@@ -1208,8 +1276,10 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-The repository baseline and golf-physics core are on `main`; M1 (ball physics) and
-M2 (clubs + server-authoritative shots) are complete, validated, and pushed.
-See `docs/M1-CLOSEOUT.md` and `docs/M2-NOTES.md`. The next execution target is:
+M0–M5 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
+`docs/M4-CLOSEOUT.md`, `docs/M4.5-CLOSEOUT.md`, and `docs/M5-CLOSEOUT.md`). The current milestone is:
 
-> **M3 — Three-Click Swing and HUD**
+> **M6 — Multiplayer Ready Golf**
+
+M6 applies multiplayer concurrency to the proven three-hole M5 course. Do not begin
+M7 hardening until M6's Ready Golf verification and exit criteria pass.

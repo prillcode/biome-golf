@@ -11,6 +11,7 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.ball.PhysicsConfig;
+import com.prillcode.minecraftgolf.ball.ShotPhysicsProfile;
 import com.prillcode.minecraftgolf.club.ClubDefinition;
 import com.prillcode.minecraftgolf.club.ShotResolver;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
@@ -91,7 +92,9 @@ public final class ShotService {
 		Vec3 shotOrigin = ball.ballState() == null
 				? new Vec3(ball.position().x, ball.position().y, ball.position().z)
 				: ball.ballState().position();
-		ball.launch(velocity);
+		ball.launch(velocity, club.putting()
+			? ShotPhysicsProfile.STANDARD
+			: ShotPhysicsProfile.LOFTED_CLUB);
 		if (holePermission == ShotPermission.SCORING) {
 			ActiveHoleService.instance().recordAcceptedShot(player, ball, shotOrigin);
 		}

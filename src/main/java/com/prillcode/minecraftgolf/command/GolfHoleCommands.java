@@ -16,7 +16,7 @@ import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.ActiveHoleService.StartResult;
 
-/** Player-facing lifecycle commands for the one configured M4 hole. */
+/** Player-facing lifecycle commands for the server-authoritative M5 course. */
 public final class GolfHoleCommands {
 
 	private static boolean registered;
@@ -41,9 +41,10 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("abandon").executes(GolfHoleCommands::abandon))
 				.then(Commands.literal("status").executes(GolfHoleCommands::status)))
 			.then(Commands.literal("practiceball").executes(GolfHoleCommands::dropPracticeBall))
-			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp)));
+			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp))
+			.then(Commands.literal("nexthole").executes(GolfHoleCommands::nextHole)));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf hole start|restart|abandon|status, /golf practiceball, and /golf pickup commands");
+			"Registered /golf hole start|restart|abandon|status, /golf practiceball, /golf pickup, and /golf nexthole commands");
 	}
 
 	private static int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -83,6 +84,11 @@ public final class GolfHoleCommands {
 	private static int pickUp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		return sendResult(context, ActiveHoleService.instance().pickUp(player));
+	}
+
+	private static int nextHole(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		return sendResult(context, ActiveHoleService.instance().nextHole(player));
 	}
 
 	private static int sendResult(CommandContext<CommandSourceStack> context, StartResult result) {

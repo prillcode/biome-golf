@@ -20,7 +20,7 @@ class PhysicsConfigTest {
 		assertEquals(0.60, cfg.restitution(), TOL);
 		assertEquals(0.08, cfg.bounceFloorSpeed(), TOL);
 		assertEquals(0.03, cfg.stopSpeed(), TOL);
-		assertEquals(4.0, cfg.maxLaunchSpeed(), TOL);
+		assertEquals(5.0, cfg.maxLaunchSpeed(), TOL);
 		assertEquals(0.5, cfg.maxStepDistance(), TOL);
 		assertEquals(16, cfg.maxSubsteps());
 	}

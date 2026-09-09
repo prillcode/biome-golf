@@ -13,7 +13,6 @@ public final class SwingHud {
 	private static final int BAR_WIDTH = 160;
 	private static final int BAR_HEIGHT = 7;
 	private static final int EDGE_MARGIN = 8;
-	private static final int HOTBAR_CLEARANCE = 30;
 
 	private static final int PANEL = 0xB0101010;
 	private static final int BORDER = 0xD0FFFFFF;
@@ -40,9 +39,9 @@ public final class SwingHud {
 			return;
 		}
 
-		// Keep the aiming line clear and avoid covering the centered hotbar.
+		// Keep chat/status text and the centered aiming line clear.
 		int x = graphics.guiWidth() - WIDTH - EDGE_MARGIN;
-		int y = graphics.guiHeight() - HEIGHT - HOTBAR_CLEARANCE;
+		int y = EDGE_MARGIN;
 		graphics.fill(x, y, x + WIDTH, y + HEIGHT, PANEL);
 		outline(graphics, x, y, WIDTH, HEIGHT, BORDER);
 

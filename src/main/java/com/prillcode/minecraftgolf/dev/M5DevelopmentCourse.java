@@ -1,0 +1,47 @@
+package com.prillcode.minecraftgolf.dev;
+
+import java.util.List;
+
+import com.prillcode.minecraftgolf.course.CourseDefinition;
+import com.prillcode.minecraftgolf.course.GeneratedLayoutIdentity;
+import com.prillcode.minecraftgolf.course.HoleTransition;
+import com.prillcode.minecraftgolf.golf.Vec3;
+import com.prillcode.minecraftgolf.hole.HoleBoundary;
+import com.prillcode.minecraftgolf.hole.HoleDefinition;
+
+/** Authoritative metadata matching the three reviewed M5 generated footprints. */
+public final class M5DevelopmentCourse {
+
+	private M5DevelopmentCourse() {
+	}
+
+	public static CourseDefinition definition() {
+		return new CourseDefinition(
+			"minecraft_golf:m5_development",
+			"M5 Development Course",
+			"minecraft:overworld",
+			M5DevelopmentLayout.IDENTITY,
+			List.of(
+				hole("minecraft_golf:m5_hole_1", 1, 4,
+					new Vec3(-206.5, 75.25, 494.5), new Vec3(-354.5, 71.25, 416.5),
+					volume(-384, 48, 384, -176, 128, 528), 118.0),
+				hole("minecraft_golf:m5_hole_2", 2, 3,
+					new Vec3(-367.5, 71.25, 416.5), new Vec3(-321.5, 71.25, 405.5),
+					volume(-384, 48, 384, -256, 128, 464), -103.0),
+				hole("minecraft_golf:m5_hole_3", 3, 5,
+					new Vec3(-365.5, 70.25, 490.5), new Vec3(-206.5, 71.25, 426.5),
+					volume(-400, 32, 384, -176, 128, 528), -112.0)));
+	}
+
+	private static HoleDefinition hole(
+		String id, int number, int par, Vec3 tee, Vec3 cup, HoleBoundary boundary, double yaw
+	) {
+		return new HoleDefinition(id, number, "minecraft:overworld", tee, cup, par, boundary,
+			new GeneratedLayoutIdentity(id + "_layout", 1),
+			new HoleTransition(new Vec3(tee.x(), tee.y() + 1.0, tee.z() + 2.0), yaw, 0.0));
+	}
+
+	private static HoleBoundary volume(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+		return new HoleBoundary(new Vec3(minX, minY, minZ), new Vec3(maxX, maxY, maxZ));
+	}
+}

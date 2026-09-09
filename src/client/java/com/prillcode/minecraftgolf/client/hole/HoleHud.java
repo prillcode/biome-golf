@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import com.prillcode.minecraftgolf.net.HoleStatePayload;
 import com.prillcode.minecraftgolf.net.HoleStatePayload.Phase;
+import com.prillcode.minecraftgolf.golf.CupDirection;
 
 /** Client-only HUD panel showing authoritative hole progress from server snapshots (S03). */
 public final class HoleHud {
@@ -54,6 +55,21 @@ public final class HoleHud {
 		String strokes = "Strokes: " + state.strokes() + " / " + state.strokeLimit();
 		graphics.text(client.font, strokes, x + PAD_X, textY, MUTED, false);
 		textY += LINE_HEIGHT;
+		if (state.courseTotalPar() > 0) {
+			int courseScore = state.courseStrokes() - state.courseParPlayed();
+			String cumulative = "Course: " + state.courseStrokes() + " strokes  "
+				+ formatToPar(courseScore);
+			graphics.text(client.font, cumulative, x + PAD_X, textY, GOLD, false);
+			textY += LINE_HEIGHT;
+		}
+
+		if (state.phase() == Phase.ACTIVE) {
+			String arrow = CupDirection.arrow(client.player.getX(), client.player.getZ(),
+				client.player.getYRot(), state.cupX(), state.cupZ());
+			String cupDirection = "Cup: " + arrow + "  " + state.distanceToCupBlocks() + " blocks";
+			graphics.text(client.font, cupDirection, x + PAD_X, textY, GOLD, true);
+			textY += LINE_HEIGHT;
+		}
 
 		if (state.penaltyCount() > 0) {
 			String penalties = "Penalties: " + state.penaltyCount();
@@ -82,6 +98,8 @@ public final class HoleHud {
 
 	private static int countLines(HoleStatePayload state) {
 		int lines = 2; // hole/par + strokes
+		if (state.courseTotalPar() > 0) lines++;
+		if (state.phase() == Phase.ACTIVE) lines++;
 		if (state.penaltyCount() > 0) lines++;
 		if (state.strokes() > 0) lines++;
 		if (state.phase() == Phase.MISSING_BALL) lines += 2;

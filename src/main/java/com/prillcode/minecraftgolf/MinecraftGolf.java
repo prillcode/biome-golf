@@ -1,11 +1,7 @@
 package com.prillcode.minecraftgolf;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.entity.EntityType;
 
 import org.slf4j.Logger;
@@ -14,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.prillcode.minecraftgolf.block.GolfBlocks;
 import com.prillcode.minecraftgolf.command.GolfDevCommands;
 import com.prillcode.minecraftgolf.command.GolfHoleCommands;
-import com.prillcode.minecraftgolf.config.HoleConfigLoader;
+import com.prillcode.minecraftgolf.dev.M5DevelopmentCourse;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.net.HoleStateNetworking;
@@ -52,14 +48,8 @@ public class MinecraftGolf implements ModInitializer {
 		// command tree is op-gated and consumes only server-authoritative state.
 		GolfDevCommands.register();
 
-		// M4: one human-readable configured hole and its player lifecycle.
-		Path holeConfig = FabricLoader.getInstance().getConfigDir()
-				.resolve("minecraft_golf").resolve("hole.json");
-		try {
-			ActiveHoleService.instance().initialize(HoleConfigLoader.loadOrCreate(holeConfig));
-		} catch (IOException | IllegalArgumentException exception) {
-			throw new IllegalStateException("Could not load Minecraft Golf hole config at " + holeConfig, exception);
-		}
+		// M5: the fixed, versioned three-hole development course and its player lifecycle.
+		ActiveHoleService.instance().initializeCourse(M5DevelopmentCourse.definition());
 		GolfHoleCommands.register();
 
 		// M3: typed shot-request networking (payload codec + server receiver).

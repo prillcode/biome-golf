@@ -2,6 +2,8 @@ package com.prillcode.minecraftgolf.hole;
 
 import java.util.Objects;
 
+import com.prillcode.minecraftgolf.course.GeneratedLayoutIdentity;
+import com.prillcode.minecraftgolf.course.HoleTransition;
 import com.prillcode.minecraftgolf.golf.Vec3;
 
 /** Immutable, Minecraft-free metadata for one configured golf hole. */
@@ -12,8 +14,23 @@ public record HoleDefinition(
 	Vec3 tee,
 	Vec3 cup,
 	int par,
-	HoleBoundary boundary
+	HoleBoundary boundary,
+	GeneratedLayoutIdentity generatedLayout,
+	HoleTransition transition
 ) {
+	/** Compatibility constructor for the pre-course M4/M4.5 configured hole. */
+	public HoleDefinition(
+		String id,
+		int number,
+		String dimension,
+		Vec3 tee,
+		Vec3 cup,
+		int par,
+		HoleBoundary boundary
+	) {
+		this(id, number, dimension, tee, cup, par, boundary,
+			new GeneratedLayoutIdentity("legacy:" + id, 1), HoleTransition.at(tee));
+	}
 
 	public HoleDefinition {
 		requireNonBlank(id, "id");
@@ -21,6 +38,8 @@ public record HoleDefinition(
 		Objects.requireNonNull(tee, "tee");
 		Objects.requireNonNull(cup, "cup");
 		Objects.requireNonNull(boundary, "boundary");
+		Objects.requireNonNull(generatedLayout, "generatedLayout");
+		Objects.requireNonNull(transition, "transition");
 		if (number <= 0) {
 			throw new IllegalArgumentException("hole number must be positive");
 		}
@@ -37,6 +56,9 @@ public record HoleDefinition(
 		}
 		if (!boundary.contains(cup)) {
 			throw new IllegalArgumentException("cup must be inside the playable boundary");
+		}
+		if (!boundary.contains(transition.playerPosition())) {
+			throw new IllegalArgumentException("transition position must be inside the playable boundary");
 		}
 	}
 
