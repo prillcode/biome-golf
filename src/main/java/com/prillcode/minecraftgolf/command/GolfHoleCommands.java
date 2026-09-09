@@ -37,9 +37,13 @@ public final class GolfHoleCommands {
 		dispatcher.register(Commands.literal("golf")
 			.then(Commands.literal("hole")
 				.then(Commands.literal("start").executes(GolfHoleCommands::start))
+				.then(Commands.literal("restart").executes(GolfHoleCommands::restart))
+				.then(Commands.literal("abandon").executes(GolfHoleCommands::abandon))
 				.then(Commands.literal("status").executes(GolfHoleCommands::status)))
+			.then(Commands.literal("practiceball").executes(GolfHoleCommands::dropPracticeBall))
 			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp)));
-		MinecraftGolf.LOGGER.info("Registered /golf hole start|status and /golf pickup commands");
+		MinecraftGolf.LOGGER.info(
+			"Registered /golf hole start|restart|abandon|status, /golf practiceball, and /golf pickup commands");
 	}
 
 	private static int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -53,16 +57,35 @@ public final class GolfHoleCommands {
 		return 1;
 	}
 
+	private static int restart(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		return sendResult(context, ActiveHoleService.instance().restart(player));
+	}
+
+	private static int abandon(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		return sendResult(context, ActiveHoleService.instance().abandon(player));
+	}
+
 	private static int status(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		context.getSource().sendSuccess(
-			() -> Component.literal(ActiveHoleService.instance().status(player.getUUID())), false);
+			() -> Component.literal(ActiveHoleService.instance().status(player)), false);
 		return 1;
+	}
+
+	private static int dropPracticeBall(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		return sendResult(context, ActiveHoleService.instance().dropPracticeBall(player));
 	}
 
 	private static int pickUp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
-		StartResult result = ActiveHoleService.instance().pickUp(player);
+		return sendResult(context, ActiveHoleService.instance().pickUp(player));
+	}
+
+	private static int sendResult(CommandContext<CommandSourceStack> context, StartResult result) {
 		if (!result.success()) {
 			context.getSource().sendFailure(Component.literal(result.message()));
 			return 0;

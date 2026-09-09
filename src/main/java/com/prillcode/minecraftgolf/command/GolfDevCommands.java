@@ -17,9 +17,13 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.ball.BallState;
+import com.prillcode.minecraftgolf.dev.DevelopmentHoleBuilder;
+import com.prillcode.minecraftgolf.dev.DevelopmentHoleBuilder.Layout;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
+import com.prillcode.minecraftgolf.hole.HoleDefinition;
+import com.prillcode.minecraftgolf.server.ActiveHoleService;
 
 /**
  * Server-side developer launch and test controls (MILESTONES.md M1, ROADMAP
@@ -33,6 +37,7 @@ import com.prillcode.minecraftgolf.golf.Vec3;
  * /golf launch &lt;forward&gt; &lt;up&gt; [id]   launch nearest (or given) ball
  * /golf inspect [id]                     print BallState of nearest (or given) ball
  * /golf clear                            remove every loaded golf ball
+ * /golf dev preparehole                  explicitly prepare the configured flat test hole
  * </pre>
  *
  * <p>Commands mutate only server-authoritative state (ARCHITECTURE.md §2.1):
@@ -94,8 +99,41 @@ public final class GolfDevCommands {
 								.executes(GolfDevCommands::inspectById)))
 				.then(Commands.literal("clear")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-						.executes(GolfDevCommands::clearAll)));
-		MinecraftGolf.LOGGER.info("Registered /golf dev command group (spawn, launch, inspect, clear)");
+						.executes(GolfDevCommands::clearAll))
+				.then(Commands.literal("dev")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.literal("preparehole")
+								.executes(GolfDevCommands::prepareHole))));
+		MinecraftGolf.LOGGER.info(
+			"Registered /golf developer commands (spawn, launch, inspect, clear, dev preparehole)");
+	}
+
+	// ------------------------------------------------------------------
+	// /golf dev preparehole
+	// ------------------------------------------------------------------
+
+	private static int prepareHole(CommandContext<CommandSourceStack> ctx) {
+		CommandSourceStack source = ctx.getSource();
+		ServerLevel level = source.getLevel();
+		HoleDefinition hole = ActiveHoleService.instance().configuredHole();
+		String currentDimension = level.dimension().identifier().toString();
+		if (!hole.dimension().equals(currentDimension)) {
+			source.sendFailure(Component.literal("[golf] configured hole is in " + hole.dimension()
+				+ "; command source is in " + currentDimension));
+			return 0;
+		}
+		try {
+			Layout layout = DevelopmentHoleBuilder.prepare(level, hole);
+			source.sendSuccess(() -> Component.literal(
+				"[golf] prepared development hole: X[" + layout.minX() + ".." + layout.maxX()
+					+ "] Y=" + layout.floorY() + " Z[" + layout.minZ() + ".." + layout.maxZ()
+					+ "]"), true);
+			return 1;
+		} catch (IllegalArgumentException exception) {
+			source.sendFailure(Component.literal("[golf] cannot prepare development hole: "
+				+ exception.getMessage()));
+			return 0;
+		}
 	}
 
 	// ------------------------------------------------------------------
@@ -135,7 +173,7 @@ public final class GolfDevCommands {
 			source.sendFailure(Component.literal("golf: failed to add golf ball to the level"));
 			return 0;
 		}
-		String msg = "golf: spawned ball #" + ball.getId() + " at " + fmt(x, y, z)
+		String msg = "golf: spawned unowned debug ball #" + ball.getId() + " at " + fmt(x, y, z)
 				+ " (drops and settles under gravity)";
 		MinecraftGolf.LOGGER.info(msg);
 		source.sendSuccess(() -> Component.literal(msg), false);

@@ -20,6 +20,8 @@ public enum ShotOutcome {
 	AIM_NOT_LEGAL,
 	/** An active hole exists, but this is not its assigned ball. */
 	NOT_ACTIVE_BALL,
+	/** The assigned active-hole ball no longer exists and the attempt must be restarted. */
+	MISSING_ACTIVE_BALL,
 	/** The player's active hole is already complete or capped. */
 	HOLE_COMPLETE,
 	/** Shots off a club the player must be holding, and this is not one. */

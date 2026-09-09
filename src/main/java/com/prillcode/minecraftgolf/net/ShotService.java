@@ -62,6 +62,9 @@ public final class ShotService {
 		if (holePermission == ShotPermission.WRONG_BALL) {
 			return ShotOutcome.NOT_ACTIVE_BALL;
 		}
+		if (holePermission == ShotPermission.MISSING_BALL) {
+			return ShotOutcome.MISSING_ACTIVE_BALL;
+		}
 		if (holePermission == ShotPermission.HOLE_COMPLETE) {
 			return ShotOutcome.HOLE_COMPLETE;
 		}

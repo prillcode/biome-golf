@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.entity.EntityType;
 
@@ -16,6 +17,7 @@ import com.prillcode.minecraftgolf.command.GolfHoleCommands;
 import com.prillcode.minecraftgolf.config.HoleConfigLoader;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.item.GolfItems;
+import com.prillcode.minecraftgolf.net.HoleStateNetworking;
 import com.prillcode.minecraftgolf.net.ShotNetworking;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 
@@ -62,5 +64,12 @@ public class MinecraftGolf implements ModInitializer {
 
 		// M3: typed shot-request networking (payload codec + server receiver).
 		ShotNetworking.register();
+
+		// S03: clientbound hole-state snapshot networking; client receiver registered in MinecraftGolfClient.
+		HoleStateNetworking.register();
+
+		// S03: send the current hole-state snapshot to each player on join/reconnect.
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+			ActiveHoleService.instance().sendCurrentSnapshot(handler.getPlayer()));
 	}
 }

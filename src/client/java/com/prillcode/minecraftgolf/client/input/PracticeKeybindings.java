@@ -26,9 +26,9 @@ public final class PracticeKeybindings {
 	public void tick(Minecraft client) {
 		while (dropBall.consumeClick()) {
 			if (client.player != null && client.getConnection() != null) {
-				// Reuse the existing command path so its gamemaster permission check
-				// and server-side spawn implementation remain the single authority.
-				client.getConnection().sendCommand("golf spawn");
+				// The player-facing command validates practice mode and performs the spawn
+				// server-side. Operator /golf spawn remains a separate debug tool.
+				client.getConnection().sendCommand("golf practiceball");
 			}
 		}
 	}

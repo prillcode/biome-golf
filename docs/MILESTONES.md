@@ -136,6 +136,7 @@ The host operating system should not affect the Fabric server architecture.
 | M2 | Clubs and Shot Execution | Complete (see docs/M2-NOTES.md) |
 | M3 | Three-Click Swing and HUD | Complete (see docs/M3-CLOSEOUT.md) |
 | M4 | Holes, Cups, Boundaries, and Scoring | Complete (see docs/M4-CLOSEOUT.md) |
+| M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
 | M5 | Multiplayer Ready Golf | Next |
 | M6 | Three-Hole MVP Course | Not Started |
 | M7 | MVP Hardening and Family Playtest | Not Started |
@@ -792,6 +793,67 @@ One complete golf hole can be played from tee to cup with correct basic scoring 
 
 ---
 
+# M4.5 — Single-Player Loop Hardening
+
+## Goal
+
+Make the configured single-player hole repeatable, understandable, and recoverable without developer assistance before multiplayer adds concurrency.
+
+## Prerequisites
+
+- M4 complete
+
+## Scope
+
+Implement, in bounded increments:
+
+1. explicit lifecycle and practice-mode contracts,
+2. restart, abandon, missing-ball recovery, and equipment guidance,
+3. typed server-to-client hole-state synchronization with a client-only HUD,
+4. a repeatable, non-destructive development hole and documented reset flow,
+5. integration hardening and manual single-player acceptance.
+
+Preserve server authority for gameplay state and scoring. Practice remains unrestricted when no hole is active. The player remains at the shot origin while the client-only camera follows the ball; do not add automatic teleport-to-ball.
+
+## Required Deliverables
+
+- player-accessible start, restart, abandon, status, and Pick Up behavior
+- clear equipment availability or actionable in-game guidance
+- explicit active-hole versus practice behavior
+- authoritative hole HUD state: hole/par, strokes/cap, penalties, score-to-par, lifecycle status, and final result
+- safe cleanup and recovery for restart, abandon, missing ball, disconnect/reconnect, dimension errors, and configuration errors
+- repeatable development-hole setup that does not destructively rewrite arbitrary terrain
+- tests and documentation for repeated play and reset behavior
+
+## Verification
+
+- `./gradlew test`
+- `./gradlew clean test build`
+- no `net.minecraft.client` imports under `src/main`
+- Loom dedicated server boot and registration logs
+- Loom client startup and resource/model checks
+- Docker JAR identity, healthy server, and development time/weather controls
+- manual single-player loop covering practice, start/restart/abandon, equipment, HUD updates, accepted/rejected shots, Pick Up, missing-ball recovery, completion, replay, and camera restoration
+
+## Non-Goals
+
+Do not implement:
+
+- multiplayer players or Ready Golf
+- round orchestration or multiple-hole progression
+- course-authoring commands or UI
+- traditional turns or additional modes
+- wind, prediction, or cinematic camera
+- automatic teleport-to-ball
+- persistent global statistics
+- speculative abstractions for M5
+
+## Exit Criteria
+
+A player can launch the mod, start and finish the configured hole repeatedly without developer assistance, understand the complete authoritative hole state through the UI, and recover safely from expected lifecycle failures.
+
+---
+
 # M5 — Multiplayer Ready Golf
 
 ## Goal
@@ -800,7 +862,7 @@ Deliver the intended 1–4 player multiplayer experience.
 
 ## Prerequisites
 
-- M4 complete
+- M4.5 complete
 
 ## Scope
 
