@@ -6,7 +6,7 @@ This is a **bounded, risk-first** plan for M5. It deliberately does not turn the
 
 ## Purpose
 
-Prove the full-sized, single-player golf course loop — practice range, exactly three authored holes (par 3, par 4, par 5), sequencing, transitions, scorecard, replay, and tuning — before multiplayer concurrency multiplies uncertain gameplay.
+Prove the full-sized, single-player golf course loop — practice range, exactly three authored holes ordered as Hole 1 par 4, Hole 2 par 3, and Hole 3 par 5, sequencing, transitions, scorecard, replay, and tuning — before multiplayer concurrency multiplies uncertain gameplay.
 
 ## Product constraints
 
@@ -52,25 +52,25 @@ The slices below are ordered risk-first. Each defines its own goal, deliverables
 - **Verification:** `./gradlew test`; manual practice-range validation via `runClient`.
 - **Exit criteria:** A player can practice all club types on the range with no active course attempt.
 
-### S4 — Generated par 3
+### S4 — Generated Hole 1 (par 4)
+
+- **Goal:** Generate the authored opening par 4 hole.
+- **Deliverables:** Driver tee shot, fairway positioning, approach shot, bunker and/or water risk, and ordinary scoring flow.
+- **Verification:** `./gradlew test`; manual completion of Hole 1.
+- **Exit criteria:** The par 4 validates driver, approach, and scoring flow with meaningful risk.
+
+### S5 — Generated Hole 2 (par 3)
 
 - **Goal:** Generate the authored par 3 hole.
 - **Deliverables:** Short iron/wedge accuracy, approach control, putting, and a concise but meaningful hazard decision.
-- **Verification:** `./gradlew test`; manual completion of the par 3.
+- **Verification:** `./gradlew test`; manual completion of Hole 2.
 - **Exit criteria:** The par 3 is completable with a clear hazard decision and validates short-game clubs.
 
-### S5 — Generated par 4
-
-- **Goal:** Generate the authored par 4 hole.
-- **Deliverables:** Driver tee shot, fairway positioning, approach shot, bunker and/or water risk, and ordinary scoring flow.
-- **Verification:** `./gradlew test`; manual completion of the par 4.
-- **Exit criteria:** The par 4 validates driver, approach, and scoring flow with meaningful risk.
-
-### S6 — Generated par 5
+### S6 — Generated Hole 3 (par 5)
 
 - **Goal:** Generate the authored par 5 hole.
 - **Deliverables:** Realistic longer-shot strategy, multiple-shot pacing, elevation or route choice, Minecraft-native terrain/surface interaction, and no excessive empty travel.
-- **Verification:** `./gradlew test`; manual completion of the par 5.
+- **Verification:** `./gradlew test`; manual completion of Hole 3.
 - **Exit criteria:** The par 5 validates the full club set and feels meaningfully different from the par 3 and par 4.
 
 ### S7 — Single-player transitions, HUD, replay, and recovery
@@ -91,7 +91,7 @@ The slices below are ordered risk-first. Each defines its own goal, deliverables
 
 - **Goal:** Full verification ladder and final acceptance.
 - **Deliverables:** `./gradlew test`, `./gradlew clean test build`, no `net.minecraft.client` imports under `src/main`, Loom dedicated-server boot/registration logs, Loom client startup/HUD/resource/camera checks, Docker JAR identity and healthy server, repeated course preparation proving idempotence, Docker daytime and paused time/weather verification, and documentation updates (`dev-server/README.md`, `README.md`, `MILESTONES.md`).
-- **Verification:** Full ladder plus manual completion of par 3, par 4, par 5, scorecard, replay, and recovery.
+- **Verification:** Full ladder plus manual completion of Hole 1 par 4, Hole 2 par 3, Hole 3 par 5, scorecard, replay, and recovery.
 - **Exit criteria:** All M5 exit criteria pass and the experience is completable using documented controls without developer intervention.
 
 ## Travel-to-ball evaluation (check-in)

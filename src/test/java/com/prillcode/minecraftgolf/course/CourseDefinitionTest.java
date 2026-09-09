@@ -14,29 +14,29 @@ import com.prillcode.minecraftgolf.hole.HoleDefinition;
 class CourseDefinitionTest {
 
 	@Test
-	void requiresExactlyOrderedParThreeFourFiveHoles() {
+	void requiresExactlyOrderedParFourThreeFiveHoles() {
 		CourseDefinition course = course(holes());
 
 		assertEquals(3, course.holes().size());
 		assertEquals(12, course.totalPar());
 		assertEquals("test:2", course.hole(2).id());
 		assertThrows(IllegalArgumentException.class, () -> course.hole(0));
-		assertThrows(IllegalArgumentException.class, () -> course(List.of(hole(1, 3), hole(2, 4))));
+		assertThrows(IllegalArgumentException.class, () -> course(List.of(hole(1, 4), hole(2, 3))));
 		assertThrows(IllegalArgumentException.class,
-			() -> course(List.of(hole(1, 3), hole(3, 4), hole(2, 5))));
+			() -> course(List.of(hole(1, 4), hole(3, 3), hole(2, 5))));
 		assertThrows(IllegalArgumentException.class,
-			() -> course(List.of(hole(1, 4), hole(2, 3), hole(3, 5))));
+			() -> course(List.of(hole(1, 3), hole(2, 4), hole(3, 5))));
 	}
 
 	@Test
 	void rejectsDuplicateIdsAndCrossDimensionHoles() {
-		HoleDefinition duplicate = definition("test:1", 2, 4, "minecraft:overworld");
+		HoleDefinition duplicate = definition("test:1", 2, 3, "minecraft:overworld");
 		assertThrows(IllegalArgumentException.class,
-			() -> course(List.of(hole(1, 3), duplicate, hole(3, 5))));
+			() -> course(List.of(hole(1, 4), duplicate, hole(3, 5))));
 
-		HoleDefinition nether = definition("test:2", 2, 4, "minecraft:the_nether");
+		HoleDefinition nether = definition("test:2", 2, 3, "minecraft:the_nether");
 		assertThrows(IllegalArgumentException.class,
-			() -> course(List.of(hole(1, 3), nether, hole(3, 5))));
+			() -> course(List.of(hole(1, 4), nether, hole(3, 5))));
 	}
 
 	private static CourseDefinition course(List<HoleDefinition> holes) {
@@ -45,7 +45,7 @@ class CourseDefinitionTest {
 	}
 
 	private static List<HoleDefinition> holes() {
-		return List.of(hole(1, 3), hole(2, 4), hole(3, 5));
+		return List.of(hole(1, 4), hole(2, 3), hole(3, 5));
 	}
 
 	private static HoleDefinition hole(int number, int par) {

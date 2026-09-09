@@ -858,7 +858,7 @@ A player can launch the mod, start and finish the configured hole repeatedly wit
 
 ## Goal
 
-Prove the complete single-player, full-sized golf course experience — a generated practice range, exactly three authored holes (par 3, par 4, par 5), course sequencing, between-hole transitions, a final three-hole scorecard, replay/reset, and full gameplay tuning across realistic hole lengths — before multiplayer concurrency multiplies uncertain gameplay.
+Prove the complete single-player, full-sized golf course experience — a generated practice range, exactly three authored holes ordered as Hole 1 par 4, Hole 2 par 3, and Hole 3 par 5, course sequencing, between-hole transitions, a final three-hole scorecard, replay/reset, and full gameplay tuning across realistic hole lengths — before multiplayer concurrency multiplies uncertain gameplay.
 
 This milestone replaces the former "Multiplayer Ready Golf" plan, which is moved to M6 and applied only after the single-player course loop is proven (GSD decision D018).
 
@@ -910,9 +910,9 @@ The practice range is not part of the scored three-hole round. Practice remains 
 
 Generate exactly three intentionally different holes:
 
-- **Par 3** — short iron or wedge accuracy, approach control, putting, and a concise but meaningful hazard decision.
-- **Par 4** — driver tee shot, fairway positioning, approach shot, bunker and/or water risk, and ordinary golf scoring flow.
-- **Par 5** — realistic longer-shot strategy, multiple-shot pacing, elevation or route choice, Minecraft-native terrain/surface interaction, and avoiding excessive empty travel.
+- **Hole 1 — Par 4** — driver tee shot, fairway positioning, approach shot, bunker and/or water risk, and ordinary golf scoring flow.
+- **Hole 2 — Par 3** — short iron or wedge accuracy, approach control, putting, and a concise but meaningful hazard decision.
+- **Hole 3 — Par 5** — realistic longer-shot strategy, multiple-shot pacing, elevation or route choice, Minecraft-native terrain/surface interaction, and avoiding excessive empty travel.
 
 The holes should validate the full club set and feel meaningfully different.
 
@@ -951,7 +951,7 @@ If this requires a material UX decision, prepare options and ask the user rather
 - server-owned course model with exactly three ordered holes
 - course-level state (current hole, per-hole score, cumulative score, completion, replay/reset)
 - deterministic generated practice range (not part of the scored round)
-- three authored generated holes (par 3, par 4, par 5)
+- three authored generated holes ordered par 4, par 3, par 5
 - single-player course sequencing and between-hole transitions
 - final three-hole scorecard
 - replay/reset behavior
@@ -974,7 +974,7 @@ If this requires a material UX decision, prepare options and ask the user rather
 - repeated course preparation proving idempotence
 - Docker daytime and paused time/weather verification
 - manual practice-range validation
-- manual completion of par 3, par 4, and par 5
+- manual completion of Hole 1 par 4, Hole 2 par 3, and Hole 3 par 5
 - scorecard and replay validation
 - club-distance and travel-pacing findings
 - camera restoration on short and long shots
@@ -1005,9 +1005,9 @@ M5 is complete only when one player can:
 1. explicitly generate or restore the bounded development course,
 2. use the practice range,
 3. start the three-hole course,
-4. complete the par 3,
-5. transition to and complete the par 4,
-6. transition to and complete the par 5,
+4. complete Hole 1 (par 4),
+5. transition to and complete Hole 2 (par 3),
+6. transition to and complete Hole 3 (par 5),
 7. receive an accurate per-hole and cumulative scorecard,
 8. recover safely from expected lifecycle failures,
 9. replay the course without stale balls or scores,

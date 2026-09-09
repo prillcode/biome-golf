@@ -45,9 +45,9 @@ class PlayerCourseStateTest {
 		PlayerCourseState state = PlayerCourseState.start(course());
 		state = state.updateCurrentHole(state.currentHole().pickUp()).advance();
 
-		assertEquals(8, state.completedStrokes());
-		assertEquals(3, state.completedPar());
-		assertEquals(5, state.completedScoreToPar());
+		assertEquals(10, state.completedStrokes());
+		assertEquals(4, state.completedPar());
+		assertEquals(6, state.completedScoreToPar());
 
 		PlayerCourseState reset = state.reset();
 		assertFalse(reset.isComplete());
@@ -70,7 +70,7 @@ class PlayerCourseStateTest {
 	private static CourseDefinition course() {
 		return new CourseDefinition("test", "Test Course", "minecraft:overworld",
 			new GeneratedLayoutIdentity("test-course", 1),
-			List.of(hole(1, 3), hole(2, 4), hole(3, 5)));
+			List.of(hole(1, 4), hole(2, 3), hole(3, 5)));
 	}
 
 	private static HoleDefinition hole(int number, int par) {

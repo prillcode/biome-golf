@@ -15,7 +15,7 @@ public record CourseDefinition(
 	GeneratedLayoutIdentity generatedLayout,
 	List<HoleDefinition> holes
 ) {
-	private static final List<Integer> REQUIRED_PARS = List.of(3, 4, 5);
+	private static final List<Integer> REQUIRED_PARS = List.of(4, 3, 5);
 
 	public CourseDefinition {
 		requireNonBlank(id, "id");
@@ -36,7 +36,7 @@ public record CourseDefinition(
 				throw new IllegalArgumentException("holes must be ordered and numbered 1, 2, 3");
 			}
 			if (hole.par() != REQUIRED_PARS.get(index)) {
-				throw new IllegalArgumentException("M5 course holes must be par 3, par 4, par 5 in order");
+				throw new IllegalArgumentException("M5 course holes must be par 4, par 3, par 5 in order");
 			}
 			if (!dimension.equals(hole.dimension())) {
 				throw new IllegalArgumentException("every hole must use the course dimension");

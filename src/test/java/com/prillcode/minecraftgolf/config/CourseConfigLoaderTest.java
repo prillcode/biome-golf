@@ -41,7 +41,7 @@ class CourseConfigLoaderTest {
 		assertThrows(IllegalArgumentException.class, () -> CourseConfigLoader.load(missing));
 
 		Path wrongParOrder = tempDir.resolve("wrong-par.json");
-		Files.writeString(wrongParOrder, validCourseJson().replace("\"par\": 3", "\"par\": 4"));
+		Files.writeString(wrongParOrder, validCourseJson().replace("\"par\": 4", "\"par\": 3"));
 		assertThrows(IllegalArgumentException.class, () -> CourseConfigLoader.load(wrongParOrder));
 
 		Path outsideTransition = tempDir.resolve("outside-transition.json");
@@ -60,14 +60,14 @@ class CourseConfigLoaderTest {
 			  "generatedLayout": {"id": "m5-campus", "version": 7},
 			  "holes": [
 			    {
-			      "id": "m5:1", "number": 1, "par": 3,
+			      "id": "m5:1", "number": 1, "par": 4,
 			      "tee": [10, 64.25, 0], "cup": [30, 64.25, 0],
 			      "boundary": {"min": [0, 0, -20], "max": [40, 100, 20]},
 			      "generatedLayout": {"id": "m5-par-3", "version": 2},
 			      "transition": {"playerPosition": [10, 65, 0], "yaw": 0, "pitch": 0}
 			    },
 			    {
-			      "id": "m5:2", "number": 2, "par": 4,
+			      "id": "m5:2", "number": 2, "par": 3,
 			      "tee": [50, 64.25, 0], "cup": [70, 64.25, 0],
 			      "boundary": {"min": [40, 0, -20], "max": [80, 100, 20]},
 			      "generatedLayout": {"id": "m5-par-4", "version": 2},
