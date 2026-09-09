@@ -15,6 +15,7 @@ Prove the full-sized, single-player golf course loop — practice range, exactly
 - **No general procedural generator.** Use deterministic, authored, versioned generation behind an explicit operator command.
 - **No automatic teleport-to-ball.** Only a separately accepted on-demand interaction may replace it.
 - **No terrain mutation outside the declared footprint.** Exact bounds must be documented before any terrain is rewritten.
+- **Approved fixed ocean campus.** The development layout uses the Docker world's known disposable ocean area with overall envelope `X[-320..448]`, `Y[48..112]`, `Z[-256..512]` (769 × 65 × 769 blocks). This includes tuning headroom beyond the current 150-block Driver carry and avoids cramping the par 5. Generation mutates only explicitly declared authored subregions inside that envelope, not the entire envelope. `/golf dev preparecourse` must preflight the target and reject unsafe/non-development terrain. Loom Singleplayer testing uses the documented Docker world seed `-1928790872702396508`.
 - **Preserve M4.5 contracts.** Start/restart/abandon/status/Pick Up remain safe; practice balls are player-owned and only allowed outside a hole attempt; operator `/golf spawn` remains an unowned debug tool; HUD stays driven by typed server snapshots; accepted cup speed, Putter tuning, penalties, stroke cap, and camera restoration are preserved.
 
 ## Bounded slices
