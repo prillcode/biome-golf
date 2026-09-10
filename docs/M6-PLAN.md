@@ -191,6 +191,12 @@ Each slice must pass its verification before the next begins. Stop and document 
 - Include at least one period with multiple balls moving, one penalty, one Pick Up or cap completion, staggered hole completion, coordinated next-hole travel, and final score comparison.
 - Confirm no forced turns, early advancement, ownership leak, HUD/score cross-talk, wrong-player travel, stale balls, or dedicated-server errors.
 
+**Four-player acceptance decision (agreed with user):** the physical four-golfer LAN
+acceptance is waived. Four-player correctness is evidenced instead by the existing
+four-player domain unit tests in `ReadyGolfRoundTest` plus code review of the
+server integration, with the two-player manual matrix as on-wire proof. A true
+four-player session may be revisited during M7 family playtesting.
+
 **Exit criteria:** Every M6 verification item in `docs/MILESTONES.md` passes and up to four golfers complete the course without state corruption or forced turn-taking.
 
 ## Risk register and stop conditions
