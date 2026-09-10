@@ -105,6 +105,16 @@ public final class ActiveHoleService {
 		return hole;
 	}
 
+	/** The configured course, or {@code null} when only a single hole is initialized. */
+	public CourseDefinition configuredCourseOrNull() {
+		return course;
+	}
+
+	/** The currently configured hole, or {@code null} before any initialization. */
+	public HoleDefinition configuredHoleOrNull() {
+		return hole;
+	}
+
 	public StartResult createRound(ServerPlayer creator) {
 		if (course == null) {
 			return new StartResult(false, "[golf] no configured course is available");
