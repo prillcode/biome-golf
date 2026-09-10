@@ -245,9 +245,9 @@ At closeout, record the final commit, test count, Ready Golf domain decisions, c
 - Docker server (post-fix JAR): booted `Done (2.113s)!`; container health `healthy`; staged (`dev-server/mods`) and container (`/mods`) JAR SHA-256 identical: `efc2bde808bf81687f4902c5fb3bf4d06d0fb92016e8f339f3d5d8345468e5b1`. Laptop client JAR and mini-PC copy carry the same SHA.
 - `/golf dev preparecourse` idempotence: `minecraft_golf:m5_ocean_campus v11`, envelope `X[-640..448] Y[32..192] Z[-256..640]`, seed check passed. First run repaired 7 drifted blocks (gameplay drift, self-healing as designed); second run reported **0 changed**.
 
-**Solo M5 regression — user-driven, in progress**
+**Solo M5 regression — user-driven — PASS**
 
-- Tests 1–2 (hole start, restart) passed on the S5 JAR. Test 3 (abandon → start) was blocked by the stale-state bug above; fix deployed, re-test pending.
+- Tests 1–2 (hole start, restart) passed on the S5 JAR. Test 3 (abandon → start) was blocked by the stale-state bug above; after fix `68447e7` was deployed, the user confirmed test 3 passes against the fixed server (2026-09-10).
 
 **Two-player manual matrix (items 1–9)** — deferred until a second golfer is available; to be run by the user.
 
