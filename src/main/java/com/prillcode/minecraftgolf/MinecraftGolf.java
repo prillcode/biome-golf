@@ -58,8 +58,12 @@ public class MinecraftGolf implements ModInitializer {
 		// S03: clientbound hole-state snapshot networking; client receiver registered in MinecraftGolfClient.
 		HoleStateNetworking.register();
 
-		// S03: send the current hole-state snapshot to each player on join/reconnect.
+		// S5: reconnect a suspended golfer and send the authoritative snapshot on join.
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-			ActiveHoleService.instance().sendCurrentSnapshot(handler.getPlayer()));
+			ActiveHoleService.instance().onPlayerConnected(handler.getPlayer()));
+
+		// S5: apply the Ready Golf suspension policy on disconnect.
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+			ActiveHoleService.instance().onPlayerDisconnected(handler.getPlayer(), server));
 	}
 }

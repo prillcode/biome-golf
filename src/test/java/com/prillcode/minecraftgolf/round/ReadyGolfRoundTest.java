@@ -143,6 +143,25 @@ class ReadyGolfRoundTest {
 	}
 
 	@Test
+	void finalHoleDisconnectCompletesRoundWhenRemainingGolferIsTerminal() {
+		ReadyGolfRound round = playingRound();
+		for (int holeIndex = 0; holeIndex < 2; holeIndex++) {
+			round = holeOut(round, PLAYER_ONE);
+			round = update(round, PLAYER_TWO, state(round, PLAYER_TWO).currentHole().pickUp());
+			round = round.advanceNextHole(holeIndex);
+		}
+		round = holeOut(round, PLAYER_ONE);
+
+		round = round.disconnect(PLAYER_TWO);
+
+		assertEquals(RoundPhase.COMPLETE, round.phase());
+		assertEquals(ParticipantStatus.ACTIVE, participant(round, PLAYER_ONE).status());
+		assertEquals(ParticipantStatus.WITHDRAWN, participant(round, PLAYER_TWO).status());
+		assertTrue(state(round, PLAYER_ONE).isComplete());
+		assertEquals(3, state(round, PLAYER_ONE).finalScorecard().totalStrokes());
+	}
+
+	@Test
 	void withdrawalReevaluatesBarrierWithoutChangingRemainingScore() {
 		ReadyGolfRound round = holeOut(playingRound(), PLAYER_ONE);
 		PlayerCourseState completed = state(round, PLAYER_ONE);
