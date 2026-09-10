@@ -1099,6 +1099,21 @@ Up to four golfers can complete the proven three-hole course using Ready Golf wi
 
 Determine whether the MVP is genuinely fun and stable enough to justify V1 development.
 
+## Playtest findings (from M6 S4 two-player session)
+
+- **Course destructibility.** In creative mode any golfer can break any block,
+  including digging holes in greens and destroying the cup/flag. The ability to
+  clear in-the-way trees/rocks is fun Minecraft flavor worth keeping, but tee
+  boxes, greens, and the cup/flag must be protected. Candidate fix: a server-side
+  block-break guard keyed to course metadata (tee/green/cup plus a configurable
+  vicinity radius) via Fabric's block-break cancel event — avoid a full
+  world-guard framework. Recovery today is `/golf dev preparecourse` (idempotent).
+- **Advance UX.** The post-hole flow already offers a clickable chat
+  "[Go to next tee]" action plus `/golf nexthole`, but playtesters want either a
+  no-text-input prompt (e.g. a HUD button) or full auto-advance once all golfers
+  are terminal. Full auto-advance would deviate from the M6 player-initiated
+  `/golf nexthole` contract, so treat it as a deliberate M7 product decision.
+
 ## Prerequisites
 
 - M6 complete
