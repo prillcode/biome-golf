@@ -40,6 +40,10 @@ First Gradle run downloads dependencies. `runServer` needs `run/eula.txt` with `
 
 A Fabric dedicated server for realistic testing and LAN play. See `dev-server/README.md`.
 
+For a production-oriented Google Compute Engine deployment, domain setup, backups,
+and end-user mod distribution, see
+[`docs/GCP-DEPLOYMENT-AND-MOD-DISTRIBUTION.md`](docs/GCP-DEPLOYMENT-AND-MOD-DISTRIBUTION.md).
+
 ```bash
 ./scripts/dev-server-sync.sh      # build + copy mod JAR into dev-server/mods/
 ./scripts/dev-server-up.sh        # start the server (detached)
