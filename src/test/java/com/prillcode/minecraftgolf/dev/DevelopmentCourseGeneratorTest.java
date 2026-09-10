@@ -143,12 +143,12 @@ class DevelopmentCourseGeneratorTest {
 		world.blocks.put(outside, LayoutBlock.GRASS_BLOCK);
 
 		DevelopmentCourseGenerator.GenerationResult first = DevelopmentCourseGenerator.prepare(plan, world);
-		Map<BlockPoint, LayoutBlock> firstSnapshot = Map.copyOf(world.blocks);
+		int writesAfterFirstPreparation = world.writes.size();
 		DevelopmentCourseGenerator.GenerationResult second = DevelopmentCourseGenerator.prepare(plan, world);
 
 		assertEquals(plan.desiredBlocks().size(), first.changedBlocks());
 		assertEquals(0, second.changedBlocks());
-		assertEquals(firstSnapshot, world.blocks);
+		assertEquals(writesAfterFirstPreparation, world.writes.size());
 		assertEquals(LayoutBlock.GRASS_BLOCK, world.blocks.get(outside));
 		assertTrue(world.writes.stream().allMatch(plan::isInsideAuthoredRegion));
 	}

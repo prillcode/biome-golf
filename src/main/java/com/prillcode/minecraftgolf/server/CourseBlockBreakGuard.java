@@ -52,17 +52,6 @@ public final class CourseBlockBreakGuard {
 	/** Fabric BEFORE handler: returns true to allow the break, false to cancel it. */
 	private static boolean onBeforeBlockBreak(Level world, Player player, BlockPos pos,
 			BlockState state, BlockEntity blockEntity) {
-		// Operator/dev exemption mirrors /golf dev preparecourse's permission gate.
-		if (player instanceof ServerPlayer serverPlayer
-				&& Commands.LEVEL_GAMEMASTERS.check(serverPlayer.permissions())) {
-			return true;
-		}
-		// Always protect the cup/flag block itself, regardless of radius.
-		if (state.getBlock() == GolfBlocks.GOLF_CUP) {
-			MinecraftGolf.LOGGER.info("[golf] blocked {} from breaking the cup at ({}, {}, {})",
-				player.getName().getString(), pos.getX(), pos.getY(), pos.getZ());
-			return false;
-		}
 		// Zone membership from authored metadata; guard applies only in the course dimension.
 		ActiveHoleService service = ActiveHoleService.instance();
 		CourseDefinition course = service.configuredCourseOrNull();
@@ -82,7 +71,11 @@ public final class CourseBlockBreakGuard {
 		if (!world.dimension().identifier().toString().equals(dimension)) {
 			return true;
 		}
-		if (CourseProtection.isProtected(zones, pos.getX(), pos.getY(), pos.getZ())) {
+		boolean hasDevPermission = player instanceof ServerPlayer serverPlayer
+			&& Commands.LEVEL_GAMEMASTERS.check(serverPlayer.permissions());
+		boolean cupBlock = state.getBlock() == GolfBlocks.GOLF_CUP;
+		if (!CourseProtection.mayBreak(zones, pos.getX(), pos.getY(), pos.getZ(),
+				cupBlock, hasDevPermission)) {
 			MinecraftGolf.LOGGER.info("[golf] blocked {} from breaking a protected course block at ({}, {}, {})",
 				player.getName().getString(), pos.getX(), pos.getY(), pos.getZ());
 			return false;

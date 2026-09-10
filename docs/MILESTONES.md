@@ -139,7 +139,7 @@ The host operating system should not affect the Fabric server architecture.
 | M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
 | M5 | Single-Player Course Experience | Complete (see docs/M5-CLOSEOUT.md) |
 | M6 | Multiplayer Ready Golf | Complete (see docs/M6-CLOSEOUT.md) |
-| M7 | MVP Hardening and Family Playtest | Not Started |
+| M7 | MVP Hardening and Family Playtest | In Progress |
 | M8 | V1 Gameplay Enhancements | Deferred |
 | M9 | Course Authoring and Additional Modes | Deferred |
 

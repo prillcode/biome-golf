@@ -1,8 +1,10 @@
 package com.prillcode.minecraftgolf.net;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -73,6 +75,19 @@ class HoleStatePayloadTest {
 		assertEquals(7, p.courseStrokes());
 		assertEquals(7, p.courseParPlayed());
 		assertEquals(12, p.courseTotalPar());
+	}
+
+	@Test
+	void roundAdvanceAvailabilityIsExplicitAndPreservedWithCourseTotals() {
+		assertFalse(HoleStatePayload.active(PlayerHoleState.start(PAR_FOUR))
+			.roundAdvanceAvailable());
+		HoleStatePayload p = HoleStatePayload.complete(
+			PlayerHoleState.start(PAR_FOUR).recordAcceptedShot().pickUp())
+			.withRoundAdvanceAvailable(true)
+			.withCourseTotals(7, 4, 12);
+
+		assertTrue(p.roundAdvanceAvailable());
+		assertEquals(7, p.courseStrokes());
 	}
 
 	@Test

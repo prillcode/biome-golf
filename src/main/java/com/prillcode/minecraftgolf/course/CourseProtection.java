@@ -25,6 +25,7 @@ public final class CourseProtection {
 	/** Builds the tee and cup vicinity zones for every hole of a course. */
 	public static List<ProtectedZone> zonesFor(CourseDefinition course, CourseProtectionConfig config) {
 		Objects.requireNonNull(course, "course");
+		Objects.requireNonNull(config, "config");
 		List<ProtectedZone> zones = new ArrayList<>(course.holes().size() * 2);
 		for (HoleDefinition hole : course.holes()) {
 			zones.add(teeZone(hole, config));
@@ -36,6 +37,7 @@ public final class CourseProtection {
 	/** Builds the tee and cup vicinity zones for a single authored hole. */
 	public static List<ProtectedZone> zonesFor(HoleDefinition hole, CourseProtectionConfig config) {
 		Objects.requireNonNull(hole, "hole");
+		Objects.requireNonNull(config, "config");
 		return List.of(teeZone(hole, config), cupZone(hole, config));
 	}
 
@@ -59,6 +61,18 @@ public final class CourseProtection {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Pure break-policy decision used by the Fabric guard. Dev-level players are
+	 * exempt; ordinary players are blocked for the cup itself or any zone member.
+	 */
+	public static boolean mayBreak(List<ProtectedZone> zones, int x, int y, int z,
+			boolean cupBlock, boolean hasDevPermission) {
+		if (hasDevPermission) {
+			return true;
+		}
+		return !cupBlock && !isProtected(zones, x, y, z);
 	}
 
 	private static ProtectedZone teeZone(HoleDefinition hole, CourseProtectionConfig config) {

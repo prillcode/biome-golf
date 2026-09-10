@@ -1,6 +1,8 @@
 # M7 — MVP Hardening and Family Playtest: Bounded Plan
 
-**Status:** Planned. Implementation has not started. Baseline: `main` at `4f31776` with 187 passing tests and M6 accepted.
+**Status:** In progress. S1/S2 implementation and automated verification complete;
+manual acceptance pending. S3 capture artifact is ready at `docs/M7-PLAYTEST.md`.
+Baseline: `main` at `4f31776` with 187 passing tests and M6 accepted.
 
 M7 does not add new features. It hardens the proven M5 course + M6 Ready Golf MVP for repeated family/LAN play and produces the evidence needed to decide whether to proceed to V1. The milestone's exit is a judgment call, so the plan's job is to (a) resolve the two M6 S4 playtest findings with minimal, deliberate change, (b) absorb the deferred M6 manual-acceptance items, (c) structure playtest capture so findings drive tuning and defect fixes rather than anecdotes, and (d) keep every M6 contract intact.
 

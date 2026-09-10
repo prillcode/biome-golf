@@ -992,8 +992,24 @@ public final class ActiveHoleService {
 	}
 
 	private void sendCompleteSnapshot(ServerPlayer player, PlayerHoleState state) {
-		HoleStateNetworking.send(player, withCourseTotals(player.getUUID(),
-			HoleStatePayload.complete(state), state));
+		HoleStatePayload payload = withCourseTotals(player.getUUID(),
+			HoleStatePayload.complete(state), state);
+		if (roundAdvanceAvailable(player.getUUID(), state)) {
+			payload = payload.withRoundAdvanceAvailable(true);
+		}
+		HoleStateNetworking.send(player, payload);
+	}
+
+	private boolean roundAdvanceAvailable(UUID playerId, PlayerHoleState state) {
+		if (!state.isComplete() || activeRound == null || course == null
+				|| activeRound.phase() != RoundPhase.PLAYING
+				|| activeRound.currentHoleIndex() >= course.holes().size() - 1
+				|| !activeRound.allActiveTerminal()) {
+			return false;
+		}
+		return activeRound.findParticipant(playerId)
+			.map(participant -> participant.status() == ParticipantStatus.ACTIVE)
+			.orElse(false);
 	}
 
 	private void sendFinalScorecard(ServerPlayer player, CourseScorecard scorecard) {
@@ -1026,6 +1042,9 @@ public final class ActiveHoleService {
 			}
 			ServerPlayer recipient = server.getPlayerList().getPlayer(participant.playerId());
 			if (recipient != null) {
+				if (activeRound.allActiveTerminal()) {
+					sendCompleteSnapshot(recipient, participant.courseState().currentHole());
+				}
 				sendBarrierMessage(recipient);
 			}
 		}

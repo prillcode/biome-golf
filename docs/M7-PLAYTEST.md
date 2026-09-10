@@ -1,0 +1,124 @@
+# M7 — Family/LAN Playtest Record
+
+Status: **Ready for manual sessions.** Complete one copy of the session record for
+each playtest. Findings in this document are the only inputs authorized to drive
+M7 S4 tuning and S5 defect fixes.
+
+## Session record template
+
+- Date/time:
+- Build commit/JAR SHA-256:
+- Server environment: Loom / Docker LAN / other
+- Course seed: `-1928790872702396508`
+- Players and Minecraft familiarity:
+- Player count:
+- Holes completed:
+- Session duration:
+- Observer/recorder:
+
+### Setup
+
+1. Run `/golf dev preparecourse` twice; record the first and second changed-block counts.
+2. One golfer runs `/golf round create`; the others run `/golf round join`.
+3. The coordinator runs `/golf round start`.
+4. Confirm each golfer owns a separate ball and sees only their own score/HUD state.
+
+### Experience checklist
+
+Rate each item 1–5 and add a short observation. A rating without an observation is
+not sufficient evidence for a tuning change.
+
+| Area | Rating | Observation |
+|---|---:|---|
+| Ball flight and roll feel |  |  |
+| Three-click swing understanding |  |  |
+| Swing difficulty |  |  |
+| Shot pacing |  |  |
+| Club selection/balance |  |  |
+| Putting |  |  |
+| Post-shot camera |  |  |
+| Ready Golf synchronization |  |  |
+| Hole pacing |  |  |
+| Scoring clarity |  |  |
+| Navigation to the next tee |  |  |
+| Minecraft terrain interactions |  |  |
+
+### M7 protection and advance checks
+
+- [ ] Ordinary creative-mode golfer cannot break Hole 1 tee-box blocks.
+- [ ] Ordinary creative-mode golfer cannot break blocks at each green/cup vicinity.
+- [ ] Ordinary golfer cannot break the golf cup/flag block.
+- [ ] Ordinary golfer can clear a tree or rock outside all protected zones.
+- [ ] Operator can modify a protected block for repair work.
+- [ ] `/golf dev preparecourse` repairs deliberate operator damage.
+- [ ] A second `/golf dev preparecourse` reports zero changed blocks.
+- [ ] A completed golfer cannot advance while another active golfer is unfinished.
+- [ ] When all active golfers finish Hole 1 or 2, every client receives the advance prompt.
+- [ ] “Not now” closes the prompt without advancing.
+- [ ] “Go to next tee” advances everyone exactly once.
+- [ ] `/golf nexthole` and the clickable chat action still work as fallbacks.
+- [ ] Hole 3 finalizes automatically without an advance prompt.
+
+### Deferred M6 two-player matrix
+
+- [ ] Create/join/start one shared round; two owned balls and player-specific HUD values.
+- [ ] Overlapping shots with different clubs; both launches, cameras, rests, and owner travel.
+- [ ] Different stroke/penalty totals remain independent.
+- [ ] One player finishes first; waiting state and early advancement rejection are correct.
+- [ ] Second player finishes; one coordinated transition and correct hole results.
+- [ ] Individual restart, missing-ball recovery, and withdrawal do not affect the other player.
+- [ ] Disconnect/reconnect, offline advancement, reconnect after withdrawal, disconnect in flight,
+      and all-disconnected recovery behave as specified in `docs/M6-PLAN.md` S5.
+- [ ] Hole 3 produces accurate player-specific scorecards and shared final results.
+- [ ] Solo `/golf hole start`, restart, abandon → start, and replay remain correct afterward.
+
+### Presentation checks
+
+- [ ] Every club renders correctly in inventory.
+- [ ] Every club renders correctly in first person.
+- [ ] Every club renders correctly in third person on both clients.
+- [ ] No magenta/black missing-texture presentation appears.
+
+### Success questions
+
+- Was hitting the ball satisfying? Why or why not?
+- Did players understand the swing without coaching? Where did they hesitate?
+- Did Ready Golf keep the round moving?
+- Which Minecraft interactions were fun or frustrating?
+- Did players want to replay the course?
+- Did players propose or begin imagining new holes?
+- Would the family voluntarily play again?
+
+## Findings log
+
+Use severity `Critical`, `High`, `Medium`, or `Low`. Use disposition `S4 tuning`,
+`S5 defect`, `Deferred`, or `No change`. Do not implement a finding until its
+reproduction/evidence and intended result are recorded.
+
+| ID | Session | Severity | Area | Evidence/reproduction | Intended result | Disposition | Status |
+|---|---|---|---|---|---|---|---|
+| M7-F01 | M6 S4 | High | Course integrity | Creative golfers could destroy tees, greens, and cup/flag | Protect authored tee/cup vicinities while leaving ordinary terrain editable | S5 defect | Implemented; manual verification pending |
+| M7-F02 | M6 S4 | High | Hole transition UX | Players wanted a no-text-input advance action | Player-initiated HUD prompt using the existing server barrier | S5 defect | Implemented; manual verification pending |
+
+## Prioritized defects
+
+| Priority | Finding | Decision |
+|---:|---|---|
+| 1 | M7-F01 course destructibility | M7 S1 implementation complete; manual acceptance pending |
+| 2 | M7-F02 advance UX | M7 S2 implementation complete; manual two-client acceptance pending |
+
+Add session-discovered crashes, desync, stuck balls, impossible recovery, misleading
+HUD behavior, scoring errors, and major usability problems here before starting S5.
+
+## Tuning candidates awaiting evidence
+
+- Hole 3 may play short for a par 5.
+- Driver and Fairway Wood may need slightly more rollout than irons.
+
+These are observations carried from M5, not authorization to change the accepted
+course or physics baseline. Promote either item to S4 only when a recorded M7
+session provides a clear signal and a specific desired outcome.
+
+## Session records
+
+Duplicate the session record template below this heading for each completed session.

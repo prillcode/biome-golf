@@ -72,4 +72,16 @@ class CourseProtectionTest {
 		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(12.0, 0.0));
 		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(Double.NaN, 8.0));
 	}
+
+	@Test
+	void breakPolicyProtectsZonesAndCupButExemptsDevOperators() {
+		List<ProtectedZone> zones = List.of(
+			new ProtectedZone("tee", 1, new com.prillcode.minecraftgolf.golf.Vec3(0, 64, 0), 5, 3));
+
+		assertFalse(CourseProtection.mayBreak(zones, 0, 64, 0, false, false));
+		assertFalse(CourseProtection.mayBreak(zones, 100, 64, 100, true, false));
+		assertTrue(CourseProtection.mayBreak(zones, 100, 64, 100, false, false));
+		assertTrue(CourseProtection.mayBreak(zones, 0, 64, 0, false, true));
+		assertTrue(CourseProtection.mayBreak(zones, 100, 64, 100, true, true));
+	}
 }

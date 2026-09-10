@@ -35,6 +35,7 @@ public record HoleStatePayload(
 		int courseStrokes,
 		int courseParPlayed,
 		int courseTotalPar,
+		boolean roundAdvanceAvailable,
 		HoleCompletionReason completionReason,
 		GolfScoreTerm scoreTerm
 ) implements CustomPacketPayload {
@@ -44,6 +45,9 @@ public record HoleStatePayload(
 
 	public HoleStatePayload {
 		Objects.requireNonNull(phase, "phase");
+		if (roundAdvanceAvailable && phase != Phase.COMPLETE) {
+			throw new IllegalArgumentException("round advancement is available only from COMPLETE");
+		}
 	}
 
 	public static final Type<HoleStatePayload> TYPE =
@@ -59,7 +63,7 @@ public record HoleStatePayload(
 		return new HoleStatePayload(Phase.PRACTICE,
 				hole.number(), hole.par(), hole.strokeLimit(),
 				0, 0, 0, hole.cup().x(), hole.cup().z(), -1,
-				0, 0, 0, null, null);
+				0, 0, 0, false, null, null);
 	}
 
 	/** ACTIVE snapshot: hole is in progress. */
@@ -74,7 +78,7 @@ public record HoleStatePayload(
 				state.strokes(), state.penaltyStrokes(),
 				state.strokes() > 0 ? state.scoreToPar() : 0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				distanceToCupBlocks(ballPosition, state.hole().cup()), 0, 0, 0,
+				distanceToCupBlocks(ballPosition, state.hole().cup()), 0, 0, 0, false,
 				null, null);
 	}
 
@@ -85,7 +89,7 @@ public record HoleStatePayload(
 				state.strokes(), state.penaltyStrokes(),
 				state.strokes() > 0 ? state.scoreToPar() : 0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				-1, 0, 0, 0,
+				-1, 0, 0, 0, false,
 				null, null);
 	}
 
@@ -96,7 +100,7 @@ public record HoleStatePayload(
 				state.strokes(), state.penaltyStrokes(),
 				state.strokes() > 0 ? state.scoreToPar() : 0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				-1, 0, 0, 0,
+				-1, 0, 0, 0, false,
 				state.completionReason(),
 				state.strokes() > 0 ? state.scoreTerm() : null);
 	}
@@ -105,7 +109,14 @@ public record HoleStatePayload(
 	public HoleStatePayload withCourseTotals(int totalStrokes, int parPlayed, int totalPar) {
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, penaltyCount,
 			scoreToPar, cupX, cupZ, distanceToCupBlocks, totalStrokes, parPlayed, totalPar,
-			completionReason, scoreTerm);
+			roundAdvanceAvailable, completionReason, scoreTerm);
+	}
+
+	/** Marks this authoritative snapshot as eligible for player-initiated round advancement. */
+	public HoleStatePayload withRoundAdvanceAvailable(boolean available) {
+		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, penaltyCount,
+			scoreToPar, cupX, cupZ, distanceToCupBlocks, courseStrokes, courseParPlayed,
+			courseTotalPar, available, completionReason, scoreTerm);
 	}
 
 	// ── Codec ────────────────────────────────────────────────────────────────
@@ -124,6 +135,7 @@ public record HoleStatePayload(
 		buf.writeInt(p.courseStrokes());
 		buf.writeInt(p.courseParPlayed());
 		buf.writeInt(p.courseTotalPar());
+		buf.writeBoolean(p.roundAdvanceAvailable());
 		boolean hasReason = p.completionReason() != null;
 		buf.writeBoolean(hasReason);
 		if (hasReason) {
@@ -150,6 +162,7 @@ public record HoleStatePayload(
 		int courseStrokes = buf.readInt();
 		int courseParPlayed = buf.readInt();
 		int courseTotalPar = buf.readInt();
+		boolean roundAdvanceAvailable = buf.readBoolean();
 		HoleCompletionReason completionReason = buf.readBoolean()
 				? HoleCompletionReason.values()[buf.readByte()]
 				: null;
@@ -158,7 +171,7 @@ public record HoleStatePayload(
 				: null;
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes,
 				penaltyCount, scoreToPar, cupX, cupZ, distanceToCupBlocks,
-				courseStrokes, courseParPlayed, courseTotalPar,
+				courseStrokes, courseParPlayed, courseTotalPar, roundAdvanceAvailable,
 				completionReason, scoreTerm);
 	}
 
