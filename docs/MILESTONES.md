@@ -138,7 +138,7 @@ The host operating system should not affect the Fabric server architecture.
 | M4 | Holes, Cups, Boundaries, and Scoring | Complete (see docs/M4-CLOSEOUT.md) |
 | M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
 | M5 | Single-Player Course Experience | Complete (see docs/M5-CLOSEOUT.md) |
-| M6 | Multiplayer Ready Golf | Not Started |
+| M6 | Multiplayer Ready Golf | Complete (see docs/M6-CLOSEOUT.md) |
 | M7 | MVP Hardening and Family Playtest | Not Started |
 | M8 | V1 Gameplay Enhancements | Deferred |
 | M9 | Course Authoring and Additional Modes | Deferred |
@@ -1291,10 +1291,12 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M5 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
-`docs/M4-CLOSEOUT.md`, `docs/M4.5-CLOSEOUT.md`, and `docs/M5-CLOSEOUT.md`). The current milestone is:
+M0–M6 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
+`docs/M4-CLOSEOUT.md`, `docs/M4.5-CLOSEOUT.md`, `docs/M5-CLOSEOUT.md`, and `docs/M6-CLOSEOUT.md`). The current milestone is:
 
-> **M6 — Multiplayer Ready Golf**
+> **M7 — MVP Hardening and Family Playtest**
 
-M6 applies multiplayer concurrency to the proven three-hole M5 course. Do not begin
-M7 hardening until M6's Ready Golf verification and exit criteria pass.
+M7 prioritizes playtesting, tuning, bug fixing, and usability rather than new features,
+and must resolve the two M6 S4 playtest findings recorded in its scope section. Do not
+begin M8 until the MVP is stable enough for repeated family play and has demonstrated
+enough fun/replay value to continue development.
