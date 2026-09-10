@@ -47,7 +47,8 @@ Status: **Agent-executable work complete through the manual playtest gate.**
 - S5 finding M7-F03: an older installed client was disconnected when the M7
   `hole_state` schema added one byte. The changed channel is now versioned as
   `hole_state_v2`, allowing Fabric's `canSend` negotiation to suppress an
-  unsupported schema rather than invoke a stale decoder. Reconnect verification
-  is pending after both client and server reload the rebuilt JAR.
+  unsupported schema rather than invoke a stale decoder. A matching M7 client
+  connected successfully after both client and Docker server reloaded the rebuilt
+  JAR on 2026-09-10.
 - S6 closeout, final V1 decision, and M7 completion remain blocked on those manual
   results.
