@@ -936,7 +936,10 @@ public final class ActiveHoleService {
 		if (activeRound == null) {
 			return null;
 		}
+		// Only an ACTIVE participant owns live course progress. A withdrawn (or
+		// suspended) golfer must not block the solo fast path with stale state.
 		return activeRound.findParticipant(playerId)
+			.filter(participant -> participant.status() == ParticipantStatus.ACTIVE)
 			.map(ReadyGolfParticipant::courseState)
 			.orElse(null);
 	}
