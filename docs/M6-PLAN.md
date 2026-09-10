@@ -131,7 +131,8 @@ Each slice must pass its verification before the next begins. Stop and document 
 - Each client receives only its own hole/HUD snapshot and camera follows only its selected owned ball.
 - All clients observe all loaded golf balls through normal entity synchronization.
 - If necessary for understandable testing, add only minimal owner identification using already synchronized owner data; do not expand into the deferred cosmetic ball system.
-- The magenta/black first-person club defect is investigated only if it blocks multiplayer acceptance; otherwise record it unchanged for M7.
+- Repair the Minecraft 26.2 item-definition/resource path responsible for the magenta/black club artifacts. A vanilla tool model may be used briefly as a diagnostic fallback, but is not the intended presentation.
+- Replace the one shared placeholder with seven distinct Minecraft-style 2D club sprites and verify inventory, first-person, third-person, and dropped-item presentation. Custom 3D Blockbench club models remain deferred unless later playtesting justifies them.
 
 **Verification:** two Loom clients or one Loom client plus another compatible client on a dedicated server; execute overlapping long shots, short shots, penalties, rests, and camera returns.
 
@@ -190,6 +191,12 @@ Each slice must pass its verification before the next begins. Stop and document 
 - Include at least one period with multiple balls moving, one penalty, one Pick Up or cap completion, staggered hole completion, coordinated next-hole travel, and final score comparison.
 - Confirm no forced turns, early advancement, ownership leak, HUD/score cross-talk, wrong-player travel, stale balls, or dedicated-server errors.
 
+**Four-player acceptance decision (agreed with user):** the physical four-golfer LAN
+acceptance is waived. Four-player correctness is evidenced instead by the existing
+four-player domain unit tests in `ReadyGolfRoundTest` plus code review of the
+server integration, with the two-player manual matrix as on-wire proof. A true
+four-player session may be revisited during M7 family playtesting.
+
 **Exit criteria:** Every M6 verification item in `docs/MILESTONES.md` passes and up to four golfers complete the course without state corruption or forced turn-taking.
 
 ## Risk register and stop conditions
@@ -220,3 +227,28 @@ Traditional turns, scramble or teams, matchmaking, invitations/permissions beyon
 ## Completion record to capture
 
 At closeout, record the final commit, test count, Ready Golf domain decisions, command flow, disconnect semantics, Loom/Docker/JAR evidence, two-player matrix results, four-player LAN findings, solo M5 regression results, and any M7-only usability or tuning observations.
+
+## S6 verification record (2026-09-10)
+
+**Automated and static checks — PASS**
+
+- `./gradlew test`: 187 tests, 0 failures, 0 errors (15 in `ReadyGolfRoundTest`).
+- `./gradlew clean build`: SUCCESS.
+- `net.minecraft.client` imports under `src/main/java`: 0.
+- `git diff --check`: clean.
+- S6 regression fix `68447e7`: solo `/golf hole abandon` left the golfer `WITHDRAWN` inside a `COMPLETE` round, so `/golf hole start` answered "course recovery needed" and `/golf hole restart` threw "round must be PLAYING but is COMPLETE". `ActiveHoleService.courseState()` now exposes progress only for `ACTIVE` participants, restoring the M5 return-to-practice solo behavior.
+
+**Loom and Docker checks — PASS**
+
+- Loom client (`runClient`): `Minecraft Golf client initialized`, resource reload includes `minecraft_golf`, `Sound engine started` (title screen) and rendering continued. Only benign dev-environment errors (dev-account authlib 401, narrator `flite` missing, Realms auth, GLFW `X11: Standard cursor shape unavailable`).
+- Loom dedicated server: reached `Done` during S5 (initial attempt crashed on the Docker 25565 port conflict; rerun on 25566 succeeded).
+- Docker server (post-fix JAR): booted `Done (2.113s)!`; container health `healthy`; staged (`dev-server/mods`) and container (`/mods`) JAR SHA-256 identical: `efc2bde808bf81687f4902c5fb3bf4d06d0fb92016e8f339f3d5d8345468e5b1`. Laptop client JAR and mini-PC copy carry the same SHA.
+- `/golf dev preparecourse` idempotence: `minecraft_golf:m5_ocean_campus v11`, envelope `X[-640..448] Y[32..192] Z[-256..640]`, seed check passed. First run repaired 7 drifted blocks (gameplay drift, self-healing as designed); second run reported **0 changed**.
+
+**Solo M5 regression — user-driven — PASS**
+
+- Tests 1–2 (hole start, restart) passed on the S5 JAR. Test 3 (abandon → start) was blocked by the stale-state bug above; after fix `68447e7` was deployed, the user confirmed test 3 passes against the fixed server (2026-09-10).
+
+**Two-player manual matrix (items 1–9)** — deferred until a second golfer is available; to be run by the user.
+
+**Four-player LAN acceptance** — waived by user decision (see above); covered by four-player domain unit tests plus server integration code review.

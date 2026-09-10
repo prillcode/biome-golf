@@ -2,13 +2,16 @@
 
 A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary Minecraft worlds — arcade-realistic, skill-based, and played through real terrain.
 
-> **Current milestone: M6 — Multiplayer Ready Golf** (M0–M5 are complete; see `docs/M5-CLOSEOUT.md`; roadmap and status in `docs/MILESTONES.md`)
+> **Current milestone: M7 — MVP Hardening and Family Playtest** (M0–M6 are complete; see `docs/M6-CLOSEOUT.md`; roadmap and status in `docs/MILESTONES.md`)
 
-M5 playtest flow on the approved seed (`-1928790872702396508`): run
-`/golf dev preparecourse`, then `/golf hole start`. After completing each hole,
-use the clickable next-tee action or `/golf nexthole` after Holes 1 and 2. The
-server preserves cumulative scoring and automatically prints the final scorecard
-when Hole 3 ends.
+M6 Ready Golf play flow on the approved seed (`-1928790872702396508`): run
+`/golf dev preparecourse`, then one golfer creates a shared round with
+`/golf round create`, others join with `/golf round join`, and the coordinator
+starts it with `/golf round start`. Golfers play Ready Golf (no forced turns).
+After completing each hole, use the clickable next-tee action or `/golf nexthole`
+after Holes 1 and 2. The server preserves cumulative scoring and automatically
+prints the final scorecard when Hole 3 ends. The solo flow remains available via
+`/golf hole start` when no lobby or round exists.
 
 ## Project purpose
 

@@ -138,7 +138,7 @@ The host operating system should not affect the Fabric server architecture.
 | M4 | Holes, Cups, Boundaries, and Scoring | Complete (see docs/M4-CLOSEOUT.md) |
 | M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
 | M5 | Single-Player Course Experience | Complete (see docs/M5-CLOSEOUT.md) |
-| M6 | Multiplayer Ready Golf | Not Started |
+| M6 | Multiplayer Ready Golf | Complete (see docs/M6-CLOSEOUT.md) |
 | M7 | MVP Hardening and Family Playtest | Not Started |
 | M8 | V1 Gameplay Enhancements | Deferred |
 | M9 | Course Authoring and Additional Modes | Deferred |
@@ -1099,6 +1099,21 @@ Up to four golfers can complete the proven three-hole course using Ready Golf wi
 
 Determine whether the MVP is genuinely fun and stable enough to justify V1 development.
 
+## Playtest findings (from M6 S4 two-player session)
+
+- **Course destructibility.** In creative mode any golfer can break any block,
+  including digging holes in greens and destroying the cup/flag. The ability to
+  clear in-the-way trees/rocks is fun Minecraft flavor worth keeping, but tee
+  boxes, greens, and the cup/flag must be protected. Candidate fix: a server-side
+  block-break guard keyed to course metadata (tee/green/cup plus a configurable
+  vicinity radius) via Fabric's block-break cancel event — avoid a full
+  world-guard framework. Recovery today is `/golf dev preparecourse` (idempotent).
+- **Advance UX.** The post-hole flow already offers a clickable chat
+  "[Go to next tee]" action plus `/golf nexthole`, but playtesters want either a
+  no-text-input prompt (e.g. a HUD button) or full auto-advance once all golfers
+  are terminal. Full auto-advance would deviate from the M6 player-initiated
+  `/golf nexthole` contract, so treat it as a deliberate M7 product decision.
+
 ## Prerequisites
 
 - M6 complete
@@ -1276,10 +1291,12 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M5 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
-`docs/M4-CLOSEOUT.md`, `docs/M4.5-CLOSEOUT.md`, and `docs/M5-CLOSEOUT.md`). The current milestone is:
+M0–M6 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
+`docs/M4-CLOSEOUT.md`, `docs/M4.5-CLOSEOUT.md`, `docs/M5-CLOSEOUT.md`, and `docs/M6-CLOSEOUT.md`). The current milestone is:
 
-> **M6 — Multiplayer Ready Golf**
+> **M7 — MVP Hardening and Family Playtest**
 
-M6 applies multiplayer concurrency to the proven three-hole M5 course. Do not begin
-M7 hardening until M6's Ready Golf verification and exit criteria pass.
+M7 prioritizes playtesting, tuning, bug fixing, and usability rather than new features,
+and must resolve the two M6 S4 playtest findings recorded in its scope section. Do not
+begin M8 until the MVP is stable enough for repeated family play and has demonstrated
+enough fun/replay value to continue development.

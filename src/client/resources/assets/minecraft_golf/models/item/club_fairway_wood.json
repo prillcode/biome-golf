@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft_golf:item/club"
+    "layer0": "minecraft_golf:item/club_fairway_wood"
   }
 }

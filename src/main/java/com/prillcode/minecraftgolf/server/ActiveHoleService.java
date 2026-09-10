@@ -1,8 +1,8 @@
 package com.prillcode.minecraftgolf.server;
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -13,6 +13,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -42,9 +43,13 @@ import com.prillcode.minecraftgolf.item.GolfClubItem;
 import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.net.HoleStateNetworking;
 import com.prillcode.minecraftgolf.net.HoleStatePayload;
+import com.prillcode.minecraftgolf.round.ParticipantStatus;
+import com.prillcode.minecraftgolf.round.ReadyGolfParticipant;
+import com.prillcode.minecraftgolf.round.ReadyGolfRound;
+import com.prillcode.minecraftgolf.round.RoundPhase;
 import com.prillcode.minecraftgolf.server.TravelDestinationSearch.Destination;
 
-/** Server-authoritative single-player lifecycle for the configured M5 course. */
+/** Server-authoritative solo and Ready Golf lifecycle for the configured M5 course. */
 public final class ActiveHoleService {
 
 	private static final double PRACTICE_SPAWN_FORWARD = 2.0;
@@ -64,7 +69,7 @@ public final class ActiveHoleService {
 	private final Set<UUID> overspeedCupEntries = new HashSet<>();
 	private HoleDefinition hole;
 	private CourseDefinition course;
-	private final Map<UUID, PlayerCourseState> courseStates = new HashMap<>();
+	private ReadyGolfRound activeRound;
 
 	private ActiveHoleService() {
 	}
@@ -76,7 +81,7 @@ public final class ActiveHoleService {
 	public void initialize(HoleDefinition configuredHole) {
 		hole = Objects.requireNonNull(configuredHole, "configuredHole");
 		course = null;
-		courseStates.clear();
+		activeRound = null;
 		lifecycle.clear();
 		overspeedCupEntries.clear();
 		MinecraftGolf.LOGGER.info("Loaded hole {} (#{} par {}, Double Par + 2 limit {}) in {}",
@@ -86,7 +91,7 @@ public final class ActiveHoleService {
 	public void initializeCourse(CourseDefinition configuredCourse) {
 		course = Objects.requireNonNull(configuredCourse, "configuredCourse");
 		hole = course.hole(1);
-		courseStates.clear();
+		activeRound = null;
 		lifecycle.clear();
 		overspeedCupEntries.clear();
 		MinecraftGolf.LOGGER.info("Loaded course {} (3 holes, par {}) using layout {} v{}",
@@ -100,23 +105,133 @@ public final class ActiveHoleService {
 		return hole;
 	}
 
+	public StartResult createRound(ServerPlayer creator) {
+		if (course == null) {
+			return new StartResult(false, "[golf] no configured course is available");
+		}
+		if (activeRound != null && activeRound.phase() != RoundPhase.COMPLETE) {
+			return new StartResult(false, "[golf] a Ready Golf lobby or round already exists");
+		}
+		if (activeRound != null) {
+			cleanupRoundSessions(creator, activeRound);
+			activeRound = null;
+		}
+		if (lifecycle.session(creator.getUUID()).isPresent()) {
+			return new StartResult(false, "[golf] abandon your current hole before creating a round");
+		}
+		activeRound = ReadyGolfRound.create(UUID.randomUUID(), course, creator.getUUID());
+		MinecraftGolf.LOGGER.info("{} created Ready Golf lobby {}",
+			creator.getName().getString(), activeRound.roundId());
+		return new StartResult(true, "[golf] Ready Golf lobby created; other golfers may use /golf round join");
+	}
+
+	public StartResult joinRound(ServerPlayer player) {
+		if (activeRound == null || activeRound.phase() != RoundPhase.LOBBY) {
+			return new StartResult(false, "[golf] no open Ready Golf lobby; use /golf round create");
+		}
+		if (lifecycle.session(player.getUUID()).isPresent()) {
+			return new StartResult(false, "[golf] abandon your current hole before joining a round");
+		}
+		try {
+			activeRound = activeRound.join(player.getUUID());
+		} catch (IllegalStateException exception) {
+			return new StartResult(false, "[golf] " + exception.getMessage());
+		}
+		MinecraftGolf.LOGGER.info("{} joined Ready Golf lobby {}",
+			player.getName().getString(), activeRound.roundId());
+		return new StartResult(true, "[golf] joined Ready Golf lobby ("
+			+ activeRound.participants().size() + "/" + ReadyGolfRound.MAX_PARTICIPANTS + ")");
+	}
+
+	public StartResult startRound(ServerPlayer coordinator) {
+		if (activeRound == null || activeRound.phase() != RoundPhase.LOBBY) {
+			return new StartResult(false, "[golf] create or join a lobby before starting");
+		}
+		ReadyGolfRound lobby = activeRound;
+		ReadyGolfRound started;
+		try {
+			started = lobby.start(coordinator.getUUID());
+		} catch (IllegalStateException exception) {
+			return new StartResult(false, "[golf] " + exception.getMessage());
+		}
+		HoleDefinition firstHole = course.hole(1);
+		for (ReadyGolfParticipant participant : started.participants()) {
+			ServerPlayer golfer = coordinator.level().getServer().getPlayerList().getPlayer(participant.playerId());
+			if (golfer == null) {
+				return new StartResult(false, "[golf] every lobby golfer must be online before starting");
+			}
+			Optional<String> issue = attemptPreflight(golfer, firstHole);
+			if (issue.isPresent()) {
+				return new StartResult(false, issue.orElseThrow());
+			}
+		}
+
+		activeRound = started;
+		for (ReadyGolfParticipant participant : started.participants()) {
+			ServerPlayer golfer = coordinator.level().getServer().getPlayerList().getPlayer(participant.playerId());
+			StartResult result = createAttempt(golfer, false, firstHole);
+			if (!result.success()) {
+				cleanupStartedRound(coordinator, started);
+				activeRound = lobby;
+				return new StartResult(false, "[golf] round start rolled back: " + result.message());
+			}
+		}
+		MinecraftGolf.LOGGER.info("Started Ready Golf round {} with {} golfers",
+			activeRound.roundId(), activeRound.participants().size());
+		return new StartResult(true, "[golf] Ready Golf started with "
+			+ activeRound.participants().size() + " golfer(s)");
+	}
+
+	public StartResult leaveRound(ServerPlayer player) {
+		if (activeRound == null || activeRound.phase() == RoundPhase.COMPLETE
+				|| activeRound.findParticipant(player.getUUID()).isEmpty()) {
+			return new StartResult(false, "[golf] you are not in an active Ready Golf round");
+		}
+		Optional<PlayerHoleSession> session = lifecycle.session(player.getUUID());
+		session.ifPresent(current -> discardAssignedBall(player, current));
+		lifecycle.abandon(player.getUUID());
+		activeRound = activeRound.withdraw(player.getUUID());
+		HoleStateNetworking.send(player, HoleStatePayload.practice(configuredHole()));
+		notifyTerminalBarrier(player.level().getServer());
+		MinecraftGolf.LOGGER.info("{} left Ready Golf round", player.getName().getString());
+		return new StartResult(true, "[golf] left the Ready Golf round; practice shots are available");
+	}
+
+	public String roundStatus(ServerPlayer player) {
+		if (activeRound == null || activeRound.phase() == RoundPhase.COMPLETE) {
+			return "[golf] no active Ready Golf lobby or round";
+		}
+		long active = activeRound.participants().stream()
+			.filter(participant -> participant.status() == ParticipantStatus.ACTIVE).count();
+		return "[golf] Ready Golf " + activeRound.phase() + " | " + active + "/"
+			+ activeRound.participants().size() + " golfers | Hole "
+			+ (activeRound.currentHoleIndex() + 1);
+	}
+
 	public StartResult start(ServerPlayer player) {
 		if (lifecycle.session(player.getUUID()).isPresent()) {
 			return new StartResult(false,
 				"[golf] a hole attempt already exists; use /golf hole restart or /golf hole abandon");
 		}
 		if (course != null) {
-			PlayerCourseState existing = courseStates.get(player.getUUID());
+			PlayerCourseState existing = courseState(player.getUUID());
 			if (existing != null) {
 				return new StartResult(false, existing.isComplete()
 					? "[golf] course complete; use /golf hole restart to replay"
 					: "[golf] course recovery needed; use /golf hole restart");
 			}
-			PlayerCourseState started = PlayerCourseState.start(course);
-			courseStates.put(player.getUUID(), started);
+			if (activeRound != null && activeRound.phase() != RoundPhase.COMPLETE) {
+				return new StartResult(false, "[golf] a Ready Golf lobby or round already exists; use /golf round join");
+			}
+			if (activeRound != null) {
+				cleanupRoundSessions(player, activeRound);
+			}
+			activeRound = ReadyGolfRound.create(UUID.randomUUID(), course, player.getUUID())
+				.start(player.getUUID());
+			PlayerCourseState started = courseState(player.getUUID());
 			StartResult result = createAttempt(player, false, started.currentHole().hole());
 			if (!result.success()) {
-				courseStates.remove(player.getUUID());
+				activeRound = null;
 			}
 			return result;
 		}
@@ -148,13 +263,17 @@ public final class ActiveHoleService {
 	}
 
 	public StartResult restart(ServerPlayer player) {
-		PlayerCourseState courseState = courseStates.get(player.getUUID());
+		PlayerCourseState courseState = courseState(player.getUUID());
 		if (course != null && courseState != null) {
 			boolean hadSession = lifecycle.session(player.getUUID()).isPresent();
-			PlayerCourseState restarted = courseState.isComplete()
-				? courseState.reset()
-				: courseState.restartCurrentHole();
-			courseStates.put(player.getUUID(), restarted);
+			try {
+				activeRound = courseState.isComplete()
+					? activeRound.replaySolo(player.getUUID())
+					: activeRound.restartCurrentHole(player.getUUID());
+			} catch (IllegalStateException exception) {
+				return new StartResult(false, "[golf] " + exception.getMessage());
+			}
+			PlayerCourseState restarted = courseState(player.getUUID());
 			return createAttempt(player, hadSession, restarted.currentHole().hole());
 		}
 		if (lifecycle.session(player.getUUID()).isEmpty()) {
@@ -165,15 +284,52 @@ public final class ActiveHoleService {
 
 	public StartResult abandon(ServerPlayer player) {
 		Optional<PlayerHoleSession> session = lifecycle.session(player.getUUID());
-		if (session.isEmpty() && !courseStates.containsKey(player.getUUID())) {
+		if (session.isEmpty() && courseState(player.getUUID()) == null) {
 			return new StartResult(false, "[golf] no hole attempt to abandon");
 		}
 		lifecycle.abandon(player.getUUID());
 		session.ifPresent(current -> discardAssignedBall(player, current));
-		courseStates.remove(player.getUUID());
+		if (activeRound != null && activeRound.findParticipant(player.getUUID()).isPresent()
+				&& activeRound.phase() != RoundPhase.COMPLETE) {
+			activeRound = activeRound.withdraw(player.getUUID());
+			notifyTerminalBarrier(player.level().getServer());
+		}
 		MinecraftGolf.LOGGER.info("{} abandoned the active golf attempt", player.getName().getString());
 		HoleStateNetworking.send(player, HoleStatePayload.practice(configuredHole()));
 		return new StartResult(true, "[golf] hole abandoned; practice shots are available");
+	}
+
+	private Optional<String> attemptPreflight(ServerPlayer player, HoleDefinition definition) {
+		ServerLevel level = player.level();
+		String currentDimension = level.dimension().identifier().toString();
+		if (!definition.dimension().equals(currentDimension)) {
+			return Optional.of("[golf] " + player.getName().getString() + " must be in "
+				+ definition.dimension() + " before the round starts");
+		}
+		loadPointChunk(level, definition.tee());
+		loadPointChunk(level, definition.cup());
+		return validateTerrain(level, definition)
+			.map(issue -> "[golf] unsafe configured hole: " + issue);
+	}
+
+	private void cleanupStartedRound(ServerPlayer coordinator, ReadyGolfRound started) {
+		for (ReadyGolfParticipant participant : started.participants()) {
+			ServerPlayer golfer = coordinator.level().getServer().getPlayerList().getPlayer(participant.playerId());
+			if (golfer == null) {
+				continue;
+			}
+			lifecycle.session(participant.playerId()).ifPresent(session -> discardAssignedBall(golfer, session));
+			lifecycle.abandon(participant.playerId());
+			HoleStateNetworking.send(golfer, HoleStatePayload.practice(configuredHole()));
+		}
+	}
+
+	private void cleanupRoundSessions(ServerPlayer serverContext, ReadyGolfRound round) {
+		for (ReadyGolfParticipant participant : round.participants()) {
+			lifecycle.session(participant.playerId())
+				.ifPresent(session -> discardAssignedBall(serverContext, session));
+			lifecycle.abandon(participant.playerId());
+		}
 	}
 
 	private StartResult createAttempt(ServerPlayer player, boolean restart, HoleDefinition definition) {
@@ -245,7 +401,7 @@ public final class ActiveHoleService {
 		sendCurrentSnapshot(player);
 		Optional<PlayerHoleSession> currentSession = lifecycle.session(player.getUUID());
 		if (currentSession.isEmpty()) {
-			PlayerCourseState courseState = courseStates.get(player.getUUID());
+			PlayerCourseState courseState = courseState(player.getUUID());
 			if (courseState != null && courseState.isComplete()) {
 				CourseScorecard scorecard = courseState.finalScorecard();
 				return "[golf] course complete | " + scorecard.totalStrokes() + " strokes | "
@@ -294,6 +450,7 @@ public final class ActiveHoleService {
 		if (updated.isComplete()) {
 			sendCompletion(player, updated);
 			sendCompleteSnapshot(player, updated);
+			notifyTerminalBarrier(player.level().getServer());
 		} else {
 			sendActiveSnapshot(player, updated, shotOrigin);
 		}
@@ -308,6 +465,11 @@ public final class ActiveHoleService {
 		}
 		PlayerHoleSession session = lifecycle.session(owner).orElse(null);
 		if (session == null || session.state().isComplete() || !session.ballUuid().equals(ball.getUUID())) {
+			return;
+		}
+		// S5: a suspended or withdrawn golfer's hole state is frozen; their ball may
+		// still coast to a rest, but it must not score or penalize while offline.
+		if (!isActiveParticipant(owner)) {
 			return;
 		}
 		if (!session.state().hole().boundary().contains(to)) {
@@ -350,6 +512,7 @@ public final class ActiveHoleService {
 		if (player != null) {
 			sendCompletion(player, completed);
 			sendCompleteSnapshot(player, completed);
+			notifyTerminalBarrier(player.level().getServer());
 		}
 		MinecraftGolf.LOGGER.info("Player {} holed out hole {} in {} strokes",
 			owner, completed.hole().id(), completed.strokes());
@@ -364,6 +527,9 @@ public final class ActiveHoleService {
 		PlayerHoleSession session = lifecycle.session(owner).orElse(null);
 		if (session == null || session.state().isComplete()
 				|| !session.ballUuid().equals(ball.getUUID())) {
+			return;
+		}
+		if (!isActiveParticipant(owner)) {
 			return;
 		}
 		ServerPlayer player = ball.level().getServer().getPlayerList().getPlayer(owner);
@@ -390,6 +556,7 @@ public final class ActiveHoleService {
 			if (updated.isComplete()) {
 				sendCompletion(player, updated);
 				sendCompleteSnapshot(player, updated);
+				notifyTerminalBarrier(player.level().getServer());
 			} else {
 				sendActiveSnapshot(player, updated, session.lastSafePosition());
 			}
@@ -434,13 +601,18 @@ public final class ActiveHoleService {
 		}
 		sendCompletion(player, updated);
 		sendCompleteSnapshot(player, updated);
+		notifyTerminalBarrier(player.level().getServer());
 		return new StartResult(true, "[golf] Pick Up Ball — score recorded as " + updated.strokes());
 	}
 
 	public StartResult nextHole(ServerPlayer player) {
-		PlayerCourseState state = courseStates.get(player.getUUID());
+		PlayerCourseState state = courseState(player.getUUID());
 		if (state == null) {
 			return new StartResult(false, "[golf] start the course before advancing");
+		}
+		ReadyGolfParticipant caller = activeRound.findParticipant(player.getUUID()).orElse(null);
+		if (caller == null || caller.status() != ParticipantStatus.ACTIVE) {
+			return new StartResult(false, "[golf] only an active participant can advance the round");
 		}
 		if (state.isComplete()) {
 			return new StartResult(false, "[golf] course is already complete; use /golf hole restart to replay");
@@ -448,18 +620,109 @@ public final class ActiveHoleService {
 		if (!state.currentHole().isComplete()) {
 			return new StartResult(false, "[golf] complete the current hole before advancing");
 		}
-		PlayerHoleSession oldSession = lifecycle.session(player.getUUID()).orElse(null);
-		if (oldSession != null) {
-			discardAssignedBall(player, oldSession);
-			lifecycle.abandon(player.getUUID());
+		if (!activeRound.allActiveTerminal()) {
+			MinecraftGolf.LOGGER.info(
+				"Rejected early Hole {} advancement in Ready Golf round {}: {}/{} active golfers complete",
+				activeRound.currentHoleIndex() + 1, activeRound.roundId(),
+				activeRound.terminalActiveParticipantCount(), activeRound.activeParticipantCount());
+			return new StartResult(false, waitingMessage());
 		}
-		PlayerCourseState advanced = state.advance();
-		courseStates.put(player.getUUID(), advanced);
-		if (advanced.isComplete()) {
-			sendFinalScorecard(player, advanced.finalScorecard());
-			return new StartResult(true, "[golf] three-hole course complete");
+
+		int expectedHoleIndex = activeRound.currentHoleIndex();
+		HoleDefinition nextDefinition = course.holes().get(expectedHoleIndex + 1);
+		List<PreparedAttempt> prepared = prepareTransition(player, nextDefinition);
+		if (prepared == null) {
+			return new StartResult(false,
+				"[golf] transition cancelled; every golfer remains on the current hole");
 		}
-		return createAttempt(player, false, advanced.currentHole().hole());
+
+		sendMultiplayerHoleResults(player.level().getServer(), activeRound);
+		ReadyGolfRound previousRound = activeRound;
+		activeRound = activeRound.advanceNextHole(expectedHoleIndex);
+		cleanupSuspendedAtTransition(player, previousRound);
+		commitTransition(prepared, nextDefinition);
+		MinecraftGolf.LOGGER.info("Advanced Ready Golf round {} from Hole {} to Hole {} for {} golfers",
+			activeRound.roundId(), expectedHoleIndex + 1, expectedHoleIndex + 2, prepared.size());
+		return new StartResult(true, "[golf] all golfers advanced to Hole " + (expectedHoleIndex + 2));
+	}
+
+	private List<PreparedAttempt> prepareTransition(ServerPlayer serverContext,
+			HoleDefinition nextDefinition) {
+		List<PreparedAttempt> prepared = new ArrayList<>();
+		for (ReadyGolfParticipant participant : activeRound.participants()) {
+			if (participant.status() != ParticipantStatus.ACTIVE) {
+				continue;
+			}
+			ServerPlayer golfer = serverContext.level().getServer().getPlayerList()
+				.getPlayer(participant.playerId());
+			PlayerHoleSession oldSession = lifecycle.session(participant.playerId()).orElse(null);
+			if (golfer == null || oldSession == null) {
+				discardPreparedAttempts(prepared);
+				return null;
+			}
+			Optional<String> issue = attemptPreflight(golfer, nextDefinition);
+			if (issue.isPresent()) {
+				MinecraftGolf.LOGGER.warn("Ready Golf transition preflight failed: {}", issue.orElseThrow());
+				discardPreparedAttempts(prepared);
+				return null;
+			}
+			GolfBallEntity ball = GolfBallEntities.GOLF_BALL.create(
+				golfer.level(), EntitySpawnReason.COMMAND);
+			if (ball == null) {
+				discardPreparedAttempts(prepared);
+				return null;
+			}
+			ball.setOwner(participant.playerId());
+			ball.placeAtRest(nextDefinition.tee());
+			if (!golfer.level().addFreshEntity(ball)) {
+				ball.discard();
+				discardPreparedAttempts(prepared);
+				return null;
+			}
+			prepared.add(new PreparedAttempt(golfer, oldSession, ball));
+		}
+		return prepared;
+	}
+
+	private static void discardPreparedAttempts(List<PreparedAttempt> prepared) {
+		prepared.forEach(attempt -> attempt.ball().discard());
+	}
+
+	private void cleanupSuspendedAtTransition(ServerPlayer serverContext, ReadyGolfRound previousRound) {
+		for (ReadyGolfParticipant participant : previousRound.participants()) {
+			if (participant.status() != ParticipantStatus.SUSPENDED) {
+				continue;
+			}
+			lifecycle.session(participant.playerId())
+				.ifPresent(session -> discardAssignedBall(serverContext, session));
+			lifecycle.abandon(participant.playerId());
+		}
+	}
+
+	private void commitTransition(List<PreparedAttempt> prepared, HoleDefinition nextDefinition) {
+		for (PreparedAttempt attempt : prepared) {
+			BlockPos cupBlockPos = BlockPos.containing(nextDefinition.cup().x(),
+				nextDefinition.cup().y() - GolfBallEntity.BALL_RADIUS, nextDefinition.cup().z());
+			attempt.player().level().setBlockAndUpdate(
+				cupBlockPos, GolfBlocks.GOLF_CUP.defaultBlockState());
+			discardAssignedBall(attempt.player(), attempt.oldSession());
+			lifecycle.restart(attempt.player().getUUID(), nextDefinition, attempt.ball().getUUID());
+			discardPlayerOwnedBalls(attempt.player(), attempt.ball().getUUID());
+			teleportToTransition(attempt.player(), nextDefinition);
+			grantMissingClubs(attempt.player());
+			PlayerHoleState started = lifecycle.session(attempt.player().getUUID())
+				.orElseThrow().state();
+			sendActiveSnapshot(attempt.player(), started, nextDefinition.tee());
+		}
+	}
+
+	private static void teleportToTransition(ServerPlayer player, HoleDefinition definition) {
+		player.teleportTo(player.level(),
+			definition.transition().playerPosition().x(),
+			definition.transition().playerPosition().y(),
+			definition.transition().playerPosition().z(),
+			Set.of(), (float) definition.transition().yaw(),
+			(float) definition.transition().pitch(), true);
 	}
 
 	private StartResult travelToNextShot(ServerPlayer player, GolfBallEntity ball) {
@@ -485,6 +748,49 @@ public final class ActiveHoleService {
 			&& !level.getBlockState(support).getCollisionShape(level, support).isEmpty()
 			&& level.getFluidState(feet).isEmpty()
 			&& level.getFluidState(head).isEmpty();
+	}
+
+	/**
+	 * S5: reapplies the authoritative snapshot on join and, if this golfer was
+	 * suspended from the active round, reconnects them before entity validation.
+	 */
+	public void onPlayerConnected(ServerPlayer player) {
+		UUID playerId = player.getUUID();
+		if (activeRound != null && activeRound.phase() == RoundPhase.PLAYING) {
+			ReadyGolfParticipant participant = activeRound.findParticipant(playerId).orElse(null);
+			if (participant != null && participant.status() == ParticipantStatus.SUSPENDED) {
+				activeRound = activeRound.reconnect(playerId);
+				MinecraftGolf.LOGGER.info("{} reconnected to Ready Golf round {}",
+					player.getName().getString(), activeRound.roundId());
+			}
+		}
+		sendCurrentSnapshot(player);
+	}
+
+	/**
+	 * S5: removes a lobby golfer or suspends an in-progress golfer on disconnect.
+	 * Suspension removes the golfer from the advancement barrier so an offline
+	 * player can never deadlock the remaining golfers.
+	 */
+	public void onPlayerDisconnected(ServerPlayer player, MinecraftServer server) {
+		if (activeRound == null || activeRound.phase() == RoundPhase.COMPLETE) {
+			return;
+		}
+		UUID playerId = player.getUUID();
+		ReadyGolfParticipant participant = activeRound.findParticipant(playerId).orElse(null);
+		if (participant == null || participant.status() != ParticipantStatus.ACTIVE) {
+			return;
+		}
+		if (activeRound.phase() == RoundPhase.LOBBY) {
+			activeRound = activeRound.disconnect(playerId);
+			MinecraftGolf.LOGGER.info("{} left Ready Golf lobby {}",
+				player.getName().getString(), activeRound.roundId());
+			return;
+		}
+		activeRound = activeRound.disconnect(playerId);
+		MinecraftGolf.LOGGER.info("{} suspended from Ready Golf round {}",
+			player.getName().getString(), activeRound.roundId());
+		notifyTerminalBarrier(server);
 	}
 
 	/** Sends a MISSING_BALL snapshot to the player if they have an active in-progress session. */
@@ -603,15 +909,43 @@ public final class ActiveHoleService {
 	}
 
 	private void updateCourseState(UUID playerId, PlayerHoleState updated) {
-		PlayerCourseState state = courseStates.get(playerId);
-		if (state != null) {
-			PlayerCourseState next = state.updateCurrentHole(updated);
-			courseStates.put(playerId, next.isFinalHoleTerminal() ? next.advance() : next);
+		if (activeRound == null || activeRound.phase() != RoundPhase.PLAYING) {
+			return;
 		}
+		ReadyGolfParticipant participant = activeRound.findParticipant(playerId).orElse(null);
+		if (participant == null || participant.status() != ParticipantStatus.ACTIVE) {
+			return;
+		}
+		activeRound = activeRound.updateCurrentHole(playerId, updated);
+	}
+
+	/** True while no round owns the player, or while they are an ACTIVE participant. */
+	private boolean isActiveParticipant(UUID playerId) {
+		if (activeRound == null) {
+			return true;
+		}
+		if (activeRound.phase() != RoundPhase.PLAYING) {
+			return false;
+		}
+		return activeRound.findParticipant(playerId)
+			.map(participant -> participant.status() == ParticipantStatus.ACTIVE)
+			.orElse(false);
+	}
+
+	private PlayerCourseState courseState(UUID playerId) {
+		if (activeRound == null) {
+			return null;
+		}
+		// Only an ACTIVE participant owns live course progress. A withdrawn (or
+		// suspended) golfer must not block the solo fast path with stale state.
+		return activeRound.findParticipant(playerId)
+			.filter(participant -> participant.status() == ParticipantStatus.ACTIVE)
+			.map(ReadyGolfParticipant::courseState)
+			.orElse(null);
 	}
 
 	private String cumulativeStatus(UUID playerId, PlayerHoleState current) {
-		PlayerCourseState state = courseStates.get(playerId);
+		PlayerCourseState state = courseState(playerId);
 		if (state == null) {
 			return "";
 		}
@@ -621,7 +955,7 @@ public final class ActiveHoleService {
 	}
 
 	private HoleStatePayload withCourseTotals(UUID playerId, HoleStatePayload payload, PlayerHoleState current) {
-		PlayerCourseState state = courseStates.get(playerId);
+		PlayerCourseState state = courseState(playerId);
 		if (state == null) {
 			return payload;
 		}
@@ -664,20 +998,114 @@ public final class ActiveHoleService {
 			+ formatToPar(scorecard.scoreToPar()) + ")").withStyle(ChatFormatting.GOLD));
 	}
 
+	private void notifyTerminalBarrier(MinecraftServer server) {
+		if (activeRound == null) {
+			return;
+		}
+		if (activeRound.phase() == RoundPhase.COMPLETE) {
+			sendMultiplayerFinalResults(server, activeRound);
+			return;
+		}
+		if (activeRound.phase() != RoundPhase.PLAYING) {
+			return;
+		}
+		for (ReadyGolfParticipant participant : activeRound.participants()) {
+			if (participant.status() != ParticipantStatus.ACTIVE
+					|| !participant.courseState().currentHole().isComplete()) {
+				continue;
+			}
+			ServerPlayer recipient = server.getPlayerList().getPlayer(participant.playerId());
+			if (recipient != null) {
+				sendBarrierMessage(recipient);
+			}
+		}
+	}
+
+	private void sendMultiplayerHoleResults(MinecraftServer server, ReadyGolfRound round) {
+		if (round.activeParticipantCount() <= 1) {
+			return;
+		}
+		List<Component> lines = new ArrayList<>();
+		lines.add(Component.literal("[golf] HOLE " + (round.currentHoleIndex() + 1)
+			+ " RESULTS").withStyle(ChatFormatting.GOLD));
+		for (ReadyGolfParticipant participant : round.participants()) {
+			if (participant.status() != ParticipantStatus.ACTIVE) {
+				continue;
+			}
+			PlayerHoleState result = participant.courseState().currentHole();
+			lines.add(Component.literal(playerLabel(server, participant.playerId()) + " — "
+				+ result.strokes() + " strokes (" + formatToPar(result.scoreToPar()) + ")"));
+		}
+		sendToActiveParticipants(server, round, lines);
+	}
+
+	private void sendMultiplayerFinalResults(MinecraftServer server, ReadyGolfRound round) {
+		if (round.activeParticipantCount() > 1) {
+			List<Component> lines = new ArrayList<>();
+			lines.add(Component.literal("[golf] READY GOLF FINAL RESULTS")
+				.withStyle(ChatFormatting.GOLD));
+			for (ReadyGolfParticipant participant : round.participants()) {
+				if (participant.status() != ParticipantStatus.ACTIVE) {
+					continue;
+				}
+				CourseScorecard scorecard = participant.courseState().finalScorecard();
+				lines.add(Component.literal(playerLabel(server, participant.playerId()) + " — "
+					+ scorecard.totalStrokes() + " strokes ("
+					+ formatToPar(scorecard.scoreToPar()) + ")"));
+			}
+			sendToActiveParticipants(server, round, lines);
+		}
+		for (ReadyGolfParticipant participant : round.participants()) {
+			if (participant.status() != ParticipantStatus.ACTIVE) {
+				continue;
+			}
+			ServerPlayer recipient = server.getPlayerList().getPlayer(participant.playerId());
+			if (recipient != null) {
+				sendFinalScorecard(recipient, participant.courseState().finalScorecard());
+			}
+		}
+	}
+
+	private static void sendToActiveParticipants(MinecraftServer server, ReadyGolfRound round,
+			List<Component> lines) {
+		for (ReadyGolfParticipant participant : round.participants()) {
+			if (participant.status() != ParticipantStatus.ACTIVE) {
+				continue;
+			}
+			ServerPlayer recipient = server.getPlayerList().getPlayer(participant.playerId());
+			if (recipient != null) {
+				lines.forEach(recipient::sendSystemMessage);
+			}
+		}
+	}
+
+	private static String playerLabel(MinecraftServer server, UUID playerId) {
+		ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+		return player == null ? playerId.toString().substring(0, 8) : player.getName().getString();
+	}
+
+	private String waitingMessage() {
+		return "[golf] waiting for golfers: " + activeRound.terminalActiveParticipantCount()
+			+ "/" + activeRound.activeParticipantCount() + " complete";
+	}
+
+	private void sendBarrierMessage(ServerPlayer player) {
+		if (!activeRound.allActiveTerminal()) {
+			player.sendSystemMessage(Component.literal(waitingMessage()));
+			return;
+		}
+		Component action = Component.literal("[Go to next tee]")
+			.withStyle(style -> style.withColor(ChatFormatting.GREEN).withUnderlined(true)
+				.withClickEvent(new ClickEvent.RunCommand("/golf nexthole"))
+				.withHoverEvent(new HoverEvent.ShowText(
+					Component.literal("Advance every active golfer"))));
+		player.sendSystemMessage(Component.literal("[golf] all golfers complete — ").append(action));
+	}
+
 	private void sendCompletion(ServerPlayer player, PlayerHoleState state) {
 		String term = state.strokes() > 0 ? state.scoreTerm().name().replace('_', ' ') : "NO SCORE";
 		player.sendSystemMessage(Component.literal("[golf] HOLE COMPLETE — " + state.strokes()
 			+ " strokes, " + term + " (" + formatToPar(state.scoreToPar()) + ")"));
-		PlayerCourseState courseState = courseStates.get(player.getUUID());
-		if (courseState != null && courseState.isComplete()) {
-			sendFinalScorecard(player, courseState.finalScorecard());
-		} else if (courseState != null) {
-			Component action = Component.literal("[Go to next tee]")
-				.withStyle(style -> style.withColor(ChatFormatting.GREEN).withUnderlined(true)
-					.withClickEvent(new ClickEvent.RunCommand("/golf nexthole"))
-					.withHoverEvent(new HoverEvent.ShowText(Component.literal("Advance the authoritative course"))));
-			player.sendSystemMessage(Component.literal("[golf] ").append(action));
-		}
 	}
 
 	private static String formatToPar(int scoreToPar) {
@@ -685,6 +1113,13 @@ public final class ActiveHoleService {
 			return "Even Par";
 		}
 		return scoreToPar > 0 ? "+" + scoreToPar : Integer.toString(scoreToPar);
+	}
+
+	private record PreparedAttempt(
+		ServerPlayer player,
+		PlayerHoleSession oldSession,
+		GolfBallEntity ball
+	) {
 	}
 
 	public record StartResult(boolean success, String message) {
