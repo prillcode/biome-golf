@@ -99,6 +99,7 @@ reproduction/evidence and intended result are recorded.
 |---|---|---|---|---|---|---|---|
 | M7-F01 | M6 S4 | High | Course integrity | Creative golfers could destroy tees, greens, and cup/flag | Protect authored tee/cup vicinities while leaving ordinary terrain editable | S5 defect | Implemented; manual verification pending |
 | M7-F02 | M6 S4 | High | Hole transition UX | Players wanted a no-text-input advance action | Player-initiated HUD prompt using the existing server barrier | S5 defect | Implemented; manual verification pending |
+| M7-F03 | M7 smoke test | High | Network compatibility | An M6 client connecting to the M7 server was disconnected because `hole_state` gained one byte under the same payload ID | Version changed payload channels so Fabric capability negotiation suppresses unsupported schemas instead of invoking an incompatible decoder | S5 defect | Fixed as `hole_state_v2`; reconnect verification pending |
 
 ## Prioritized defects
 
@@ -106,6 +107,7 @@ reproduction/evidence and intended result are recorded.
 |---:|---|---|
 | 1 | M7-F01 course destructibility | M7 S1 implementation complete; manual acceptance pending |
 | 2 | M7-F02 advance UX | M7 S2 implementation complete; manual two-client acceptance pending |
+| 3 | M7-F03 stale-client packet decode failure | Versioned the changed clientbound channel as `hole_state_v2`; reconnect verification pending |
 
 Add session-discovered crashes, desync, stuck balls, impossible recovery, misleading
 HUD behavior, scoring errors, and major usability problems here before starting S5.

@@ -51,7 +51,7 @@ public record HoleStatePayload(
 	}
 
 	public static final Type<HoleStatePayload> TYPE =
-			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_state"));
+			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_state_v2"));
 
 	public static final StreamCodec<FriendlyByteBuf, HoleStatePayload> STREAM_CODEC =
 			StreamCodec.of(HoleStatePayload::encode, HoleStatePayload::decode);

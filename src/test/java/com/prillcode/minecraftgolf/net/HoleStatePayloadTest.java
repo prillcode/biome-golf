@@ -28,6 +28,7 @@ class HoleStatePayloadTest {
 	@Test
 	void practiceSnapshot_hasCorrectPhaseAndHoleMetadata() {
 		HoleStatePayload p = HoleStatePayload.practice(PAR_FOUR);
+		assertEquals("minecraft_golf:hole_state_v2", p.type().id().toString());
 		assertEquals(Phase.PRACTICE, p.phase());
 		assertEquals(1, p.holeNumber());
 		assertEquals(4, p.par());

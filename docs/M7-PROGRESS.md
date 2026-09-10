@@ -31,7 +31,7 @@ Status: **Agent-executable work complete through the manual playtest gate.**
   reloaded resources, created item/GUI atlases, and started sound; only the
   previously accepted dev narrator/auth-service warnings appeared
 - Built/staged JAR SHA-256 identity —
-  `4a39db813179b4e22c5e98389b90d3bb988913ea88c110896d351055ebfbc2d7`
+  `cde1846f5db84573440e0e5af78d7e5f3d11cd7988e8d4130c860fdbe1dabd81`
 
 ## Manual and environment gates
 
@@ -43,7 +43,11 @@ Status: **Agent-executable work complete through the manual playtest gate.**
   transition, fallback, and Hole 3 checks.
 - S3 needs at least one real family/LAN session with two or more golfers.
 - S4 tuning is intentionally unchanged until a recorded session supplies evidence.
-- S5 has no additional session-discovered defects yet; the two inherited defects
-  are implemented and await manual acceptance.
+- The two inherited S5 defects are implemented and await manual acceptance.
+- S5 finding M7-F03: an older installed client was disconnected when the M7
+  `hole_state` schema added one byte. The changed channel is now versioned as
+  `hole_state_v2`, allowing Fabric's `canSend` negotiation to suppress an
+  unsupported schema rather than invoke a stale decoder. Reconnect verification
+  is pending after both client and server reload the rebuilt JAR.
 - S6 closeout, final V1 decision, and M7 completion remain blocked on those manual
   results.
