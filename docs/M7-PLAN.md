@@ -10,7 +10,7 @@ Determine whether the MVP is genuinely fun and stable enough to justify V1 devel
 
 ## Existing seams and required change
 
-- **No block-break protection exists.** The mod currently has no `PlayerBlockBreakEvents` handler, so in creative mode any golfer can break any block, including tee boxes, greens, and the cup/flag. Course metadata today is `HoleDefinition` (tee, cup, boundary, transition) plus the generated layout's `GREEN_WOOL` fills; greens exist only as blocks, not as authored metadata. The block-break guard therefore needs an explicit protected-zone model (green center + radius, plus tee/cup vicinity) added to the Minecraft-free course/hole domain before Fabric integration.
+- **No block-break protection exists.** The mod currently has no `PlayerBlockBreakEvents` handler, so in creative mode any golfer can break any block, including tee boxes, greens, and the cup/flag. Course metadata today is `HoleDefinition` (tee, cup, boundary, transition) plus the generated layout's `GREEN_WOOL` fills; greens exist only as blocks, not as authored metadata. Per the recorded S1 decision (see "Recorded M7 decisions"), the guard keys protection on tee/cup vicinity around the authored `HoleDefinition` positions rather than adding new green metadata; greens are protected through cup vicinity and tee boxes through tee vicinity.
 - **`/golf dev preparecourse` is the recovery path.** It is idempotent and currently repairs drifted blocks. The block-break guard must not block the operator/dev repair path, or recovery breaks. It should also remain possible to clear in-the-way trees/rocks outside protected zones, preserving the fun Minecraft flavor.
 - **Advance UX is a deliberate product decision.** The post-hole flow already has a clickable chat action plus `/golf nexthole`. Playtesters want either a no-text-input prompt (HUD button) or full auto-advance. Full auto-advance would deviate from the M6 player-initiated `/golf nexthole` contract, so the choice is explicitly an M7 product decision to be made with the user before implementation.
 - **Deferred M6 manual acceptance carries over.** The two-player manual matrix (items 1–9 in `docs/M6-PLAN.md`) still needs a second golfer, and the true four-player LAN session was waived for M6. M7 family playtesting is the natural place to run these.
@@ -27,6 +27,13 @@ Determine whether the MVP is genuinely fun and stable enough to justify V1 devel
 - `/golf hole start` remains the backward-compatible one-player fast path with unchanged M5 start, progression, finalization, and replay.
 - Common code under `src/main` contains no `net.minecraft.client` imports; dedicated-server compatibility is preserved.
 
+## Recorded M7 decisions
+
+Made with the user before implementation (2026-09-10). These are locked inputs to the slices below.
+
+- **S1 protected-zone scope — tee/cup vicinity only.** The block-break guard protects a configurable-radius vicinity around each hole's authored tee and cup positions. Greens are protected via cup vicinity and tee boxes via tee vicinity; no new green metadata is added to `HoleDefinition` in M7. The cup/flag block itself is always protected regardless of radius.
+- **S2 advance UX — HUD button.** Advance remains player-initiated and barrier-gated. A no-text-input HUD prompt/button appears when all active golfers are terminal and invokes the existing server-side `nextHole` barrier call. `/golf nexthole` and the clickable chat action remain as fallbacks. Full auto-advance is rejected for M7 and remains a documented future option that would require an explicit contract deviation.
+
 ## Bounded slices
 
 Ordered so that the two known playtest findings are resolved first, followed by structured playtesting, then tuning/defect work driven by what the sessions find. Slices S1 and S2 are the only slices with significant agent-implementable scope before playtesting; S4 and S5 must be fed by real session findings.
@@ -35,8 +42,8 @@ Ordered so that the two known playtest findings are resolved first, followed by 
 
 - **Goal:** Stop golf-course destruction in creative mode without a world-guard framework and without breaking the fun of clearing in-the-way trees/rocks or the `/golf dev preparecourse` repair path.
 - **Deliverables:**
-  - Minecraft-free protected-zone model in the course/hole domain: per-hole green center + radius and tee/cup vicinity (configurable radius), derived from authored metadata; greens become authored metadata rather than only layout blocks.
-  - A `PlayerBlockBreakEvents`-based server-side guard that cancels breaks of blocks inside the configured protected zones (tee boxes, greens, cup/flag vicinity) and always protects the cup/flag block itself.
+  - Minecraft-free protected-zone model in the course/hole domain: per-hole tee and cup vicinity zones with a configurable radius, derived from the authored `HoleDefinition` positions (per the recorded S1 decision, no new green metadata).
+  - A `PlayerBlockBreakEvents`-based server-side guard that cancels breaks of blocks inside the configured tee/cup vicinity zones (protecting tee boxes, greens, and the cup/flag vicinity) and always protects the cup/flag block itself.
   - Operator/dev exemption so `/golf dev preparecourse` (and any future repair command) can still rebuild protected areas; ordinary players remain free to clear vegetation/terrain outside protected zones.
   - Configuration for the vicinity radius (server gameplay config), with a sane default; no full world-guard framework.
   - Focused unit tests for zone membership/radius logic plus integration evidence that breaks inside zones are rejected and outside zones remain allowed.
@@ -47,8 +54,8 @@ Ordered so that the two known playtest findings are resolved first, followed by 
 
 - **Goal:** Resolve the M6 S4 advance-UX playtest finding as an explicit product decision, then implement the chosen option with minimal scope.
 - **Deliverables:**
-  - A written decision (recorded in this plan and `docs/MILESTONES.md`) choosing among: (a) keep player-initiated `/golf nexthole` (chat + clickable action), (b) add a no-text-input HUD prompt/button that still goes through the existing server-side barrier, or (c) full auto-advance once all golfers are terminal. Full auto-advance is a deliberate deviation from the M6 contract and must be documented as such before implementation.
-  - Implementation of the chosen option only; server authority and the barrier logic are preserved regardless of choice.
+  - The recorded decision (2026-09-10, see "Recorded M7 decisions" and `docs/MILESTONES.md`): **HUD button** — a no-text-input HUD prompt/button shown when all active golfers are terminal, invoking the existing server-side barrier call; `/golf nexthole` and the chat action remain as fallbacks; full auto-advance is rejected for M7 and would require a recorded contract deviation if revisited.
+  - Implementation of the recorded option only; server authority and the barrier logic are preserved.
 - **Verification:** `./gradlew test`, `./gradlew build`; manual two-golfer check that the chosen flow works and early advancement is still rejected.
 - **Exit criteria:** The playtest finding is resolved with a documented decision and a working implementation; the M6 barrier contract remains intact.
 
@@ -106,7 +113,7 @@ Ordered so that the two known playtest findings are resolved first, followed by 
 |---|---|
 | Block-break guard blocks the fun clearing of trees/rocks | Protect only authored zones (tee/green/cup vicinity) with a configurable radius; everything outside stays breakable; operator/dev repair path exempt. |
 | Guard prevents `/golf dev preparecourse` recovery | Operator/dev exemption proven by re-running preparecourse to zero changes after a damage scenario. |
-| Full auto-advance regresses the M6 barrier contract | Decision is recorded as a deliberate deviation before implementation; barrier/authority logic unchanged; `nexthole` remains the fallback if auto-advance is rejected. |
+| Full auto-advance regresses the M6 barrier contract | Rejected for M7 by the recorded S2 decision (HUD button chosen); barrier/authority logic unchanged; `/golf nexthole` and the chat action remain as fallbacks. |
 | Tuning drifts the accepted M5 feel | Small, single-purpose changes with carry/physics tests pinned; re-run M5 regression checks. |
 | No second golfer available for the two-player matrix | Document the gap explicitly; M7 family sessions are the scheduled opportunity; four-player evidence stays unit-test + integration + code review as in M6. |
 | Family sessions produce vague/unrecorded feedback | Repeatable checklists and a findings log with severity/priority; findings tie every S4/S5 change to a recorded observation. |

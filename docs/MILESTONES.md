@@ -1114,6 +1114,19 @@ Determine whether the MVP is genuinely fun and stable enough to justify V1 devel
   are terminal. Full auto-advance would deviate from the M6 player-initiated
   `/golf nexthole` contract, so treat it as a deliberate M7 product decision.
 
+### Recorded M7 decisions (2026-09-10)
+
+- **S1 protected-zone scope:** tee/cup vicinity only. The block-break guard
+  protects a configurable-radius vicinity around each hole's authored tee and cup
+  positions; greens are protected via cup vicinity, tee boxes via tee vicinity,
+  and the cup/flag block is always protected. No new green metadata is authored
+  in M7.
+- **S2 advance UX:** HUD button. Advance stays player-initiated and
+  barrier-gated via a no-text-input HUD prompt/button that invokes the existing
+  server-side `nextHole` barrier; `/golf nexthole` and the clickable chat action
+  remain as fallbacks. Full auto-advance is rejected for M7 (would be a recorded
+  M6-contract deviation if revisited).
+
 ## Prerequisites
 
 - M6 complete
