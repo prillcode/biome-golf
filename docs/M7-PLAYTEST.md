@@ -54,10 +54,10 @@ not sufficient evidence for a tuning change.
 - [x] A second `/golf dev preparecourse` reports zero changed blocks.
 - [ ] A completed golfer cannot advance while another active golfer is unfinished.
 - [ ] When all active golfers finish Hole 1 or 2, every client receives the advance prompt.
-- [ ] “Not now” closes the prompt without advancing.
-- [ ] “Go to next tee” advances everyone exactly once.
-- [ ] `/golf nexthole` and the clickable chat action still work as fallbacks.
-- [ ] Hole 3 finalizes automatically without an advance prompt.
+- [x] “Not now” closes the prompt without advancing.
+- [x] “Go to next tee” advances everyone exactly once.
+- [x] `/golf nexthole` and the clickable chat action still work as fallbacks.
+- [x] Hole 3 finalizes automatically without an advance prompt.
 
 ### Deferred M6 two-player matrix
 
@@ -98,7 +98,7 @@ reproduction/evidence and intended result are recorded.
 | ID | Session | Severity | Area | Evidence/reproduction | Intended result | Disposition | Status |
 |---|---|---|---|---|---|---|---|
 | M7-F01 | M6 S4 | High | Course integrity | Creative golfers could destroy tees, greens, and cup/flag | Protect authored tee/cup vicinities while leaving ordinary terrain editable | S5 defect | Accepted on Docker 2026-09-10 |
-| M7-F02 | M6 S4 | High | Hole transition UX | Players wanted a no-text-input advance action | Player-initiated HUD prompt using the existing server barrier | S5 defect | Implemented; manual verification pending |
+| M7-F02 | M6 S4 | High | Hole transition UX | Players wanted a no-text-input advance action | Player-initiated HUD prompt using the existing server barrier | S5 defect | Solo paths accepted; two-player barrier verification pending |
 | M7-F03 | M7 smoke test | High | Network compatibility | An M6 client connecting to the M7 server was disconnected because `hole_state` gained one byte under the same payload ID | Version changed payload channels so Fabric capability negotiation suppresses unsupported schemas instead of invoking an incompatible decoder | S5 defect | Fixed as `hole_state_v2`; matching M7 client reconnect verified 2026-09-10 |
 | M7-F04 | M7 manual verification | Low | Course integrity | The 12-block boundary worked as designed, but the tester may prefer a larger protected surrounding area later | Keep the accepted M7 radius; reconsider configurable or broader authoring protection from future playtest evidence | Deferred | Recorded for M8 consideration |
 | M7-F05 | M7 manual verification | Medium | Minecraft interaction | Tester wants normal golf play to use Survival with Peaceful difficulty; vanilla block interaction is sufficient and need not be club-exclusive | Make Survival + Peaceful the persistent Docker gameplay profile while preserving vanilla breaking outside protected course zones | S5 defect | Applied and live-verified 2026-09-10 |
@@ -108,7 +108,7 @@ reproduction/evidence and intended result are recorded.
 | Priority | Finding | Decision |
 |---:|---|---|
 | 1 | M7-F01 course destructibility | Accepted on Docker: non-OP protection, OP repair, `10 changed` then `0 changed` |
-| 2 | M7-F02 advance UX | M7 S2 implementation complete; manual two-client acceptance pending |
+| 2 | M7-F02 advance UX | Solo prompt/button/dismissal/chat/command/final-hole paths accepted; two-client barrier pending |
 | 3 | M7-F03 stale-client packet decode failure | Versioned the changed clientbound channel as `hole_state_v2`; matching M7 client reconnect passed |
 
 Add session-discovered crashes, desync, stuck balls, impossible recovery, misleading
@@ -142,5 +142,11 @@ Duplicate the session record template below this heading for each completed sess
 - Gameplay-profile decision: live player and server default changed to Survival;
   difficulty confirmed Peaceful. Vanilla obstacle breaking remains available and
   is not restricted exclusively to golf clubs.
+- Solo advance verification: **Not now** dismissed without movement; the HUD
+  button advanced Hole 1 to Hole 2 exactly once; clickable chat advanced Hole 2
+  to Hole 3 exactly once; Hole 3 finalized with a scorecard and no prompt.
+- Command fallback verification: a second round used the HUD for Hole 1 to Hole
+  2, then `/golf nexthole` for Hole 2 to Hole 3; authoritative status showed one
+  active Hole 3 ball. The temporary round was then cleanly left.
 - Scope note: this was an implementation acceptance pass, not the required
   two-or-more-player family/LAN session.

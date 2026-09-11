@@ -41,8 +41,10 @@ Status: **Agent-executable work complete through the manual playtest gate.**
   Hole 2 tees and all three greens/cups, ordinary terrain remained editable,
   operator repair access passed, and preparation repaired deliberate damage
   (`10 changed`) before an idempotent rerun (`0 changed`).
-- S2 needs the two-client early-rejection, prompt, dismissal, exactly-once
-  transition, fallback, and Hole 3 checks.
+- S2 solo paths are accepted on Docker: prompt dismissal, HUD exactly-once
+  advancement, clickable-chat and command fallbacks, and Hole 3 finalization
+  without another prompt. Two-client early rejection and all-terminal prompt
+  fan-out remain.
 - S3 needs at least one real family/LAN session with two or more golfers.
 - S4 tuning is intentionally unchanged until a recorded session supplies evidence.
 - M7-F05 — Docker's persistent gameplay profile is now Survival + Peaceful; golf
