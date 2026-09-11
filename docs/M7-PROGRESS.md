@@ -1,6 +1,7 @@
 # M7 — Execution Progress
 
-Status: **Agent-executable work complete through the manual playtest gate.**
+Status: **Complete.** See `docs/M7-CLOSEOUT.md` for the final verification,
+accepted residual gaps, and V1 decision.
 
 ## Completed implementation
 
@@ -11,60 +12,41 @@ Status: **Agent-executable work complete through the manual playtest gate.**
   with **Go to next tee** and **Not now**, and a serverbound intent that delegates
   to the existing `ActiveHoleService.nextHole` barrier. The chat action and
   `/golf nexthole` remain available.
-- S3 capture structure: repeatable family/LAN checklist, deferred M6 two-player
-  matrix, presentation checks, findings log, prioritized defect list, and
-  evidence-gated tuning candidates in `docs/M7-PLAYTEST.md`.
-- Verification harness: replaced a full copy of the multi-million-entry generated
-  layout map in `DevelopmentCourseGeneratorTest` with a direct write-count
-  idempotence assertion. This preserves the contract and reduces the full suite
-  from minutes/worker EOF failures to seconds.
+- S3 capture and execution: repeatable family/LAN checklist, findings log,
+  prioritized defects, two complete two-player three-hole Docker rounds, and
+  recorded manual-evidence gaps.
+- S4 tuning: intentionally unchanged because the sessions did not provide a clear
+  reason to alter the accepted course or physics baseline.
+- S5 hardening: course protection, advance prompt, versioned hole-state payloads,
+  Survival/Peaceful Docker defaults, explicit `ROUND COMPLETE` state, and the
+  completed-round command-total correction.
+- Verification harness: direct write-count idempotence assertion keeps the
+  generated-layout contract covered without copying a multi-million-entry map.
 
-## Automated verification
+## Final verification
 
-- `./gradlew clean build --no-daemon` — PASS
-- 200 tests, 0 failures, 0 errors
+- `./gradlew test` and `./gradlew clean build` — PASS
+- 201 tests, 0 failures, 0 errors, 0 skipped
 - `git diff --check` — PASS
 - `net.minecraft.client` imports under `src/main/java` — 0
-- Loom dedicated server on port 25566 — reached `Done (1.381s)`, registered the
-  M7 next-hole networking and course block-break guard, then stopped cleanly
-- Loom client — initialized Minecraft Golf client, registered both M7 paths,
-  reloaded resources, created item/GUI atlases, and started sound; only the
-  previously accepted dev narrator/auth-service warnings appeared
-- Built/staged JAR SHA-256 identity —
-  `0b43f8c9b75717a10f3fd889204c4302e6e64fe5e0538f31deff573bbb095520`
+- Loom dedicated server — reached `Done (2.305s)` with all M7 handlers registered
+- Loom client — client initialized, mod resources/atlases loaded, sound started;
+  only the accepted narrator/auth-service environment warnings appeared
+- Docker — healthy, Survival + Peaceful, server reached `Done (2.551s)`
+- Course preparation — `6 changed`, then idempotent `0 changed`
+- Stable JAR SHA-256 —
+  `d277373c610b8464f822ed89469448c567219bb0df56577093fa93d002e10d76`
 
-## Manual and environment gates
+## Manual acceptance and decision
 
-- Docker server — healthy with the staged M7 JAR; the `prill` account's Docker
-  group membership was restored during verification.
-- S1 — accepted on Docker: non-operator Creative protection passed at Hole 1 and
-  Hole 2 tees and all three greens/cups, ordinary terrain remained editable,
-  operator repair access passed, and preparation repaired deliberate damage
-  (`10 changed`) before an idempotent rerun (`0 changed`).
-- S2 solo paths are accepted on Docker: prompt dismissal, HUD exactly-once
-  advancement, clickable-chat and command fallbacks, and Hole 3 finalization
-  without another prompt. Two-client early rejection and all-terminal prompt
-  fan-out remain.
-- S3 needs at least one real family/LAN session with two or more golfers.
-- S4 tuning is intentionally unchanged until a recorded session supplies evidence.
-- M7-F05 — Docker's persistent gameplay profile is now Survival + Peaceful; golf
-  clubs retain ordinary vanilla block interaction rather than becoming exclusive
-  obstacle-removal tools.
-- One-client presentation — all seven clubs passed inventory, first-person, and
-  third-person rendering with no missing textures; the tester accepted the flat
-  2D item style for MVP. Second-client third-person presentation remains.
-- M7-F01 is manually accepted; inherited finding M7-F02 still needs the two-client
-  advance-flow acceptance pass.
-- S5 finding M7-F03: an older installed client was disconnected when the M7
-  `hole_state` schema added one byte. The changed channel is now versioned as
-  `hole_state_v2`, allowing Fabric's `canSend` negotiation to suppress an
-  unsupported schema rather than invoke a stale decoder. A matching M7 client
-  connected successfully after both client and Docker server reloaded the rebuilt
-  JAR on 2026-09-10.
-- S5 finding M7-F07: a completed round retained an ambiguous Hole 3 `COMPLETE`
-  HUD. The server now authors a distinct `ROUND_COMPLETE` phase, broadcasts it
-  to every active golfer, and the HUD retains the final score with replay/exit
-  guidance. The evolved schema uses `hole_state_v3`; clean build and Docker boot
-  pass, with manual HUD acceptance pending after client restart.
-- S6 closeout, final V1 decision, and M7 completion remain blocked on those manual
-  results.
+- Course protection and operator repair paths passed.
+- Prompt dismissal, two-client prompt fanout, early-advance rejection, command/chat
+  fallbacks, coordinated transitions, and final-hole behavior passed.
+- Separate balls, concurrent shots, independent scoring, and two full family/LAN
+  rounds passed.
+- Club rendering passed on the primary client; flat 2D presentation was accepted.
+- A full Minecraft restart after JAR replacement restored the versioned hole HUD;
+  the explicit final `ROUND COMPLETE` display was accepted.
+- The user accepted the remaining recovery/disconnect/four-player/secondary-client
+  presentation evidence gaps and chose to close M7 on 2026-09-10.
+- Decision: **proceed to V1/M8 planning**.

@@ -1,8 +1,8 @@
 # M7 — Family/LAN Playtest Record
 
-Status: **Ready for manual sessions.** Complete one copy of the session record for
-each playtest. Findings in this document are the only inputs authorized to drive
-M7 S4 tuning and S5 defect fixes.
+Status: **Closed.** M7 playtest evidence and accepted residual gaps are summarized
+in `docs/M7-CLOSEOUT.md`. This record remains the source evidence for later V1
+prioritization.
 
 ## Session record template
 
@@ -98,22 +98,22 @@ reproduction/evidence and intended result are recorded.
 | ID | Session | Severity | Area | Evidence/reproduction | Intended result | Disposition | Status |
 |---|---|---|---|---|---|---|---|
 | M7-F01 | M6 S4 | High | Course integrity | Creative golfers could destroy tees, greens, and cup/flag | Protect authored tee/cup vicinities while leaving ordinary terrain editable | S5 defect | Accepted on Docker 2026-09-10 |
-| M7-F02 | M6 S4 | High | Hole transition UX | Players wanted a no-text-input advance action | Player-initiated HUD prompt using the existing server barrier | S5 defect | Solo paths accepted; two-player barrier verification pending |
-| M7-F03 | M7 smoke test | High | Network compatibility | An M6 client connecting to the M7 server was disconnected because `hole_state` gained one byte under the same payload ID | Version changed payload channels so Fabric capability negotiation suppresses unsupported schemas instead of invoking an incompatible decoder | S5 defect | Fixed as `hole_state_v2`; matching M7 client reconnect verified 2026-09-10 |
+| M7-F02 | M6 S4 | High | Hole transition UX | Players wanted a no-text-input advance action | Player-initiated HUD prompt using the existing server barrier | S5 defect | Accepted in solo and two-player Docker sessions 2026-09-10 |
+| M7-F03 | M7 smoke test | High | Network compatibility | An M6 client connecting to the M7 server was disconnected because `hole_state` gained one byte under the same payload ID | Version changed payload channels so Fabric capability negotiation suppresses unsupported schemas instead of invoking an incompatible decoder | S5 defect | Fixed through versioned payload evolution; matching M7 client reconnect verified 2026-09-10 |
 | M7-F04 | M7 manual verification | Low | Course integrity | The 12-block boundary worked as designed, but the tester may prefer a larger protected surrounding area later | Keep the accepted M7 radius; reconsider configurable or broader authoring protection from future playtest evidence | Deferred | Recorded for M8 consideration |
 | M7-F05 | M7 manual verification | Medium | Minecraft interaction | Tester wants normal golf play to use Survival with Peaceful difficulty; vanilla block interaction is sufficient and need not be club-exclusive | Make Survival + Peaceful the persistent Docker gameplay profile while preserving vanilla breaking outside protected course zones | S5 defect | Applied and live-verified 2026-09-10 |
 | M7-F06 | M7 manual verification | Low | Club presentation | All seven clubs rendered in inventory, first person, and third person on the connected client; models are flat 2D items | Flat item presentation is acceptable for MVP | No change | Accepted 2026-09-10; second-client third-person check pending |
 | M7-F07 | M7 solo round | Medium | Finalization UX | Server correctly reported no active round after Hole 3, but the retained Hole 3 `COMPLETE` HUD made the player feel stuck | Keep the final score visible with an explicit `ROUND COMPLETE` label and replay/exit guidance | S5 defect | Accepted in two-player Docker session 2026-09-10 |
 | M7-F08 | M7 two-player LAN | Medium | Client compatibility | Both golfers appeared to lose the hole HUD after the server payload was versioned; the running clients had not been restarted after their JARs were replaced | Make the required full client restart explicit when distributing an updated JAR; reconnect restores authoritative HUD state | No change | Diagnosed and accepted after full client restart 2026-09-10 |
-| M7-F09 | M7 two-player LAN | Medium | Scoring clarity | After a completed 4/3/3 round, `/golf hole status` reported 13 strokes while the final HUD correctly reported 10; the status formatter added the final hole twice | Completed-round status must use the final authoritative scorecard totals | S5 defect | Fixed 2026-09-10; Docker recheck pending |
+| M7-F09 | M7 two-player LAN | Medium | Scoring clarity | After a completed 4/3/3 round, `/golf hole status` reported 13 strokes while the final HUD correctly reported 10; the status formatter added the final hole twice | Completed-round status must use the final authoritative scorecard totals | S5 defect | Fixed with regression coverage; accepted for M7 closeout 2026-09-10 |
 
 ## Prioritized defects
 
 | Priority | Finding | Decision |
 |---:|---|---|
 | 1 | M7-F01 course destructibility | Accepted on Docker: non-OP protection, OP repair, `10 changed` then `0 changed` |
-| 2 | M7-F02 advance UX | Solo prompt/button/dismissal/chat/command/final-hole paths accepted; two-client barrier pending |
-| 3 | M7-F03 stale-client packet decode failure | Versioned the changed clientbound channel as `hole_state_v2`; matching M7 client reconnect passed |
+| 2 | M7-F02 advance UX | Accepted in solo and two-client sessions, including early rejection, prompt fanout, and exactly-once transitions |
+| 3 | M7-F03 stale-client packet decode failure | Versioned evolving clientbound channels (`hole_state_v2`, then `hole_state_v3`); matching M7 client reconnect passed |
 | 4 | M7-F07 ambiguous final HUD | Accepted: final score remains visible under explicit `ROUND COMPLETE` with replay/exit guidance |
 | 5 | M7-F09 completed-round command total | Fixed status formatting to use final scorecard totals instead of adding the retained final hole twice |
 

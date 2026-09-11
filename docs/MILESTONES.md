@@ -139,8 +139,8 @@ The host operating system should not affect the Fabric server architecture.
 | M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
 | M5 | Single-Player Course Experience | Complete (see docs/M5-CLOSEOUT.md) |
 | M6 | Multiplayer Ready Golf | Complete (see docs/M6-CLOSEOUT.md) |
-| M7 | MVP Hardening and Family Playtest | In Progress |
-| M8 | V1 Gameplay Enhancements | Deferred |
+| M7 | MVP Hardening and Family Playtest | Complete (see docs/M7-CLOSEOUT.md) |
+| M8 | V1 Gameplay Enhancements | Ready for planning |
 | M9 | Course Authoring and Additional Modes | Deferred |
 
 ---
@@ -1201,7 +1201,8 @@ The MVP is stable enough for repeated family play and has demonstrated enough fu
 
 ## Status
 
-Deferred until M7 validates the MVP.
+Ready for planning. M7 validated the MVP and recorded a decision to proceed to V1;
+candidate scope must be prioritized before implementation begins.
 
 ## Goal
 
@@ -1235,7 +1236,7 @@ Do not assume every candidate feature belongs in V1.
 
 ## Exit Criteria
 
-To be defined after M7.
+To be defined during bounded M8 planning before implementation begins.
 
 ---
 
@@ -1310,12 +1311,11 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M6 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
-`docs/M4-CLOSEOUT.md`, `docs/M4.5-CLOSEOUT.md`, `docs/M5-CLOSEOUT.md`, and `docs/M6-CLOSEOUT.md`). The current milestone is:
+M0–M7 are complete (see the milestone closeout records through
+`docs/M7-CLOSEOUT.md`). The current milestone is:
 
-> **M7 — MVP Hardening and Family Playtest**
+> **M8 — V1 Gameplay Enhancements**
 
-M7 prioritizes playtesting, tuning, bug fixing, and usability rather than new features,
-and must resolve the two M6 S4 playtest findings recorded in its scope section. Do not
-begin M8 until the MVP is stable enough for repeated family play and has demonstrated
-enough fun/replay value to continue development.
+M8 is ready for planning and prioritization from the candidate scope above and the
+M7 findings. Do not begin implementation until M8 has an explicit bounded plan and
+exit criteria; M7 completion does not imply that every candidate belongs in V1.
