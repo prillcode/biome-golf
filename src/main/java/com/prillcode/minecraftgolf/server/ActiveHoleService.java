@@ -955,9 +955,17 @@ public final class ActiveHoleService {
 	}
 
 	private String cumulativeStatus(UUID playerId, PlayerHoleState current) {
-		PlayerCourseState state = courseState(playerId);
+		return cumulativeStatus(courseState(playerId), current);
+	}
+
+	static String cumulativeStatus(PlayerCourseState state, PlayerHoleState current) {
 		if (state == null) {
 			return "";
+		}
+		if (state.isComplete()) {
+			CourseScorecard scorecard = state.finalScorecard();
+			return " | course " + scorecard.totalStrokes() + " strokes ("
+				+ formatToPar(scorecard.scoreToPar()) + ")";
 		}
 		int strokes = state.completedStrokes() + current.strokes();
 		int par = state.completedPar() + current.hole().par();
