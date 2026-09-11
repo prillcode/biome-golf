@@ -45,13 +45,13 @@ not sufficient evidence for a tuning change.
 
 ### M7 protection and advance checks
 
-- [ ] Ordinary creative-mode golfer cannot break Hole 1 tee-box blocks.
-- [ ] Ordinary creative-mode golfer cannot break blocks at each green/cup vicinity.
-- [ ] Ordinary golfer cannot break the golf cup/flag block.
-- [ ] Ordinary golfer can clear a tree or rock outside all protected zones.
-- [ ] Operator can modify a protected block for repair work.
-- [ ] `/golf dev preparecourse` repairs deliberate operator damage.
-- [ ] A second `/golf dev preparecourse` reports zero changed blocks.
+- [x] Ordinary creative-mode golfer cannot break Hole 1 tee-box blocks.
+- [x] Ordinary creative-mode golfer cannot break blocks at each green/cup vicinity.
+- [x] Ordinary golfer cannot break the golf cup/flag block.
+- [x] Ordinary golfer can clear a tree or rock outside all protected zones.
+- [x] Operator can modify a protected block for repair work.
+- [x] `/golf dev preparecourse` repairs deliberate operator damage.
+- [x] A second `/golf dev preparecourse` reports zero changed blocks.
 - [ ] A completed golfer cannot advance while another active golfer is unfinished.
 - [ ] When all active golfers finish Hole 1 or 2, every client receives the advance prompt.
 - [ ] “Not now” closes the prompt without advancing.
@@ -97,15 +97,17 @@ reproduction/evidence and intended result are recorded.
 
 | ID | Session | Severity | Area | Evidence/reproduction | Intended result | Disposition | Status |
 |---|---|---|---|---|---|---|---|
-| M7-F01 | M6 S4 | High | Course integrity | Creative golfers could destroy tees, greens, and cup/flag | Protect authored tee/cup vicinities while leaving ordinary terrain editable | S5 defect | Implemented; manual verification pending |
+| M7-F01 | M6 S4 | High | Course integrity | Creative golfers could destroy tees, greens, and cup/flag | Protect authored tee/cup vicinities while leaving ordinary terrain editable | S5 defect | Accepted on Docker 2026-09-10 |
 | M7-F02 | M6 S4 | High | Hole transition UX | Players wanted a no-text-input advance action | Player-initiated HUD prompt using the existing server barrier | S5 defect | Implemented; manual verification pending |
 | M7-F03 | M7 smoke test | High | Network compatibility | An M6 client connecting to the M7 server was disconnected because `hole_state` gained one byte under the same payload ID | Version changed payload channels so Fabric capability negotiation suppresses unsupported schemas instead of invoking an incompatible decoder | S5 defect | Fixed as `hole_state_v2`; matching M7 client reconnect verified 2026-09-10 |
+| M7-F04 | M7 manual verification | Low | Course integrity | The 12-block boundary worked as designed, but the tester may prefer a larger protected surrounding area later | Keep the accepted M7 radius; reconsider configurable or broader authoring protection from future playtest evidence | Deferred | Recorded for M8 consideration |
+| M7-F05 | M7 manual verification | Medium | Minecraft interaction | Tester wants normal golf play to use Survival with Peaceful difficulty and expects clubs to support clearing obstacles | Preserve the accepted M7 Creative verification profile; define the intended Survival profile and whether clubs merely participate in or exclusively control obstacle clearing | Deferred | Recorded for M8 product decision |
 
 ## Prioritized defects
 
 | Priority | Finding | Decision |
 |---:|---|---|
-| 1 | M7-F01 course destructibility | M7 S1 implementation complete; manual acceptance pending |
+| 1 | M7-F01 course destructibility | Accepted on Docker: non-OP protection, OP repair, `10 changed` then `0 changed` |
 | 2 | M7-F02 advance UX | M7 S2 implementation complete; manual two-client acceptance pending |
 | 3 | M7-F03 stale-client packet decode failure | Versioned the changed clientbound channel as `hole_state_v2`; matching M7 client reconnect passed |
 
@@ -124,3 +126,18 @@ session provides a clear signal and a specific desired outcome.
 ## Session records
 
 Duplicate the session record template below this heading for each completed session.
+
+### M7 implementation verification — 2026-09-10
+
+- Build: `0861513`; JAR SHA-256
+  `cde1846f5db84573440e0e5af78d7e5f3d11cd7988e8d4130c860fdbe1dabd81`
+- Environment: Docker server on localhost; one connected player (`PrLLager207`)
+- Initial preparation: `574612 planned`, first run `6 changed`, second run `0 changed`
+- Non-operator Creative verification: Hole 1 and Hole 2 tees, every cup/green,
+  and the cup/flag resisted breaking; ordinary blocks beyond the protected radius
+  remained editable.
+- Operator verification: a protected Hole 3 green block could be broken.
+- Repair verification: `/golf dev preparecourse` reported `10 changed`, followed
+  immediately by `0 changed`.
+- Scope note: this was an implementation acceptance pass, not the required
+  two-or-more-player family/LAN session.

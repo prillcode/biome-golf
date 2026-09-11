@@ -35,15 +35,18 @@ Status: **Agent-executable work complete through the manual playtest gate.**
 
 ## Manual and environment gates
 
-- Docker start is blocked on this host because the current process cannot access
-  `/var/run/docker.sock`; `sudo -n docker` requires a password. The staged JAR is
-  ready at `dev-server/mods/minecraft-golf.jar`.
-- S1 needs the in-game protection/operator/repair checks in `docs/M7-PLAYTEST.md`.
+- Docker server — healthy with the staged M7 JAR; the `prill` account's Docker
+  group membership was restored during verification.
+- S1 — accepted on Docker: non-operator Creative protection passed at Hole 1 and
+  Hole 2 tees and all three greens/cups, ordinary terrain remained editable,
+  operator repair access passed, and preparation repaired deliberate damage
+  (`10 changed`) before an idempotent rerun (`0 changed`).
 - S2 needs the two-client early-rejection, prompt, dismissal, exactly-once
   transition, fallback, and Hole 3 checks.
 - S3 needs at least one real family/LAN session with two or more golfers.
 - S4 tuning is intentionally unchanged until a recorded session supplies evidence.
-- The two inherited S5 defects are implemented and await manual acceptance.
+- M7-F01 is manually accepted; inherited finding M7-F02 still needs the two-client
+  advance-flow acceptance pass.
 - S5 finding M7-F03: an older installed client was disconnected when the M7
   `hole_state` schema added one byte. The changed channel is now versioned as
   `hole_state_v2`, allowing Fabric's `canSend` negotiation to suppress an

@@ -1222,7 +1222,10 @@ Potential features:
 - richer sounds and particles
 - refined HUD
 - improved server configuration
-- optional survival/mob interaction configuration
+- configurable or broader course-integrity protection zones if later playtests
+  confirm the current 12-block tee/cup radius is too narrow
+- a Survival + Peaceful server profile, including a product decision on whether
+  golf clubs merely participate in or exclusively control obstacle clearing
 - traditional turn-based mode
 
 Do not assume every candidate feature belongs in V1.
