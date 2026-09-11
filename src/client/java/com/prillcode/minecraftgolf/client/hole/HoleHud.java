@@ -93,6 +93,16 @@ public final class HoleHud {
 				? state.scoreTerm().name().replace('_', ' ')
 				: "NO SCORE";
 			graphics.text(client.font, "COMPLETE: " + termLabel, x + PAD_X, textY, GOLD, true);
+			textY += LINE_HEIGHT;
+			if (state.roundAdvanceAvailable()) {
+				graphics.text(client.font, "NEXT TEE READY", x + PAD_X, textY, GOOD, true);
+			}
+		} else if (state.phase() == Phase.ROUND_COMPLETE) {
+			graphics.text(client.font, "ROUND COMPLETE", x + PAD_X, textY, GOLD, true);
+			textY += LINE_HEIGHT;
+			graphics.text(client.font, "Replay: /golf hole restart", x + PAD_X, textY, MUTED, false);
+			textY += LINE_HEIGHT;
+			graphics.text(client.font, "Exit: /golf hole abandon", x + PAD_X, textY, MUTED, false);
 		}
 	}
 
@@ -103,7 +113,10 @@ public final class HoleHud {
 		if (state.penaltyCount() > 0) lines++;
 		if (state.strokes() > 0) lines++;
 		if (state.phase() == Phase.MISSING_BALL) lines += 2;
-		else if (state.phase() == Phase.COMPLETE) lines++;
+		else if (state.phase() == Phase.COMPLETE) {
+			lines++;
+			if (state.roundAdvanceAvailable()) lines++;
+		} else if (state.phase() == Phase.ROUND_COMPLETE) lines += 3;
 		return lines;
 	}
 

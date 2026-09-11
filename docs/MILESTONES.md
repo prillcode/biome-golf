@@ -139,8 +139,8 @@ The host operating system should not affect the Fabric server architecture.
 | M4.5 | Single-Player Loop Hardening | Complete (see docs/M4.5-CLOSEOUT.md) |
 | M5 | Single-Player Course Experience | Complete (see docs/M5-CLOSEOUT.md) |
 | M6 | Multiplayer Ready Golf | Complete (see docs/M6-CLOSEOUT.md) |
-| M7 | MVP Hardening and Family Playtest | Not Started |
-| M8 | V1 Gameplay Enhancements | Deferred |
+| M7 | MVP Hardening and Family Playtest | Complete (see docs/M7-CLOSEOUT.md) |
+| M8 | V1 Gameplay Enhancements | Ready for planning |
 | M9 | Course Authoring and Additional Modes | Deferred |
 
 ---
@@ -1114,6 +1114,22 @@ Determine whether the MVP is genuinely fun and stable enough to justify V1 devel
   are terminal. Full auto-advance would deviate from the M6 player-initiated
   `/golf nexthole` contract, so treat it as a deliberate M7 product decision.
 
+### Recorded M7 decisions (2026-09-10)
+
+- **S1 protected-zone scope:** tee/cup vicinity only. The block-break guard
+  protects a configurable-radius vicinity around each hole's authored tee and cup
+  positions; greens are protected via cup vicinity, tee boxes via tee vicinity,
+  and the cup/flag block is always protected. No new green metadata is authored
+  in M7.
+- **S2 advance UX:** HUD button. Advance stays player-initiated and
+  barrier-gated via a no-text-input HUD prompt/button that invokes the existing
+  server-side `nextHole` barrier; `/golf nexthole` and the clickable chat action
+  remain as fallbacks. Full auto-advance is rejected for M7 (would be a recorded
+  M6-contract deviation if revisited).
+- **Docker gameplay profile:** Survival mode with Peaceful difficulty. Golf clubs
+  participate in ordinary vanilla block interaction; M7 does not restrict
+  obstacle clearing exclusively to clubs.
+
 ## Prerequisites
 
 - M6 complete
@@ -1185,7 +1201,8 @@ The MVP is stable enough for repeated family play and has demonstrated enough fu
 
 ## Status
 
-Deferred until M7 validates the MVP.
+Ready for planning. M7 validated the MVP and recorded a decision to proceed to V1;
+candidate scope must be prioritized before implementation begins.
 
 ## Goal
 
@@ -1209,14 +1226,17 @@ Potential features:
 - richer sounds and particles
 - refined HUD
 - improved server configuration
-- optional survival/mob interaction configuration
+- configurable or broader course-integrity protection zones if later playtests
+  confirm the current 12-block tee/cup radius is too narrow
+- optional survival/mob interaction configuration beyond the accepted Survival +
+  Peaceful default
 - traditional turn-based mode
 
 Do not assume every candidate feature belongs in V1.
 
 ## Exit Criteria
 
-To be defined after M7.
+To be defined during bounded M8 planning before implementation begins.
 
 ---
 
@@ -1291,12 +1311,11 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M6 are complete (see `docs/M1-CLOSEOUT.md`, `docs/M2-NOTES.md`, `docs/M3-CLOSEOUT.md`,
-`docs/M4-CLOSEOUT.md`, `docs/M4.5-CLOSEOUT.md`, `docs/M5-CLOSEOUT.md`, and `docs/M6-CLOSEOUT.md`). The current milestone is:
+M0–M7 are complete (see the milestone closeout records through
+`docs/M7-CLOSEOUT.md`). The current milestone is:
 
-> **M7 — MVP Hardening and Family Playtest**
+> **M8 — V1 Gameplay Enhancements**
 
-M7 prioritizes playtesting, tuning, bug fixing, and usability rather than new features,
-and must resolve the two M6 S4 playtest findings recorded in its scope section. Do not
-begin M8 until the MVP is stable enough for repeated family play and has demonstrated
-enough fun/replay value to continue development.
+M8 is ready for planning and prioritization from the candidate scope above and the
+M7 findings. Do not begin implementation until M8 has an explicit bounded plan and
+exit criteria; M7 completion does not imply that every candidate belongs in V1.

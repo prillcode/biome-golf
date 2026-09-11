@@ -19,7 +19,7 @@ import com.prillcode.minecraftgolf.hole.PlayerHoleState;
  *
  * <p>Carries only display-ready values authorised by the server; the client must
  * not derive scoring outcomes from this data. {@code completionReason} and
- * {@code scoreTerm} are null outside a {@link Phase#COMPLETE} snapshot.</p>
+ * {@code scoreTerm} are null outside terminal snapshots.</p>
  */
 public record HoleStatePayload(
 		Phase phase,
@@ -35,19 +35,23 @@ public record HoleStatePayload(
 		int courseStrokes,
 		int courseParPlayed,
 		int courseTotalPar,
+		boolean roundAdvanceAvailable,
 		HoleCompletionReason completionReason,
 		GolfScoreTerm scoreTerm
 ) implements CustomPacketPayload {
 
-	/** Four display phases covering the full player-hole lifecycle. */
-	public enum Phase { PRACTICE, ACTIVE, MISSING_BALL, COMPLETE }
+	/** Display phases covering the full player-hole and round lifecycle. */
+	public enum Phase { PRACTICE, ACTIVE, MISSING_BALL, COMPLETE, ROUND_COMPLETE }
 
 	public HoleStatePayload {
 		Objects.requireNonNull(phase, "phase");
+		if (roundAdvanceAvailable && phase != Phase.COMPLETE) {
+			throw new IllegalArgumentException("round advancement is available only from COMPLETE");
+		}
 	}
 
 	public static final Type<HoleStatePayload> TYPE =
-			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_state"));
+			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_state_v3"));
 
 	public static final StreamCodec<FriendlyByteBuf, HoleStatePayload> STREAM_CODEC =
 			StreamCodec.of(HoleStatePayload::encode, HoleStatePayload::decode);
@@ -59,7 +63,7 @@ public record HoleStatePayload(
 		return new HoleStatePayload(Phase.PRACTICE,
 				hole.number(), hole.par(), hole.strokeLimit(),
 				0, 0, 0, hole.cup().x(), hole.cup().z(), -1,
-				0, 0, 0, null, null);
+				0, 0, 0, false, null, null);
 	}
 
 	/** ACTIVE snapshot: hole is in progress. */
@@ -74,7 +78,7 @@ public record HoleStatePayload(
 				state.strokes(), state.penaltyStrokes(),
 				state.strokes() > 0 ? state.scoreToPar() : 0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				distanceToCupBlocks(ballPosition, state.hole().cup()), 0, 0, 0,
+				distanceToCupBlocks(ballPosition, state.hole().cup()), 0, 0, 0, false,
 				null, null);
 	}
 
@@ -85,7 +89,7 @@ public record HoleStatePayload(
 				state.strokes(), state.penaltyStrokes(),
 				state.strokes() > 0 ? state.scoreToPar() : 0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				-1, 0, 0, 0,
+				-1, 0, 0, 0, false,
 				null, null);
 	}
 
@@ -96,7 +100,7 @@ public record HoleStatePayload(
 				state.strokes(), state.penaltyStrokes(),
 				state.strokes() > 0 ? state.scoreToPar() : 0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				-1, 0, 0, 0,
+				-1, 0, 0, 0, false,
 				state.completionReason(),
 				state.strokes() > 0 ? state.scoreTerm() : null);
 	}
@@ -105,7 +109,24 @@ public record HoleStatePayload(
 	public HoleStatePayload withCourseTotals(int totalStrokes, int parPlayed, int totalPar) {
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, penaltyCount,
 			scoreToPar, cupX, cupZ, distanceToCupBlocks, totalStrokes, parPlayed, totalPar,
-			completionReason, scoreTerm);
+			roundAdvanceAvailable, completionReason, scoreTerm);
+	}
+
+	/** Marks this authoritative snapshot as eligible for player-initiated round advancement. */
+	public HoleStatePayload withRoundAdvanceAvailable(boolean available) {
+		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, penaltyCount,
+			scoreToPar, cupX, cupZ, distanceToCupBlocks, courseStrokes, courseParPlayed,
+			courseTotalPar, available, completionReason, scoreTerm);
+	}
+
+	/** Marks a terminal Hole 3 snapshot as the retained final-round display. */
+	public HoleStatePayload asRoundComplete() {
+		if (phase != Phase.COMPLETE) {
+			throw new IllegalStateException("only a complete hole snapshot can complete a round");
+		}
+		return new HoleStatePayload(Phase.ROUND_COMPLETE, holeNumber, par, strokeLimit,
+			strokes, penaltyCount, scoreToPar, cupX, cupZ, distanceToCupBlocks,
+			courseStrokes, courseParPlayed, courseTotalPar, false, completionReason, scoreTerm);
 	}
 
 	// ── Codec ────────────────────────────────────────────────────────────────
@@ -124,6 +145,7 @@ public record HoleStatePayload(
 		buf.writeInt(p.courseStrokes());
 		buf.writeInt(p.courseParPlayed());
 		buf.writeInt(p.courseTotalPar());
+		buf.writeBoolean(p.roundAdvanceAvailable());
 		boolean hasReason = p.completionReason() != null;
 		buf.writeBoolean(hasReason);
 		if (hasReason) {
@@ -150,6 +172,7 @@ public record HoleStatePayload(
 		int courseStrokes = buf.readInt();
 		int courseParPlayed = buf.readInt();
 		int courseTotalPar = buf.readInt();
+		boolean roundAdvanceAvailable = buf.readBoolean();
 		HoleCompletionReason completionReason = buf.readBoolean()
 				? HoleCompletionReason.values()[buf.readByte()]
 				: null;
@@ -158,7 +181,7 @@ public record HoleStatePayload(
 				: null;
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes,
 				penaltyCount, scoreToPar, cupX, cupZ, distanceToCupBlocks,
-				courseStrokes, courseParPlayed, courseTotalPar,
+				courseStrokes, courseParPlayed, courseTotalPar, roundAdvanceAvailable,
 				completionReason, scoreTerm);
 	}
 

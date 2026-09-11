@@ -1,8 +1,11 @@
 package com.prillcode.minecraftgolf.net;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +29,7 @@ class HoleStatePayloadTest {
 	@Test
 	void practiceSnapshot_hasCorrectPhaseAndHoleMetadata() {
 		HoleStatePayload p = HoleStatePayload.practice(PAR_FOUR);
+		assertEquals("minecraft_golf:hole_state_v3", p.type().id().toString());
 		assertEquals(Phase.PRACTICE, p.phase());
 		assertEquals(1, p.holeNumber());
 		assertEquals(4, p.par());
@@ -73,6 +77,19 @@ class HoleStatePayloadTest {
 		assertEquals(7, p.courseStrokes());
 		assertEquals(7, p.courseParPlayed());
 		assertEquals(12, p.courseTotalPar());
+	}
+
+	@Test
+	void roundAdvanceAvailabilityIsExplicitAndPreservedWithCourseTotals() {
+		assertFalse(HoleStatePayload.active(PlayerHoleState.start(PAR_FOUR))
+			.roundAdvanceAvailable());
+		HoleStatePayload p = HoleStatePayload.complete(
+			PlayerHoleState.start(PAR_FOUR).recordAcceptedShot().pickUp())
+			.withRoundAdvanceAvailable(true)
+			.withCourseTotals(7, 4, 12);
+
+		assertTrue(p.roundAdvanceAvailable());
+		assertEquals(7, p.courseStrokes());
 	}
 
 	@Test
@@ -141,6 +158,29 @@ class HoleStatePayloadTest {
 		assertEquals(Phase.COMPLETE, p.phase());
 		assertEquals(HoleCompletionReason.STROKE_LIMIT, p.completionReason());
 		assertEquals(PAR_FOUR.strokeLimit(), p.strokes());
+	}
+
+	@Test
+	void roundCompleteSnapshot_isExplicitAndRetainsFinalValues() {
+		HoleStatePayload complete = HoleStatePayload.complete(
+			PlayerHoleState.start(PAR_FOUR).recordAcceptedShot().pickUp())
+			.withCourseTotals(14, 12, 12)
+			.withRoundAdvanceAvailable(true);
+
+		HoleStatePayload roundComplete = complete.asRoundComplete();
+
+		assertEquals(Phase.ROUND_COMPLETE, roundComplete.phase());
+		assertEquals(14, roundComplete.courseStrokes());
+		assertEquals(12, roundComplete.courseParPlayed());
+		assertEquals(12, roundComplete.courseTotalPar());
+		assertFalse(roundComplete.roundAdvanceAvailable());
+		assertEquals(HoleCompletionReason.PICKED_UP, roundComplete.completionReason());
+	}
+
+	@Test
+	void nonTerminalSnapshot_cannotBecomeRoundComplete() {
+		assertThrows(IllegalStateException.class,
+			() -> HoleStatePayload.active(PlayerHoleState.start(PAR_FOUR)).asRoundComplete());
 	}
 
 	@Test

@@ -105,6 +105,16 @@ public final class ActiveHoleService {
 		return hole;
 	}
 
+	/** The configured course, or {@code null} when only a single hole is initialized. */
+	public CourseDefinition configuredCourseOrNull() {
+		return course;
+	}
+
+	/** The currently configured hole, or {@code null} before any initialization. */
+	public HoleDefinition configuredHoleOrNull() {
+		return hole;
+	}
+
 	public StartResult createRound(ServerPlayer creator) {
 		if (course == null) {
 			return new StartResult(false, "[golf] no configured course is available");
@@ -945,9 +955,17 @@ public final class ActiveHoleService {
 	}
 
 	private String cumulativeStatus(UUID playerId, PlayerHoleState current) {
-		PlayerCourseState state = courseState(playerId);
+		return cumulativeStatus(courseState(playerId), current);
+	}
+
+	static String cumulativeStatus(PlayerCourseState state, PlayerHoleState current) {
 		if (state == null) {
 			return "";
+		}
+		if (state.isComplete()) {
+			CourseScorecard scorecard = state.finalScorecard();
+			return " | course " + scorecard.totalStrokes() + " strokes ("
+				+ formatToPar(scorecard.scoreToPar()) + ")";
 		}
 		int strokes = state.completedStrokes() + current.strokes();
 		int par = state.completedPar() + current.hole().par();
@@ -982,8 +1000,33 @@ public final class ActiveHoleService {
 	}
 
 	private void sendCompleteSnapshot(ServerPlayer player, PlayerHoleState state) {
-		HoleStateNetworking.send(player, withCourseTotals(player.getUUID(),
-			HoleStatePayload.complete(state), state));
+		HoleStatePayload payload = withCourseTotals(player.getUUID(),
+			HoleStatePayload.complete(state), state);
+		if (isRoundComplete(player.getUUID())) {
+			payload = payload.asRoundComplete();
+		} else if (roundAdvanceAvailable(player.getUUID(), state)) {
+			payload = payload.withRoundAdvanceAvailable(true);
+		}
+		HoleStateNetworking.send(player, payload);
+	}
+
+	private boolean isRoundComplete(UUID playerId) {
+		return activeRound != null && activeRound.phase() == RoundPhase.COMPLETE
+			&& activeRound.findParticipant(playerId)
+				.map(participant -> participant.status() == ParticipantStatus.ACTIVE)
+				.orElse(false);
+	}
+
+	private boolean roundAdvanceAvailable(UUID playerId, PlayerHoleState state) {
+		if (!state.isComplete() || activeRound == null || course == null
+				|| activeRound.phase() != RoundPhase.PLAYING
+				|| activeRound.currentHoleIndex() >= course.holes().size() - 1
+				|| !activeRound.allActiveTerminal()) {
+			return false;
+		}
+		return activeRound.findParticipant(playerId)
+			.map(participant -> participant.status() == ParticipantStatus.ACTIVE)
+			.orElse(false);
 	}
 
 	private void sendFinalScorecard(ServerPlayer player, CourseScorecard scorecard) {
@@ -1003,6 +1046,16 @@ public final class ActiveHoleService {
 			return;
 		}
 		if (activeRound.phase() == RoundPhase.COMPLETE) {
+			for (ReadyGolfParticipant participant : activeRound.participants()) {
+				if (participant.status() != ParticipantStatus.ACTIVE) {
+					continue;
+				}
+				ServerPlayer recipient = server.getPlayerList().getPlayer(participant.playerId());
+				if (recipient != null) {
+					sendCompleteSnapshot(recipient,
+						participant.courseState().completedHoles().getLast());
+				}
+			}
 			sendMultiplayerFinalResults(server, activeRound);
 			return;
 		}
@@ -1016,6 +1069,9 @@ public final class ActiveHoleService {
 			}
 			ServerPlayer recipient = server.getPlayerList().getPlayer(participant.playerId());
 			if (recipient != null) {
+				if (activeRound.allActiveTerminal()) {
+					sendCompleteSnapshot(recipient, participant.courseState().currentHole());
+				}
 				sendBarrierMessage(recipient);
 			}
 		}

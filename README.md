@@ -2,7 +2,7 @@
 
 A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary Minecraft worlds — arcade-realistic, skill-based, and played through real terrain.
 
-> **Current milestone: M7 — MVP Hardening and Family Playtest** (M0–M6 are complete; see `docs/M6-CLOSEOUT.md`; roadmap and status in `docs/MILESTONES.md`)
+> **Current milestone: M8 — V1 Gameplay Enhancements** (M0–M7 are complete; see `docs/M7-CLOSEOUT.md`; M8 is ready for planning and prioritization in `docs/MILESTONES.md`)
 
 M6 Ready Golf play flow on the approved seed (`-1928790872702396508`): run
 `/golf dev preparecourse`, then one golfer creates a shared round with
@@ -39,6 +39,10 @@ First Gradle run downloads dependencies. `runServer` needs `run/eula.txt` with `
 ## Docker dev server
 
 A Fabric dedicated server for realistic testing and LAN play. See `dev-server/README.md`.
+
+For a production-oriented Google Compute Engine deployment, domain setup, backups,
+and end-user mod distribution, see
+[`docs/GCP-DEPLOYMENT-AND-MOD-DISTRIBUTION.md`](docs/GCP-DEPLOYMENT-AND-MOD-DISTRIBUTION.md).
 
 ```bash
 ./scripts/dev-server-sync.sh      # build + copy mod JAR into dev-server/mods/

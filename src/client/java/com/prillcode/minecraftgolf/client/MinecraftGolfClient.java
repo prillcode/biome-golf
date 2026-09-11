@@ -14,6 +14,7 @@ import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.client.camera.PostShotCamera;
 import com.prillcode.minecraftgolf.client.hole.HoleHud;
 import com.prillcode.minecraftgolf.client.hole.HoleHudState;
+import com.prillcode.minecraftgolf.client.hole.NextHolePrompt;
 import com.prillcode.minecraftgolf.client.input.PracticeKeybindings;
 import com.prillcode.minecraftgolf.client.render.GolfBallEntityRenderer;
 import com.prillcode.minecraftgolf.client.swing.SwingController;
@@ -33,9 +34,11 @@ public class MinecraftGolfClient implements ClientModInitializer {
 		PostShotCamera postShotCamera = new PostShotCamera();
 		SwingController swing = new SwingController(postShotCamera);
 		PracticeKeybindings practiceKeys = new PracticeKeybindings();
+		NextHolePrompt nextHolePrompt = new NextHolePrompt();
 		ClientTickEvents.END_CLIENT_TICK.register(swing::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(practiceKeys::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(postShotCamera::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(nextHolePrompt::tick);
 		UseItemCallback.EVENT.register((player, level, hand) -> {
 			if (level.isClientSide() && player == Minecraft.getInstance().player) {
 				swing.click(Minecraft.getInstance(), hand);
