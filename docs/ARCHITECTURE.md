@@ -1267,7 +1267,7 @@ services:
       TYPE: FABRIC
       VERSION: "<pinned version>"
       MEMORY: "4G"
-      MODE: creative
+      MODE: survival
       DIFFICULTY: peaceful
       ONLINE_MODE: "true"
     volumes:

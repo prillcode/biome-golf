@@ -1,6 +1,10 @@
 # Minecraft Golf Dev Server
 
-A Fabric dedicated server for realistic testing and LAN play. Runs via Docker Compose; portable across Docker hosts (this Linux machine, or a Windows 11 mini-PC).
+A Fabric dedicated server for realistic testing and LAN play. Runs via Docker
+Compose; portable across Docker hosts (this Linux machine, or a Windows 11
+mini-PC). The tracked gameplay profile uses Survival mode with Peaceful
+difficulty; Minecraft Golf does not replace vanilla block-breaking rules outside
+protected course zones.
 
 ## Requirements
 

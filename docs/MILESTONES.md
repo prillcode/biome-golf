@@ -1126,6 +1126,9 @@ Determine whether the MVP is genuinely fun and stable enough to justify V1 devel
   server-side `nextHole` barrier; `/golf nexthole` and the clickable chat action
   remain as fallbacks. Full auto-advance is rejected for M7 (would be a recorded
   M6-contract deviation if revisited).
+- **Docker gameplay profile:** Survival mode with Peaceful difficulty. Golf clubs
+  participate in ordinary vanilla block interaction; M7 does not restrict
+  obstacle clearing exclusively to clubs.
 
 ## Prerequisites
 
@@ -1224,8 +1227,8 @@ Potential features:
 - improved server configuration
 - configurable or broader course-integrity protection zones if later playtests
   confirm the current 12-block tee/cup radius is too narrow
-- a Survival + Peaceful server profile, including a product decision on whether
-  golf clubs merely participate in or exclusively control obstacle clearing
+- optional survival/mob interaction configuration beyond the accepted Survival +
+  Peaceful default
 - traditional turn-based mode
 
 Do not assume every candidate feature belongs in V1.

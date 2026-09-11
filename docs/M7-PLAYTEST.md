@@ -101,7 +101,7 @@ reproduction/evidence and intended result are recorded.
 | M7-F02 | M6 S4 | High | Hole transition UX | Players wanted a no-text-input advance action | Player-initiated HUD prompt using the existing server barrier | S5 defect | Implemented; manual verification pending |
 | M7-F03 | M7 smoke test | High | Network compatibility | An M6 client connecting to the M7 server was disconnected because `hole_state` gained one byte under the same payload ID | Version changed payload channels so Fabric capability negotiation suppresses unsupported schemas instead of invoking an incompatible decoder | S5 defect | Fixed as `hole_state_v2`; matching M7 client reconnect verified 2026-09-10 |
 | M7-F04 | M7 manual verification | Low | Course integrity | The 12-block boundary worked as designed, but the tester may prefer a larger protected surrounding area later | Keep the accepted M7 radius; reconsider configurable or broader authoring protection from future playtest evidence | Deferred | Recorded for M8 consideration |
-| M7-F05 | M7 manual verification | Medium | Minecraft interaction | Tester wants normal golf play to use Survival with Peaceful difficulty and expects clubs to support clearing obstacles | Preserve the accepted M7 Creative verification profile; define the intended Survival profile and whether clubs merely participate in or exclusively control obstacle clearing | Deferred | Recorded for M8 product decision |
+| M7-F05 | M7 manual verification | Medium | Minecraft interaction | Tester wants normal golf play to use Survival with Peaceful difficulty; vanilla block interaction is sufficient and need not be club-exclusive | Make Survival + Peaceful the persistent Docker gameplay profile while preserving vanilla breaking outside protected course zones | S5 defect | Applied and live-verified 2026-09-10 |
 
 ## Prioritized defects
 
@@ -139,5 +139,8 @@ Duplicate the session record template below this heading for each completed sess
 - Operator verification: a protected Hole 3 green block could be broken.
 - Repair verification: `/golf dev preparecourse` reported `10 changed`, followed
   immediately by `0 changed`.
+- Gameplay-profile decision: live player and server default changed to Survival;
+  difficulty confirmed Peaceful. Vanilla obstacle breaking remains available and
+  is not restricted exclusively to golf clubs.
 - Scope note: this was an implementation acceptance pass, not the required
   two-or-more-player family/LAN session.

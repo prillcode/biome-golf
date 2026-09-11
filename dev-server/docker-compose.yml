@@ -10,7 +10,7 @@ services:
       VERSION: "26.2"
       SEED: "-1928790872702396508"
       MEMORY: "4G"
-      MODE: creative
+      MODE: survival
       DIFFICULTY: peaceful
       ONLINE_MODE: "true"
       MOTD: "Minecraft Golf dev server"
