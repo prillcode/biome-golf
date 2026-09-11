@@ -74,10 +74,10 @@ not sufficient evidence for a tuning change.
 
 ### Presentation checks
 
-- [ ] Every club renders correctly in inventory.
-- [ ] Every club renders correctly in first person.
+- [x] Every club renders correctly in inventory.
+- [x] Every club renders correctly in first person.
 - [ ] Every club renders correctly in third person on both clients.
-- [ ] No magenta/black missing-texture presentation appears.
+- [x] No magenta/black missing-texture presentation appears.
 
 ### Success questions
 
@@ -102,6 +102,7 @@ reproduction/evidence and intended result are recorded.
 | M7-F03 | M7 smoke test | High | Network compatibility | An M6 client connecting to the M7 server was disconnected because `hole_state` gained one byte under the same payload ID | Version changed payload channels so Fabric capability negotiation suppresses unsupported schemas instead of invoking an incompatible decoder | S5 defect | Fixed as `hole_state_v2`; matching M7 client reconnect verified 2026-09-10 |
 | M7-F04 | M7 manual verification | Low | Course integrity | The 12-block boundary worked as designed, but the tester may prefer a larger protected surrounding area later | Keep the accepted M7 radius; reconsider configurable or broader authoring protection from future playtest evidence | Deferred | Recorded for M8 consideration |
 | M7-F05 | M7 manual verification | Medium | Minecraft interaction | Tester wants normal golf play to use Survival with Peaceful difficulty; vanilla block interaction is sufficient and need not be club-exclusive | Make Survival + Peaceful the persistent Docker gameplay profile while preserving vanilla breaking outside protected course zones | S5 defect | Applied and live-verified 2026-09-10 |
+| M7-F06 | M7 manual verification | Low | Club presentation | All seven clubs rendered in inventory, first person, and third person on the connected client; models are flat 2D items | Flat item presentation is acceptable for MVP | No change | Accepted 2026-09-10; second-client third-person check pending |
 
 ## Prioritized defects
 
@@ -148,5 +149,9 @@ Duplicate the session record template below this heading for each completed sess
 - Command fallback verification: a second round used the HUD for Hole 1 to Hole
   2, then `/golf nexthole` for Hole 2 to Hole 3; authoritative status showed one
   active Hole 3 ball. The temporary round was then cleanly left.
+- Presentation verification: all seven clubs rendered without missing textures in
+  inventory, first person, and third person on the connected client. The tester
+  accepted the flat 2D item style for MVP; second-client third-person presentation
+  remains part of the multiplayer session.
 - Scope note: this was an implementation acceptance pass, not the required
   two-or-more-player family/LAN session.

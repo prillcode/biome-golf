@@ -50,6 +50,9 @@ Status: **Agent-executable work complete through the manual playtest gate.**
 - M7-F05 — Docker's persistent gameplay profile is now Survival + Peaceful; golf
   clubs retain ordinary vanilla block interaction rather than becoming exclusive
   obstacle-removal tools.
+- One-client presentation — all seven clubs passed inventory, first-person, and
+  third-person rendering with no missing textures; the tester accepted the flat
+  2D item style for MVP. Second-client third-person presentation remains.
 - M7-F01 is manually accepted; inherited finding M7-F02 still needs the two-client
   advance-flow acceptance pass.
 - S5 finding M7-F03: an older installed client was disconnected when the M7
