@@ -19,7 +19,7 @@ import com.prillcode.minecraftgolf.hole.PlayerHoleState;
  *
  * <p>Carries only display-ready values authorised by the server; the client must
  * not derive scoring outcomes from this data. {@code completionReason} and
- * {@code scoreTerm} are null outside a {@link Phase#COMPLETE} snapshot.</p>
+ * {@code scoreTerm} are null outside terminal snapshots.</p>
  */
 public record HoleStatePayload(
 		Phase phase,
@@ -40,8 +40,8 @@ public record HoleStatePayload(
 		GolfScoreTerm scoreTerm
 ) implements CustomPacketPayload {
 
-	/** Four display phases covering the full player-hole lifecycle. */
-	public enum Phase { PRACTICE, ACTIVE, MISSING_BALL, COMPLETE }
+	/** Display phases covering the full player-hole and round lifecycle. */
+	public enum Phase { PRACTICE, ACTIVE, MISSING_BALL, COMPLETE, ROUND_COMPLETE }
 
 	public HoleStatePayload {
 		Objects.requireNonNull(phase, "phase");
@@ -51,7 +51,7 @@ public record HoleStatePayload(
 	}
 
 	public static final Type<HoleStatePayload> TYPE =
-			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_state_v2"));
+			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_state_v3"));
 
 	public static final StreamCodec<FriendlyByteBuf, HoleStatePayload> STREAM_CODEC =
 			StreamCodec.of(HoleStatePayload::encode, HoleStatePayload::decode);
@@ -117,6 +117,16 @@ public record HoleStatePayload(
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, penaltyCount,
 			scoreToPar, cupX, cupZ, distanceToCupBlocks, courseStrokes, courseParPlayed,
 			courseTotalPar, available, completionReason, scoreTerm);
+	}
+
+	/** Marks a terminal Hole 3 snapshot as the retained final-round display. */
+	public HoleStatePayload asRoundComplete() {
+		if (phase != Phase.COMPLETE) {
+			throw new IllegalStateException("only a complete hole snapshot can complete a round");
+		}
+		return new HoleStatePayload(Phase.ROUND_COMPLETE, holeNumber, par, strokeLimit,
+			strokes, penaltyCount, scoreToPar, cupX, cupZ, distanceToCupBlocks,
+			courseStrokes, courseParPlayed, courseTotalPar, false, completionReason, scoreTerm);
 	}
 
 	// ── Codec ────────────────────────────────────────────────────────────────

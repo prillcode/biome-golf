@@ -103,6 +103,7 @@ reproduction/evidence and intended result are recorded.
 | M7-F04 | M7 manual verification | Low | Course integrity | The 12-block boundary worked as designed, but the tester may prefer a larger protected surrounding area later | Keep the accepted M7 radius; reconsider configurable or broader authoring protection from future playtest evidence | Deferred | Recorded for M8 consideration |
 | M7-F05 | M7 manual verification | Medium | Minecraft interaction | Tester wants normal golf play to use Survival with Peaceful difficulty; vanilla block interaction is sufficient and need not be club-exclusive | Make Survival + Peaceful the persistent Docker gameplay profile while preserving vanilla breaking outside protected course zones | S5 defect | Applied and live-verified 2026-09-10 |
 | M7-F06 | M7 manual verification | Low | Club presentation | All seven clubs rendered in inventory, first person, and third person on the connected client; models are flat 2D items | Flat item presentation is acceptable for MVP | No change | Accepted 2026-09-10; second-client third-person check pending |
+| M7-F07 | M7 solo round | Medium | Finalization UX | Server correctly reported no active round after Hole 3, but the retained Hole 3 `COMPLETE` HUD made the player feel stuck | Keep the final score visible with an explicit `ROUND COMPLETE` label and replay/exit guidance | S5 defect | Implemented as `ROUND_COMPLETE`; manual acceptance pending |
 
 ## Prioritized defects
 
@@ -111,6 +112,7 @@ reproduction/evidence and intended result are recorded.
 | 1 | M7-F01 course destructibility | Accepted on Docker: non-OP protection, OP repair, `10 changed` then `0 changed` |
 | 2 | M7-F02 advance UX | Solo prompt/button/dismissal/chat/command/final-hole paths accepted; two-client barrier pending |
 | 3 | M7-F03 stale-client packet decode failure | Versioned the changed clientbound channel as `hole_state_v2`; matching M7 client reconnect passed |
+| 4 | M7-F07 ambiguous final HUD | Implemented server-authored `ROUND_COMPLETE` display with replay/exit guidance; manual acceptance pending |
 
 Add session-discovered crashes, desync, stuck balls, impossible recovery, misleading
 HUD behavior, scoring errors, and major usability problems here before starting S5.

@@ -994,10 +994,19 @@ public final class ActiveHoleService {
 	private void sendCompleteSnapshot(ServerPlayer player, PlayerHoleState state) {
 		HoleStatePayload payload = withCourseTotals(player.getUUID(),
 			HoleStatePayload.complete(state), state);
-		if (roundAdvanceAvailable(player.getUUID(), state)) {
+		if (isRoundComplete(player.getUUID())) {
+			payload = payload.asRoundComplete();
+		} else if (roundAdvanceAvailable(player.getUUID(), state)) {
 			payload = payload.withRoundAdvanceAvailable(true);
 		}
 		HoleStateNetworking.send(player, payload);
+	}
+
+	private boolean isRoundComplete(UUID playerId) {
+		return activeRound != null && activeRound.phase() == RoundPhase.COMPLETE
+			&& activeRound.findParticipant(playerId)
+				.map(participant -> participant.status() == ParticipantStatus.ACTIVE)
+				.orElse(false);
 	}
 
 	private boolean roundAdvanceAvailable(UUID playerId, PlayerHoleState state) {
@@ -1029,6 +1038,16 @@ public final class ActiveHoleService {
 			return;
 		}
 		if (activeRound.phase() == RoundPhase.COMPLETE) {
+			for (ReadyGolfParticipant participant : activeRound.participants()) {
+				if (participant.status() != ParticipantStatus.ACTIVE) {
+					continue;
+				}
+				ServerPlayer recipient = server.getPlayerList().getPlayer(participant.playerId());
+				if (recipient != null) {
+					sendCompleteSnapshot(recipient,
+						participant.courseState().completedHoles().getLast());
+				}
+			}
 			sendMultiplayerFinalResults(server, activeRound);
 			return;
 		}

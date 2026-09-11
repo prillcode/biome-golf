@@ -22,7 +22,7 @@ Status: **Agent-executable work complete through the manual playtest gate.**
 ## Automated verification
 
 - `./gradlew clean build --no-daemon` — PASS
-- 198 tests, 0 failures, 0 errors
+- 200 tests, 0 failures, 0 errors
 - `git diff --check` — PASS
 - `net.minecraft.client` imports under `src/main/java` — 0
 - Loom dedicated server on port 25566 — reached `Done (1.381s)`, registered the
@@ -31,7 +31,7 @@ Status: **Agent-executable work complete through the manual playtest gate.**
   reloaded resources, created item/GUI atlases, and started sound; only the
   previously accepted dev narrator/auth-service warnings appeared
 - Built/staged JAR SHA-256 identity —
-  `cde1846f5db84573440e0e5af78d7e5f3d11cd7988e8d4130c860fdbe1dabd81`
+  `0b43f8c9b75717a10f3fd889204c4302e6e64fe5e0538f31deff573bbb095520`
 
 ## Manual and environment gates
 
@@ -61,5 +61,10 @@ Status: **Agent-executable work complete through the manual playtest gate.**
   unsupported schema rather than invoke a stale decoder. A matching M7 client
   connected successfully after both client and Docker server reloaded the rebuilt
   JAR on 2026-09-10.
+- S5 finding M7-F07: a completed round retained an ambiguous Hole 3 `COMPLETE`
+  HUD. The server now authors a distinct `ROUND_COMPLETE` phase, broadcasts it
+  to every active golfer, and the HUD retains the final score with replay/exit
+  guidance. The evolved schema uses `hole_state_v3`; clean build and Docker boot
+  pass, with manual HUD acceptance pending after client restart.
 - S6 closeout, final V1 decision, and M7 completion remain blocked on those manual
   results.

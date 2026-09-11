@@ -97,6 +97,12 @@ public final class HoleHud {
 			if (state.roundAdvanceAvailable()) {
 				graphics.text(client.font, "NEXT TEE READY", x + PAD_X, textY, GOOD, true);
 			}
+		} else if (state.phase() == Phase.ROUND_COMPLETE) {
+			graphics.text(client.font, "ROUND COMPLETE", x + PAD_X, textY, GOLD, true);
+			textY += LINE_HEIGHT;
+			graphics.text(client.font, "Replay: /golf hole restart", x + PAD_X, textY, MUTED, false);
+			textY += LINE_HEIGHT;
+			graphics.text(client.font, "Exit: /golf hole abandon", x + PAD_X, textY, MUTED, false);
 		}
 	}
 
@@ -110,7 +116,7 @@ public final class HoleHud {
 		else if (state.phase() == Phase.COMPLETE) {
 			lines++;
 			if (state.roundAdvanceAvailable()) lines++;
-		}
+		} else if (state.phase() == Phase.ROUND_COMPLETE) lines += 3;
 		return lines;
 	}
 
