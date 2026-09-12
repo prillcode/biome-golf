@@ -40,9 +40,9 @@ class CourseConfigLoaderTest {
 		Files.writeString(missing, "{\"id\":\"test\"}");
 		assertThrows(IllegalArgumentException.class, () -> CourseConfigLoader.load(missing));
 
-		Path wrongParOrder = tempDir.resolve("wrong-par.json");
-		Files.writeString(wrongParOrder, validCourseJson().replace("\"par\": 4", "\"par\": 3"));
-		assertThrows(IllegalArgumentException.class, () -> CourseConfigLoader.load(wrongParOrder));
+		Path wrongHoleOrder = tempDir.resolve("wrong-order.json");
+		Files.writeString(wrongHoleOrder, validCourseJson().replace("\"number\": 2", "\"number\": 3"));
+		assertThrows(IllegalArgumentException.class, () -> CourseConfigLoader.load(wrongHoleOrder));
 
 		Path outsideTransition = tempDir.resolve("outside-transition.json");
 		Files.writeString(outsideTransition,

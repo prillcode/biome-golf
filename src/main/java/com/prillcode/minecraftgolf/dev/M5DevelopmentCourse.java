@@ -15,7 +15,23 @@ public final class M5DevelopmentCourse {
 	private M5DevelopmentCourse() {
 	}
 
+	private static final List<Integer> REQUIRED_PARS = List.of(4, 3, 5);
+
 	public static CourseDefinition definition() {
+		CourseDefinition definition = build();
+		if (definition.holes().size() != REQUIRED_PARS.size()) {
+			throw new IllegalStateException("M5 development course must contain exactly three holes");
+		}
+		for (int index = 0; index < REQUIRED_PARS.size(); index++) {
+			if (definition.holes().get(index).par() != REQUIRED_PARS.get(index)) {
+				throw new IllegalStateException(
+					"M5 development course holes must be par 4, par 3, par 5 in order");
+			}
+		}
+		return definition;
+	}
+
+	private static CourseDefinition build() {
 		return new CourseDefinition(
 			"minecraft_golf:m5_development",
 			"M5 Development Course",

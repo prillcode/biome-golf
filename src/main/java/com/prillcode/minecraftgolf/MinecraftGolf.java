@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.prillcode.minecraftgolf.block.GolfBlocks;
+import com.prillcode.minecraftgolf.command.GolfCourseCommands;
 import com.prillcode.minecraftgolf.command.GolfDevCommands;
 import com.prillcode.minecraftgolf.command.GolfHoleCommands;
 import com.prillcode.minecraftgolf.dev.M5DevelopmentCourse;
@@ -17,6 +18,7 @@ import com.prillcode.minecraftgolf.net.HoleStateNetworking;
 import com.prillcode.minecraftgolf.net.NextHoleNetworking;
 import com.prillcode.minecraftgolf.net.ShotNetworking;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
+import com.prillcode.minecraftgolf.server.AuthoredCourseService;
 import com.prillcode.minecraftgolf.server.CourseBlockBreakGuard;
 
 public class MinecraftGolf implements ModInitializer {
@@ -53,6 +55,11 @@ public class MinecraftGolf implements ModInitializer {
 		// M5: the fixed, versioned three-hole development course and its player lifecycle.
 		ActiveHoleService.instance().initializeCourse(M5DevelopmentCourse.definition());
 		GolfHoleCommands.register();
+
+		// M8 S2: authored course store persistence (world JSON, fail-closed) and
+		// operator authoring/selection commands. Boot default stays the M5 course.
+		AuthoredCourseService.register();
+		GolfCourseCommands.register();
 
 		// M3: typed shot-request networking (payload codec + server receiver).
 		ShotNetworking.register();

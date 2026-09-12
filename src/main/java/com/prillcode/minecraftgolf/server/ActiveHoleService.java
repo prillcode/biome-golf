@@ -30,6 +30,7 @@ import com.prillcode.minecraftgolf.course.CourseDefinition;
 import com.prillcode.minecraftgolf.course.CourseScorecard;
 import com.prillcode.minecraftgolf.course.HoleScore;
 import com.prillcode.minecraftgolf.course.PlayerCourseState;
+import com.prillcode.minecraftgolf.club.GolfClubs;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
@@ -108,6 +109,15 @@ public final class ActiveHoleService {
 	/** The configured course, or {@code null} when only a single hole is initialized. */
 	public CourseDefinition configuredCourseOrNull() {
 		return course;
+	}
+
+	/**
+	 * True while any play is in flight: a non-complete Ready Golf lobby/round or
+	 * any player's solo hole attempt. Used to gate course selection and deletion.
+	 */
+	public boolean hasActivePlay() {
+		return (activeRound != null && activeRound.phase() != RoundPhase.COMPLETE)
+			|| lifecycle.hasAnySession();
 	}
 
 	/** The currently configured hole, or {@code null} before any initialization. */
@@ -270,6 +280,35 @@ public final class ActiveHoleService {
 		MinecraftGolf.LOGGER.info("{} dropped player-owned practice ball {}",
 			player.getName().getString(), ball.getUUID());
 		return new StartResult(true, "[golf] dropped a practice ball");
+	}
+
+	/** Resets the current golf set into hotbar slots 0 through 6. */
+	public StartResult equipClubs(ServerPlayer player) {
+		List<ItemStack> displaced = new ArrayList<>();
+		for (int slot = 0; slot < 7; slot++) {
+			ItemStack stack = player.getInventory().getItem(slot);
+			if (!stack.isEmpty() && !(stack.getItem() instanceof GolfClubItem)) {
+				displaced.add(stack.copy());
+			}
+			player.getInventory().setItem(slot, ItemStack.EMPTY);
+		}
+		for (int slot = 7; slot < player.getInventory().getContainerSize(); slot++) {
+			if (player.getInventory().getItem(slot).getItem() instanceof GolfClubItem) {
+				player.getInventory().setItem(slot, ItemStack.EMPTY);
+			}
+		}
+		for (int slot = 0; slot < GolfClubs.ALL.size(); slot++) {
+			player.getInventory().setItem(slot,
+				new ItemStack(GolfItems.itemFor(GolfClubs.ALL.get(slot).id())));
+		}
+		for (ItemStack stack : displaced) {
+			if (!player.getInventory().add(stack)) {
+				player.drop(stack, false);
+			}
+		}
+		MinecraftGolf.LOGGER.info("{} reset the golf club set into hotbar slots 0-6 via /golf clubs equip",
+			player.getName().getString());
+		return new StartResult(true, "[golf] reset the full club set into hotbar slots 1-7");
 	}
 
 	public StartResult restart(ServerPlayer player) {

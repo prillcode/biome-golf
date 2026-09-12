@@ -383,7 +383,8 @@ Polished course-authoring tools are not required for MVP.
 
 MVP courses may be defined through configuration files, development commands, or other simple administrative mechanisms.
 
-A later V1 feature should introduce convenient in-game commands, such as:
+M8 should introduce a bounded, operator-facing version of convenient in-game
+commands, such as:
 
 ```text
 /golf course create pine-hills
@@ -394,6 +395,10 @@ A later V1 feature should introduce convenient in-game commands, such as:
 ```
 
 Commands should generally operate using the administrator's current position.
+
+The initial authoring system should define metadata on existing Minecraft terrain;
+it should not attempt to provide a visual editor, arbitrary terrain generation, a
+course marketplace, or external persistence infrastructure.
 
 ---
 
@@ -765,14 +770,13 @@ Likely priorities include:
 2. Wind
 3. Better terrain and lie behavior
 4. Approximate landing-area preview
-5. In-game course creation commands
-6. Teleport-to-ball if walking becomes tedious
-7. Teleport-to-next-tee UX
-8. Scramble mode
-9. Traditional turn mode
-10. Improved course boundary tools
-11. Expanded golf-specific configuration
-12. More polished HUD, sound, particles, and visual feedback
+5. Teleport-to-ball if walking becomes tedious
+6. Teleport-to-next-tee UX
+7. Scramble mode
+8. Traditional turn mode
+9. Improved course boundary tools
+10. Expanded golf-specific configuration
+11. More polished HUD, sound, particles, and visual feedback
 
 The exact order should be revised after real family playtesting.
 

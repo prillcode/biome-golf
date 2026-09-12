@@ -714,7 +714,11 @@ CourseDefinition
 
 ## MVP Course Configuration
 
-Course-authoring commands are deferred.
+Course-authoring commands are deferred for MVP. The bounded M8 authoring slice may
+add operator-facing commands for defining metadata on existing terrain. Authoring
+must remain server-authoritative and use Minecraft-native/local persistence; it must
+not introduce a visual editor, arbitrary world generation, external storage, or a
+course-sharing service.
 
 For MVP, courses can be loaded from mod/server configuration data.
 

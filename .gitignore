@@ -85,3 +85,6 @@ vendor/
 coverage/
 .cache/
 tmp/
+
+# Server logs produced by runServer at repo root
+logs/

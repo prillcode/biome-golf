@@ -7,7 +7,7 @@ import java.util.Set;
 
 import com.prillcode.minecraftgolf.hole.HoleDefinition;
 
-/** Immutable M5 definition of exactly three ordered authored holes. */
+/** Immutable definition of one or more ordered authored holes in a single dimension. */
 public record CourseDefinition(
 	String id,
 	String displayName,
@@ -15,8 +15,6 @@ public record CourseDefinition(
 	GeneratedLayoutIdentity generatedLayout,
 	List<HoleDefinition> holes
 ) {
-	private static final List<Integer> REQUIRED_PARS = List.of(4, 3, 5);
-
 	public CourseDefinition {
 		requireNonBlank(id, "id");
 		requireNonBlank(displayName, "displayName");
@@ -24,8 +22,8 @@ public record CourseDefinition(
 		Objects.requireNonNull(generatedLayout, "generatedLayout");
 		Objects.requireNonNull(holes, "holes");
 		holes = List.copyOf(holes);
-		if (holes.size() != 3) {
-			throw new IllegalArgumentException("M5 course must contain exactly three holes");
+		if (holes.isEmpty()) {
+			throw new IllegalArgumentException("course must contain at least one hole");
 		}
 
 		Set<String> ids = new HashSet<>();
@@ -33,10 +31,8 @@ public record CourseDefinition(
 			HoleDefinition hole = Objects.requireNonNull(holes.get(index), "holes must not contain null");
 			int expectedNumber = index + 1;
 			if (hole.number() != expectedNumber) {
-				throw new IllegalArgumentException("holes must be ordered and numbered 1, 2, 3");
-			}
-			if (hole.par() != REQUIRED_PARS.get(index)) {
-				throw new IllegalArgumentException("M5 course holes must be par 4, par 3, par 5 in order");
+				throw new IllegalArgumentException("holes must be ordered and numbered 1.." + holes.size()
+					+ " without gaps");
 			}
 			if (!dimension.equals(hole.dimension())) {
 				throw new IllegalArgumentException("every hole must use the course dimension");
@@ -49,7 +45,7 @@ public record CourseDefinition(
 
 	public HoleDefinition hole(int number) {
 		if (number < 1 || number > holes.size()) {
-			throw new IllegalArgumentException("hole number must be between 1 and 3");
+			throw new IllegalArgumentException("hole number must be between 1 and " + holes.size());
 		}
 		return holes.get(number - 1);
 	}

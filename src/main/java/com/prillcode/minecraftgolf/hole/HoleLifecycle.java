@@ -129,6 +129,10 @@ public final class HoleLifecycle {
 			: ShotPermission.WRONG_BALL;
 	}
 
+	public boolean hasAnySession() {
+		return !sessions.isEmpty();
+	}
+
 	public void clear() {
 		sessions.clear();
 	}

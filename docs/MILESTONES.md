@@ -140,8 +140,8 @@ The host operating system should not affect the Fabric server architecture.
 | M5 | Single-Player Course Experience | Complete (see docs/M5-CLOSEOUT.md) |
 | M6 | Multiplayer Ready Golf | Complete (see docs/M6-CLOSEOUT.md) |
 | M7 | MVP Hardening and Family Playtest | Complete (see docs/M7-CLOSEOUT.md) |
-| M8 | V1 Gameplay Enhancements | Ready for planning |
-| M9 | Course Authoring and Additional Modes | Deferred |
+| M8 | V1 Course and Hole Authoring | Complete (see docs/M8-CLOSEOUT.md) |
+| M9 | Additional Game Modes | Deferred |
 
 ---
 
@@ -1197,71 +1197,89 @@ The MVP is stable enough for repeated family play and has demonstrated enough fu
 
 ---
 
-# M8 — V1 Gameplay Enhancements
+# M8 — V1 Course and Hole Authoring
 
 ## Status
 
-Ready for planning. M7 validated the MVP and recorded a decision to proceed to V1;
-candidate scope must be prioritized before implementation begins.
+Complete. M8 delivered the bounded operator-facing course and hole authoring slice,
+including persistence, validation, selection, and playability verification. The
+closeout record is in `docs/M8-CLOSEOUT.md`.
 
 ## Goal
 
-Improve depth, presentation, and convenience without changing the core identity.
+Let operators and builders create and play additional Minecraft-native courses and
+holes without changing the core identity or weakening the existing server-authority
+and course-integrity contracts.
 
-## Candidate Scope
+## Bounded Scope
 
-Prioritize based on playtest findings.
+### Course and hole authoring
 
-Potential features:
+- Add operator/admin commands to create and manage course metadata on existing
+  Minecraft terrain:
+  - `/golf course create <name>`
+  - `/golf course edit <id>`
+  - `/golf hole tee <number>`
+  - `/golf hole cup <number>`
+  - `/golf hole par <number> <value>`
+  - `/golf hole bounds <number>` (run twice for opposite corners)
+- Support more than one named course in a world.
+- Validate course and hole definitions before they can be played.
+- Preserve authored tee, cup, par, dimension, and boundary metadata through the
+  repository's Minecraft-native/local persistence approach.
+- Keep course protection and recovery behavior compatible with authored locations.
+- Provide commands or status output to inspect, select, and reset authored course
+  definitions safely.
+- Preserve the existing deterministic three-hole course as a regression and replay
+  fixture while new authoring is added.
+- Support selecting an authored course for the existing single-player and Ready Golf
+  flows where the current round contracts permit it.
 
-- wind
-- advanced terrain/lie effects
-- cinematic ball camera
-- approximate landing-area indicator
-- optional teleport-to-ball
-- optional water-hazard recovery choice: safe shoreline drop near the entry point or stroke-and-distance re-hit; true out-of-bounds remains stroke-and-distance only
-- optional chip-shot mode for Wedge and Short Iron, producing a low flight with controlled putt-like rollout
-- improved ball identification
-- expanded club set
-- richer sounds and particles
-- refined HUD
-- improved server configuration
-- configurable or broader course-integrity protection zones if later playtests
-  confirm the current 12-block tee/cup radius is too narrow
-- optional survival/mob interaction configuration beyond the accepted Survival +
-  Peaceful default
-- traditional turn-based mode
+### Authoring usability
 
-Do not assume every candidate feature belongs in V1.
+- Give clear feedback for invalid command order, missing tee/cup/par/bounds, duplicate
+  names or hole numbers, unsupported dimensions, and unsafe definitions.
+- Document the command workflow and the limits of the bounded authoring system.
+- Add focused unit and integration coverage for creation, validation, persistence,
+  selection, reset, and playability.
+
+## Explicitly Deferred From M8
+
+The following remain outside this bounded milestone:
+
+- visual course editor or polished authoring UI
+- arbitrary procedural course generation
+- course marketplace, sharing service, or external backend
+- Scramble and other alternate game modes
+- wind, advanced lies, cinematic camera, landing preview, teleport-to-ball, chip
+  shots, expanded clubs, and presentation-polish candidates
+- multiple tee boxes per hole (red/white/blue, per-player tee selection at round
+  start; explicitly WITHOUT per-tee par — one par per hole regardless of tee).
+  Requested during early M8 family course-building; deferred so S2 authoring stays
+  simple. Touches HoleDefinition, round state, HUD distances, transitions, and both
+  JSON serializers, so it deserves its own focused slice.
+
+These may be reconsidered in a later V1 polish milestone after authoring has been
+validated through play.
 
 ## Exit Criteria
 
-To be defined during bounded M8 planning before implementation begins.
+M8 is complete when an operator can define, validate, save, select, and play a
+second course with at least one authored hole using documented commands, while the
+existing three-hole course still completes correctly for single-player and Ready
+Golf play. Invalid definitions fail safely, authored course state survives the
+documented restart/reset boundary, course protection remains enforced, and no
+client-only code enters the dedicated-server path.
 
 ---
 
-# M9 — Course Authoring and Additional Modes
+# M9 — Additional Game Modes
 
 ## Status
 
-Deferred until the core game is proven.
+Deferred until M8 authoring is complete and the next alternate mode is prioritized.
 
 ## Candidate Scope
-
-### Course Authoring
-
-Potential commands:
-
-```text
-/golf course create <name>
-/golf hole create <number>
-/golf hole tee
-/golf hole cup
-/golf hole par <value>
-/golf hole bounds ...
-```
-
-Support multiple courses in one Minecraft world.
 
 ### Scramble
 
@@ -1311,11 +1329,6 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M7 are complete (see the milestone closeout records through
-`docs/M7-CLOSEOUT.md`). The current milestone is:
-
-> **M8 — V1 Gameplay Enhancements**
-
-M8 is ready for planning and prioritization from the candidate scope above and the
-M7 findings. Do not begin implementation until M8 has an explicit bounded plan and
-exit criteria; M7 completion does not imply that every candidate belongs in V1.
+M0–M8 are complete (see the milestone closeout records through
+`docs/M8-CLOSEOUT.md`). M9 — Additional Game Modes remains deferred until the next
+alternate mode is explicitly prioritized.

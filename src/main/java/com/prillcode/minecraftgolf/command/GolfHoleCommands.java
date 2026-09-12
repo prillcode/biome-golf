@@ -46,6 +46,8 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("restart").executes(GolfHoleCommands::restart))
 				.then(Commands.literal("abandon").executes(GolfHoleCommands::abandon))
 				.then(Commands.literal("status").executes(GolfHoleCommands::status)))
+			.then(Commands.literal("clubs")
+				.then(Commands.literal("equip").executes(GolfHoleCommands::equipClubs)))
 			.then(Commands.literal("practiceball").executes(GolfHoleCommands::dropPracticeBall))
 			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp))
 			.then(Commands.literal("nexthole").executes(GolfHoleCommands::nextHole)));
@@ -106,6 +108,12 @@ public final class GolfHoleCommands {
 		context.getSource().sendSuccess(
 			() -> Component.literal(ActiveHoleService.instance().status(player)), false);
 		return 1;
+	}
+
+	private static int equipClubs(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		return sendResult(context, ActiveHoleService.instance().equipClubs(player));
 	}
 
 	private static int dropPracticeBall(CommandContext<CommandSourceStack> context)
