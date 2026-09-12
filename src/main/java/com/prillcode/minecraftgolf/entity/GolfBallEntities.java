@@ -37,7 +37,9 @@ public final class GolfBallEntities {
 				GOLF_BALL_KEY,
 				EntityType.Builder.of(GolfBallEntity::new, MobCategory.MISC)
 						.sized((float) (GolfBallEntity.BALL_RADIUS * 2.0), (float) (GolfBallEntity.BALL_RADIUS * 2.0))
-						.clientTrackingRange(10)
+						// Shots can travel beyond the player's local 10-chunk view while the
+						// post-shot camera follows the server-authoritative ball.
+						.clientTrackingRange(16)
 						.updateInterval(1)
 						.build(GOLF_BALL_KEY));
 		return (EntityType<GolfBallEntity>) type;

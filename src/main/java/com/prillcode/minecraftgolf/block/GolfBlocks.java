@@ -31,10 +31,43 @@ public final class GolfBlocks {
 			.noOcclusion())
 	);
 
+	public static final ResourceKey<Block> GOLF_FLAG_KEY = ResourceKey.create(
+		Registries.BLOCK,
+		Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "golf_flag")
+	);
+
+	public static final GolfFlagBlock GOLF_FLAG = Registry.register(
+		BuiltInRegistries.BLOCK,
+		GOLF_FLAG_KEY,
+		new GolfFlagBlock(BlockBehaviour.Properties.of()
+			.setId(GOLF_FLAG_KEY)
+			.mapColor(MapColor.COLOR_RED)
+			.strength(0.5F)
+			.sound(SoundType.WOOL)
+			.noOcclusion())
+	);
+
+	public static final ResourceKey<Block> GOLF_FLAG_TOP_KEY = ResourceKey.create(
+		Registries.BLOCK,
+		Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "golf_flag_top")
+	);
+
+	public static final GolfFlagBlock GOLF_FLAG_TOP = Registry.register(
+		BuiltInRegistries.BLOCK,
+		GOLF_FLAG_TOP_KEY,
+		new GolfFlagBlock(BlockBehaviour.Properties.of()
+			.setId(GOLF_FLAG_TOP_KEY)
+			.mapColor(MapColor.COLOR_RED)
+			.strength(0.5F)
+			.sound(SoundType.WOOL)
+			.noOcclusion())
+	);
+
 	private GolfBlocks() {
 	}
 
 	public static void registerAll() {
-		MinecraftGolf.LOGGER.info("Registered golf cup block as {}", GOLF_CUP_KEY.identifier());
+		MinecraftGolf.LOGGER.info("Registered golf cup and flag blocks as {}, {}, and {}",
+			GOLF_CUP_KEY.identifier(), GOLF_FLAG_KEY.identifier(), GOLF_FLAG_TOP_KEY.identifier());
 	}
 }

@@ -60,6 +60,8 @@ public final class M5DevelopmentLayout {
 		operations.add(fill(-357, 70, 420, -352, 70, 420, LayoutBlock.GREEN_WOOL));
 		operations.add(fill(-355, 70, 421, -354, 70, 421, LayoutBlock.GREEN_WOOL));
 		operations.add(fill(-355, 71, 416, -355, 71, 416, LayoutBlock.GOLF_CUP));
+		operations.add(fill(-355, 72, 416, -355, 72, 416, LayoutBlock.GOLF_FLAG));
+		operations.add(fill(-355, 73, 416, -355, 73, 416, LayoutBlock.GOLF_FLAG_TOP));
 
 		// A visible striped gate warns that the natural ravine crosses driver range.
 		operations.add(clearVegetation(-276, 68, 437, -272, 78, 441));
@@ -114,6 +116,8 @@ public final class M5DevelopmentLayout {
 		operations.add(fill(-212, 70, 432, -201, 70, 434, LayoutBlock.GREEN_WOOL));
 		operations.add(fill(-209, 70, 435, -204, 70, 436, LayoutBlock.GREEN_WOOL));
 		operations.add(fill(-207, 71, 426, -207, 71, 426, LayoutBlock.GOLF_CUP));
+		operations.add(fill(-207, 72, 426, -207, 72, 426, LayoutBlock.GOLF_FLAG));
+		operations.add(fill(-207, 73, 426, -207, 73, 426, LayoutBlock.GOLF_FLAG_TOP));
 		return operations;
 	}
 
@@ -141,6 +145,8 @@ public final class M5DevelopmentLayout {
 		operations.add(fill(-326, 70, 410, -318, 70, 410, LayoutBlock.GREEN_WOOL));
 		operations.add(fill(-324, 70, 411, -320, 70, 411, LayoutBlock.GREEN_WOOL));
 		operations.add(fill(-322, 71, 405, -322, 71, 405, LayoutBlock.GOLF_CUP));
+		operations.add(fill(-322, 72, 405, -322, 72, 405, LayoutBlock.GOLF_FLAG));
+		operations.add(fill(-322, 73, 405, -322, 73, 405, LayoutBlock.GOLF_FLAG_TOP));
 		return operations;
 	}
 
@@ -177,6 +183,8 @@ public final class M5DevelopmentLayout {
 		for (int x : List.of(-246, -196, -146)) {
 			operations.add(fill(x, 62, -210, x, 62, -194, LayoutBlock.GOLD_BLOCK));
 			operations.add(fill(x, 63, -202, x, 63, -202, LayoutBlock.GOLF_CUP));
+			operations.add(fill(x, 64, -202, x, 64, -202, LayoutBlock.GOLF_FLAG));
+			operations.add(fill(x, 65, -202, x, 65, -202, LayoutBlock.GOLF_FLAG_TOP));
 		}
 		operations.add(fill(-105, 63, -205, -105, 67, -199, LayoutBlock.TARGET));
 
@@ -186,12 +194,16 @@ public final class M5DevelopmentLayout {
 		operations.add(fill(-232, 62, -151, -222, 62, -137, LayoutBlock.SAND));
 		operations.add(fill(-223, 63, -147, -223, 66, -141, LayoutBlock.TARGET));
 		operations.add(fill(-228, 63, -144, -228, 63, -144, LayoutBlock.GOLF_CUP));
+		operations.add(fill(-228, 64, -144, -228, 64, -144, LayoutBlock.GOLF_FLAG));
+		operations.add(fill(-228, 65, -144, -228, 65, -144, LayoutBlock.GOLF_FLAG_TOP));
 
 		// Putting green with a physical practice cup and adjacent fairway/rough contrast.
 		operations.add(fill(-160, 63, -176, -104, 68, -136, LayoutBlock.AIR));
 		operations.add(fill(-160, 62, -176, -104, 62, -136, LayoutBlock.GRASS_BLOCK));
 		operations.add(fill(-160, 62, -176, -154, 62, -136, LayoutBlock.DIRT));
 		operations.add(fill(-112, 63, -158, -112, 63, -158, LayoutBlock.GOLF_CUP));
+		operations.add(fill(-112, 64, -158, -112, 64, -158, LayoutBlock.GOLF_FLAG));
+		operations.add(fill(-112, 65, -158, -112, 65, -158, LayoutBlock.GOLF_FLAG_TOP));
 
 		// Recovery and Minecraft-native surface lanes, separated from normal turf.
 		operations.add(fill(-296, 63, -96, -152, 68, -48, LayoutBlock.AIR));

@@ -78,6 +78,8 @@ public final class MinecraftDevelopmentCourseWorld implements DevelopmentCourseG
 			case GREEN_WOOL -> Blocks.WOOL.green();
 			case TARGET -> Blocks.TARGET;
 			case GOLF_CUP -> GolfBlocks.GOLF_CUP;
+			case GOLF_FLAG -> GolfBlocks.GOLF_FLAG;
+			case GOLF_FLAG_TOP -> GolfBlocks.GOLF_FLAG_TOP;
 		};
 	}
 }

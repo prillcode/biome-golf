@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "minecraft_golf:block/golf_flag"
+    }
+  }
+}

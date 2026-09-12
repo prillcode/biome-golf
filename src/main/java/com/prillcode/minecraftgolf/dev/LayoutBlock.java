@@ -15,5 +15,7 @@ public enum LayoutBlock {
 	BLACK_CONCRETE,
 	GREEN_WOOL,
 	TARGET,
-	GOLF_CUP
+	GOLF_CUP,
+	GOLF_FLAG,
+	GOLF_FLAG_TOP
 }

@@ -401,6 +401,7 @@ public final class ActiveHoleService {
 		BlockPos cupBlockPos = BlockPos.containing(
 			definition.cup().x(), definition.cup().y() - GolfBallEntity.BALL_RADIUS, definition.cup().z());
 		level.setBlockAndUpdate(cupBlockPos, GolfBlocks.GOLF_CUP.defaultBlockState());
+		placeFlag(level, cupBlockPos);
 
 		GolfBallEntity ball = GolfBallEntities.GOLF_BALL.create(level, EntitySpawnReason.COMMAND);
 		if (ball == null) {
@@ -754,6 +755,7 @@ public final class ActiveHoleService {
 				nextDefinition.cup().y() - GolfBallEntity.BALL_RADIUS, nextDefinition.cup().z());
 			attempt.player().level().setBlockAndUpdate(
 				cupBlockPos, GolfBlocks.GOLF_CUP.defaultBlockState());
+			placeFlag(attempt.player().level(), cupBlockPos);
 			discardAssignedBall(attempt.player(), attempt.oldSession());
 			lifecycle.restart(attempt.player().getUUID(), nextDefinition, attempt.ball().getUUID());
 			discardPlayerOwnedBalls(attempt.player(), attempt.ball().getUUID());
@@ -762,6 +764,19 @@ public final class ActiveHoleService {
 			PlayerHoleState started = lifecycle.session(attempt.player().getUUID())
 				.orElseThrow().state();
 			sendActiveSnapshot(attempt.player(), started, nextDefinition.tee());
+		}
+	}
+
+	private static void placeFlag(ServerLevel level, BlockPos cupBlockPos) {
+		BlockPos middlePos = cupBlockPos.above();
+		BlockPos topPos = middlePos.above();
+		if (level.getBlockState(middlePos).canBeReplaced()
+			|| level.getBlockState(middlePos).getBlock() == GolfBlocks.GOLF_FLAG) {
+			level.setBlockAndUpdate(middlePos, GolfBlocks.GOLF_FLAG.defaultBlockState());
+		}
+		if (level.getBlockState(topPos).canBeReplaced()
+			|| level.getBlockState(topPos).getBlock() == GolfBlocks.GOLF_FLAG_TOP) {
+			level.setBlockAndUpdate(topPos, GolfBlocks.GOLF_FLAG_TOP.defaultBlockState());
 		}
 	}
 

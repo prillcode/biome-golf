@@ -83,6 +83,12 @@ public final class GolfCourseCommands {
 						.executes(GolfCourseCommands::createCourse)
 						.then(Commands.argument("displayName", StringArgumentType.greedyString())
 							.executes(GolfCourseCommands::createCourseNamed))))
+				.then(Commands.literal("clone")
+					.then(Commands.argument("sourceId", StringArgumentType.word())
+						.then(Commands.argument("newId", StringArgumentType.word())
+							.executes(GolfCourseCommands::cloneCourse)
+							.then(Commands.argument("displayName", StringArgumentType.greedyString())
+								.executes(GolfCourseCommands::cloneCourseNamed)))))
 				.then(Commands.literal("list").executes(GolfCourseCommands::listCourses))
 				.then(Commands.literal("status")
 					.then(Commands.argument("id", StringArgumentType.word())
@@ -115,7 +121,7 @@ public final class GolfCourseCommands {
 					.then(Commands.argument("hole", IntegerArgumentType.integer(1))
 						.executes(GolfCourseCommands::captureBounds)))));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf course authoring commands (create, list, status, finalize, delete, edit, select)"
+			"Registered /golf course authoring commands (create, clone, list, status, finalize, delete, edit, select)"
 				+ " and /golf hole metadata commands (tee, cup, par, bounds)");
 	}
 
@@ -130,6 +136,36 @@ public final class GolfCourseCommands {
 	private static int createCourseNamed(CommandContext<CommandSourceStack> ctx)
 			throws CommandSyntaxException {
 		return createCourse(ctx, StringArgumentType.getString(ctx, "displayName"));
+	}
+
+	private static int cloneCourse(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		return cloneCourse(ctx, null);
+	}
+
+	private static int cloneCourseNamed(CommandContext<CommandSourceStack> ctx)
+			throws CommandSyntaxException {
+		return cloneCourse(ctx, StringArgumentType.getString(ctx, "displayName"));
+	}
+
+	private static int cloneCourse(CommandContext<CommandSourceStack> ctx, String displayName)
+			throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		AuthoredCourseService service = AuthoredCourseService.instance();
+		String sourceId = StringArgumentType.getString(ctx, "sourceId");
+		String newId = StringArgumentType.getString(ctx, "newId");
+		String clonedId;
+		try {
+			clonedId = service.store().cloneCourse(sourceId, newId, displayName);
+		} catch (IllegalArgumentException | IllegalStateException exception) {
+			return fail(ctx, exception.getMessage());
+		}
+		service.setCurrentDraft(player.getUUID(), clonedId);
+		service.save();
+		AuthoredCourseStore.DraftSnapshot draft = service.store().draftSnapshot(clonedId);
+		ctx.getSource().sendSuccess(() -> Component.literal("[golf] cloned course '"
+			+ AuthoredCourseStore.normalizeId(sourceId) + "' as draft '" + clonedId + "' (\""
+			+ draft.displayName() + "\") — now your current draft"), true);
+		return 1;
 	}
 
 	private static int createCourse(CommandContext<CommandSourceStack> ctx, String displayName)
@@ -336,8 +372,12 @@ public final class GolfCourseCommands {
 		ServerLevel level = player.level();
 		BlockPos cupBlockPos = BlockPos.containing(
 			cup.x(), cup.y() - GolfBallEntity.BALL_RADIUS, cup.z());
-		boolean placed = level.getBlockState(cupBlockPos).canBeReplaced()
+		boolean placed = (level.getBlockState(cupBlockPos).canBeReplaced()
+			|| level.getBlockState(cupBlockPos).getBlock() == GolfBlocks.GOLF_CUP)
 			&& level.setBlockAndUpdate(cupBlockPos, GolfBlocks.GOLF_CUP.defaultBlockState());
+		if (placed) {
+			placeFlag(level, cupBlockPos);
+		}
 		String placement = placed
 			? "; placed the cup block at " + cupBlockPos.toShortString()
 			: "; could not place the cup block at " + cupBlockPos.toShortString()
@@ -405,6 +445,14 @@ public final class GolfCourseCommands {
 	// ------------------------------------------------------------------
 	// Helpers
 	// ------------------------------------------------------------------
+
+	private static void placeFlag(ServerLevel level, BlockPos cupBlockPos) {
+		BlockPos flagPos = cupBlockPos.above();
+		if (level.getBlockState(flagPos).canBeReplaced()
+			|| level.getBlockState(flagPos).getBlock() == GolfBlocks.GOLF_FLAG) {
+			level.setBlockAndUpdate(flagPos, GolfBlocks.GOLF_FLAG.defaultBlockState());
+		}
+	}
 
 	/**
 	 * Ball-rest point for the block the player stands on: centered in X/Z, at

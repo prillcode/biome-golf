@@ -180,6 +180,40 @@ class AuthoredCourseStoreTest {
 	}
 
 	@Test
+	void cloneFinalizedCourseCreatesIndependentDraft() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("original", "Original", DIMENSION);
+		completeHole(store, "original", 1, 4);
+		store.finalize("original");
+
+		String cloneId = store.cloneCourse("original", "variant", "Variant");
+		assertEquals("variant", cloneId);
+		assertTrue(store.isDraft(cloneId));
+		assertEquals("Variant", store.draftSnapshot(cloneId).displayName());
+		assertEquals(store.finalizedCourse("original").hole(1).tee(),
+			store.draftSnapshot(cloneId).holes().getFirst().tee());
+
+		store.setHolePar(cloneId, 1, 5);
+		assertEquals(4, store.finalizedCourse("original").hole(1).par());
+		assertEquals("variant:hole_1", store.finalize(cloneId).hole(1).id());
+	}
+
+	@Test
+	void cloneDraftPreservesIncompleteMetadataAndRejectsCollisions() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("draft", "Draft", DIMENSION);
+		store.setHoleTee("draft", 1, tee(0));
+
+		store.cloneCourse("draft", "copy", null);
+		AuthoredCourseStore.HoleSnapshot hole = store.draftSnapshot("copy").holes().getFirst();
+		assertEquals("Draft Copy", store.draftSnapshot("copy").displayName());
+		assertEquals(tee(0), hole.tee());
+		assertEquals(null, hole.cup());
+		assertThrows(IllegalStateException.class, () -> store.cloneCourse("draft", "COPY", null));
+		assertThrows(IllegalArgumentException.class, () -> store.cloneCourse("missing", "other", null));
+	}
+
+	@Test
 	void supportsMultipleCoursesAndSingleHoleCourses() {
 		AuthoredCourseStore store = new AuthoredCourseStore();
 		store.createCourse("one", "One", DIMENSION);

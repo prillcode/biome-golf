@@ -61,6 +61,14 @@ public final class DevelopmentHoleBuilder {
 			new BlockPos(layout.cupX(), layout.cupY(), layout.cupZ()),
 			GolfBlocks.GOLF_CUP.defaultBlockState(),
 			3);
+		level.setBlock(
+			new BlockPos(layout.cupX(), layout.cupY() + 1, layout.cupZ()),
+			GolfBlocks.GOLF_FLAG.defaultBlockState(),
+			3);
+		level.setBlock(
+			new BlockPos(layout.cupX(), layout.cupY() + 2, layout.cupZ()),
+			GolfBlocks.GOLF_FLAG_TOP.defaultBlockState(),
+			3);
 		return layout;
 	}
 

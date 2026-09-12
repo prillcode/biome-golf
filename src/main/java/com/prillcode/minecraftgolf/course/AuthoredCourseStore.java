@@ -60,6 +60,52 @@ public final class AuthoredCourseStore {
 			course.generatedLayout(), course.holes()));
 	}
 
+	/** Copies a draft or finalized course into a new, independent draft. */
+	public String cloneCourse(String sourceCourseId, String newCourseId, String displayName) {
+		String sourceId = normalizeId(sourceCourseId);
+		String destinationId = normalizeId(newCourseId);
+		String sourceDisplayName;
+		String dimension;
+		List<HoleSnapshot> holes;
+		CourseDraft sourceDraft = drafts.get(sourceId);
+		if (sourceDraft != null) {
+			sourceDisplayName = sourceDraft.displayName;
+			dimension = sourceDraft.dimension;
+			holes = draftSnapshot(sourceId).holes();
+		} else {
+			CourseDefinition source = finalized.get(sourceId);
+			if (source == null) {
+				throw new IllegalArgumentException("no course with id '" + sourceId + "'");
+			}
+			sourceDisplayName = source.displayName();
+			dimension = source.dimension();
+			holes = source.holes().stream()
+				.map(hole -> new HoleSnapshot(hole.number(), hole.tee(), hole.cup(), hole.par(),
+					hole.boundary(), hole.transition()))
+				.toList();
+		}
+		String destinationDisplayName = displayName == null ? sourceDisplayName + " Copy" : displayName;
+		createCourse(destinationId, destinationDisplayName, dimension);
+		for (HoleSnapshot hole : holes) {
+			if (hole.tee() != null) {
+				setHoleTee(destinationId, hole.number(), hole.tee());
+			}
+			if (hole.cup() != null) {
+				setHoleCup(destinationId, hole.number(), hole.cup());
+			}
+			if (hole.par() != null) {
+				setHolePar(destinationId, hole.number(), hole.par());
+			}
+			if (hole.boundary() != null) {
+				setHoleBounds(destinationId, hole.number(), hole.boundary());
+			}
+			if (hole.transition() != null) {
+				setHoleTransition(destinationId, hole.number(), hole.transition());
+			}
+		}
+		return destinationId;
+	}
+
 	public void setHoleTee(String courseId, int number, Vec3 tee) {
 		holeDraft(courseId, number).tee = Objects.requireNonNull(tee, "tee");
 	}

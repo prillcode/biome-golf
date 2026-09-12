@@ -19,6 +19,8 @@ each hole with `/golf hole tee <number>`, `/golf hole cup <number>`,
 `/golf hole par <number> <par>`, and two opposite corners with
 `/golf hole bounds <number>`. Inspect with `/golf course status <id>`, finalize
 with `/golf course finalize <id>`, and select with `/golf course select <id>`.
+Clone an existing course into an independent draft with
+`/golf course clone <source-id> <new-id> [display name]`.
 The built-in regression course is selected with `/golf course select m5`.
 Players can restore missing clubs with `/golf clubs equip`.
 

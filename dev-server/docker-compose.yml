@@ -10,11 +10,13 @@ services:
       VERSION: "26.2"
       SEED: "-1928790872702396508"
       MEMORY: "4G"
+      VIEW_DISTANCE: "16"
+      SIMULATION_DISTANCE: "16"
       MODE: survival
       DIFFICULTY: peaceful
       ONLINE_MODE: "true"
       MOTD: "Minecraft Golf dev server"
-      MODRINTH_PROJECTS: "fabric-api"
+      MODRINTH_PROJECTS: "fabric-api:0.160.0+26.2"
       RCON_CMDS_STARTUP: |-
         time set day
         gamerule minecraft:advance_time false

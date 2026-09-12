@@ -69,7 +69,7 @@ To find the host's LAN IP: `ip addr` on Linux, `ipconfig` on Windows.
 
 ## Data, restart, and reset
 
-- Server world and configuration live in the named Docker volume `minecraft-golf-data` (persistent across restarts and image updates; survives bind-mount permission quirks).
+- Server world and configuration live in the Compose volume `dev-server_minecraft-golf-data` (persistent across restarts and image updates; survives bind-mount permission quirks).
 - The mod is mounted read-only from `dev-server/mods/`.
 - `dev-server-restart.sh` preserves the world, configuration, and other volume state.
 - `dev-server-reset.sh` stops the server and removes the volume after an explicit typed confirmation. This is the only sanctioned way to delete the dev world; it does not delete source code, the staged mod JAR, or unrelated Minecraft worlds.
@@ -138,8 +138,12 @@ Server settings (version, memory, game mode, MOTD, etc.) are in `dev-server/dock
 
 - `VERSION` pins the Minecraft version — keep it in sync with `gradle.properties`.
 - `MEMORY` is the JVM heap.
+- `VIEW_DISTANCE` and `SIMULATION_DISTANCE` are set to 16 so long golf shots remain
+  loaded while the player stays at the shot origin. Clients should use a render
+  distance of at least 16 for the post-shot camera to see the full flight.
 - `MODE` / `DIFFICULTY` / `MOTD` are gameplay-facing.
-- Fabric API is downloaded automatically from Modrinth through `MODRINTH_PROJECTS`.
+- Fabric API `0.160.0+26.2` is pinned and downloaded from Modrinth through
+  `MODRINTH_PROJECTS`; keep it matched with `gradle.properties` and the client.
 - `RCON_CMDS_STARTUP` fixes the development world at daytime with clear weather so gameplay tests are repeatable. Minecraft 26.2 uses the namespaced `minecraft:advance_time` and `minecraft:advance_weather` gamerules.
 
 ## Manual integration checklist

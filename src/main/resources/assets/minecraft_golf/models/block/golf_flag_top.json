@@ -1,0 +1,12 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "minecraft:block/white_concrete",
+    "white": "minecraft:block/white_concrete",
+    "red": "minecraft:block/red_concrete"
+  },
+  "elements": [
+    {"from": [7.5, 0, 7.5], "to": [8.5, 16, 8.5], "faces": {"up": {"texture": "#white"}, "north": {"texture": "#white"}, "south": {"texture": "#white"}, "west": {"texture": "#white"}, "east": {"texture": "#white"}}},
+    {"from": [8.5, 10, 8.5], "to": [15.5, 15, 9], "faces": {"north": {"texture": "#red"}, "south": {"texture": "#red"}, "up": {"texture": "#red"}, "down": {"texture": "#red"}, "east": {"texture": "#red"}}}
+  ]
+}
