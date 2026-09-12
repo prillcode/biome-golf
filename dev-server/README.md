@@ -77,6 +77,45 @@ To find the host's LAN IP: `ip addr` on Linux, `ipconfig` on Windows.
 
 Persistent state is useful for repeatable gameplay, but it can retain stale entities or configuration. Prefer a normal restart for code changes and use reset only when the test explicitly requires a clean world.
 
+### Importing a world from another Tailscale host
+
+To bring a course built in a normal Java Edition instance on another computer into
+this Docker server, transfer only the world folder. Stop the source Java instance
+completely first, and do not run `dev-server-reset.sh` because that deletes the
+destination world and its volume.
+
+On the Windows source machine, replace `<world-folder>` with the folder name under
+`%APPDATA%\.minecraft\saves` and create an archive of its contents:
+
+```powershell
+$world = "$env:APPDATA\.minecraft\saves\<world-folder>"
+tar -czf "$env:USERPROFILE\Desktop\course-world.tar.gz" -C $world .
+```
+
+Copy the archive over Tailscale using the laptop's Tailscale address or hostname:
+
+```powershell
+scp "$env:USERPROFILE\Desktop\course-world.tar.gz" prill@<laptop-tailscale-host>:/tmp/
+```
+
+On the laptop, back up the current Docker world, stop the container, and replace
+only its `world` directory. The named volume and server configuration remain intact:
+
+```bash
+docker run --rm -v minecraft-golf-data:/data -v /tmp:/transfer alpine \
+  sh -c 'tar -czf /transfer/minecraft-golf-world-backup.tar.gz -C /data/world .'
+./scripts/dev-server-down.sh
+docker run --rm -v minecraft-golf-data:/data -v /tmp:/transfer alpine \
+  sh -c 'rm -rf /data/world && mkdir -p /data/world && tar -xzf /transfer/course-world.tar.gz -C /data/world && rm -f /data/world/session.lock'
+./scripts/dev-server-up.sh
+```
+
+After startup, verify the imported terrain in-game before authoring metadata. Do not
+run `/golf dev preparecourse` on the imported world; that command is for the M5
+regression layout and can mutate its bounded preparation area. Use `/golf course
+create ...` and the authoring commands instead. Confirm the source and destination
+Minecraft versions match, and keep the archive until the import has been accepted.
+
 ## Prepared practice area
 
 ### M5 three-hole campus

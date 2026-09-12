@@ -9,7 +9,10 @@ mkdir -p dev-server/mods
 echo "Building mod..."
 ./gradlew build -q
 
-JAR=$(ls build/libs/*.jar | grep -v sources | head -n1)
+JAR=""
+while IFS= read -r candidate; do
+	JAR="$candidate"
+done < <(printf '%s\n' build/libs/minecraft-golf-*.jar | grep -v -- '-sources\.jar$' | sort -V)
 
 if [[ -z "$JAR" ]]; then
 	echo "ERROR: no built JAR found in build/libs/" >&2
