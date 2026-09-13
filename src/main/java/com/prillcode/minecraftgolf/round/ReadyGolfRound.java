@@ -98,6 +98,27 @@ public record ReadyGolfRound(
 			List.of(participant.withCourseState(participant.courseState().reset())));
 	}
 
+	/** Replays Hole 1 for every participant that remained in the completed round. */
+	public ReadyGolfRound replayRemaining() {
+		requirePhase(RoundPhase.COMPLETE);
+		if (participants.stream().noneMatch(ReadyGolfParticipant::isParticipating)) {
+			throw new IllegalStateException("no active golfers remain in the completed round");
+		}
+		List<ReadyGolfParticipant> replayed = participants.stream()
+			.map(participant -> participant.isParticipating()
+				? participant.withCourseState(participant.courseState().reset())
+				: participant)
+			.toList();
+		return with(RoundPhase.PLAYING, 0, replayed);
+	}
+
+	/** Removes one player from a completed round without changing the other players. */
+	public ReadyGolfRound leaveCompleted(UUID playerId) {
+		requirePhase(RoundPhase.COMPLETE);
+		ReadyGolfParticipant participant = requireActiveParticipant(playerId);
+		return replaceParticipant(participant.withStatus(ParticipantStatus.WITHDRAWN));
+	}
+
 	/**
 	 * Disconnecting from a lobby removes that golfer; disconnecting during play
 	 * suspends them and excludes them from the barrier.
@@ -177,6 +198,11 @@ public record ReadyGolfRound(
 		return participants.stream()
 			.filter(participant -> participant.status() == ParticipantStatus.ACTIVE)
 			.count();
+	}
+
+	/** True when at least one connected golfer still owns this round. */
+	public boolean hasActiveParticipants() {
+		return activeParticipantCount() > 0;
 	}
 
 	public long terminalActiveParticipantCount() {

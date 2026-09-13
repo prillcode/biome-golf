@@ -40,6 +40,8 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("join").executes(GolfHoleCommands::joinRound))
 				.then(Commands.literal("start").executes(GolfHoleCommands::startRound))
 				.then(Commands.literal("leave").executes(GolfHoleCommands::leaveRound))
+				.then(Commands.literal("restart").executes(GolfHoleCommands::restartRound))
+				.then(Commands.literal("done").executes(GolfHoleCommands::doneRound))
 				.then(Commands.literal("status").executes(GolfHoleCommands::roundStatus)))
 			.then(Commands.literal("hole")
 				.then(Commands.literal("start").executes(GolfHoleCommands::start))
@@ -83,6 +85,18 @@ public final class GolfHoleCommands {
 
 	private static int leaveRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		return sendResult(context, ActiveHoleService.instance().leaveRound(
+			context.getSource().getPlayerOrException()));
+	}
+
+	private static int restartRound(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().restartRound(
+			context.getSource().getPlayerOrException()));
+	}
+
+	private static int doneRound(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().doneRound(
 			context.getSource().getPlayerOrException()));
 	}
 

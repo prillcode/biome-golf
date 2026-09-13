@@ -200,6 +200,7 @@ class ReadyGolfRoundTest {
 		assertEquals(RoundPhase.COMPLETE, round.phase());
 		assertEquals(ParticipantStatus.WITHDRAWN, participant(round, PLAYER_ONE).status());
 		assertFalse(state(round, PLAYER_ONE).isComplete());
+		assertFalse(round.hasActiveParticipants());
 	}
 
 	@Test
@@ -219,6 +220,33 @@ class ReadyGolfRoundTest {
 
 		ReadyGolfRound multiplayer = completeRound(playingRound());
 		assertThrows(IllegalStateException.class, () -> multiplayer.replaySolo(PLAYER_ONE));
+	}
+
+	@Test
+	void completedRoundReplayResetsEveryRemainingParticipantToHoleOne() {
+		ReadyGolfRound completed = completeRound(playingRound());
+
+		ReadyGolfRound replay = completed.replayRemaining();
+
+		assertEquals(RoundPhase.PLAYING, replay.phase());
+		assertEquals(0, replay.currentHoleIndex());
+		assertTrue(replay.participants().stream()
+			.allMatch(participant -> participant.status() == ParticipantStatus.ACTIVE));
+		assertEquals(0, state(replay, PLAYER_ONE).currentHole().strokes());
+		assertEquals(0, state(replay, PLAYER_TWO).currentHole().strokes());
+		assertTrue(state(replay, PLAYER_ONE).completedHoles().isEmpty());
+		assertTrue(state(replay, PLAYER_TWO).completedHoles().isEmpty());
+	}
+
+	@Test
+	void leavingCompletedRoundWithdrawsOnlyTheCaller() {
+		ReadyGolfRound completed = completeRound(playingRound());
+
+		ReadyGolfRound remaining = completed.leaveCompleted(PLAYER_ONE);
+
+		assertEquals(ParticipantStatus.WITHDRAWN, participant(remaining, PLAYER_ONE).status());
+		assertEquals(ParticipantStatus.ACTIVE, participant(remaining, PLAYER_TWO).status());
+		assertTrue(state(remaining, PLAYER_TWO).isComplete());
 	}
 
 	@Test
