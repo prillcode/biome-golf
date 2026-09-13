@@ -119,7 +119,6 @@ class AuthoredCourseStoreTest {
 			() -> store.finalize("incomplete"));
 		assertTrue(error.getMessage().contains("tee"));
 		assertTrue(error.getMessage().contains("cup"));
-		assertTrue(error.getMessage().contains("boundary"));
 		assertFalse(error.getMessage().contains("par"));
 	}
 
@@ -159,6 +158,19 @@ class AuthoredCourseStoreTest {
 		IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
 			() -> store.setHolePar("links", 1, 3));
 		assertTrue(error.getMessage().contains("finalized"));
+	}
+
+	@Test
+	void finalizeAllowsHoleWithoutBoundsAndUsesUnboundedBoundary() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("open", "Open", DIMENSION);
+		store.setHoleTee("open", 1, tee(0));
+		store.setHoleCup("open", 1, cup(0));
+		store.setHolePar("open", 1, 4);
+
+		CourseDefinition course = store.finalize("open");
+
+		assertTrue(course.hole(1).boundary().contains(new Vec3(1_000_000.0, 320.0, -1_000_000.0)));
 	}
 
 	@Test

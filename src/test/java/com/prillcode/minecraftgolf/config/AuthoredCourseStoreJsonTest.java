@@ -74,6 +74,21 @@ class AuthoredCourseStoreJsonTest {
 	}
 
 	@Test
+	void loadsFinalizedHoleWithoutBoundsAsUnbounded() throws IOException {
+		Path path = directory.resolve("unbounded.json");
+		Files.writeString(path, """
+			{"drafts": [], "finalized": [{
+			  "id": "open", "displayName": "Open", "dimension": "minecraft:overworld",
+			  "holes": [{"number": 1, "tee": [10.0, 64.0, 0.0], "cup": [40.0, 64.0, 0.0],
+			    "par": 4, "transition": {"playerPosition": [10.0, 64.0, 0.0], "yaw": 0.0, "pitch": 0.0}}]}]}
+			""");
+
+		CourseDefinition course = AuthoredCourseStoreJson.load(path).finalizedCourse("open");
+
+		assertTrue(course.hole(1).boundary().contains(new Vec3(1_000_000.0, 320.0, -1_000_000.0)));
+	}
+
+	@Test
 	void rejectsMalformedJson() throws IOException {
 		Path path = directory.resolve("broken.json");
 		Files.writeString(path, "{ not json");

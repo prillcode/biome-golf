@@ -587,8 +587,8 @@ record SurfaceDefinition(
     String id,
     double rollingFriction,
     double bounceMultiplier,
+    double landingHorizontalRetention,
     double shotPowerMultiplier,
-    double shotAccuracyMultiplier,
     boolean hazard
 ) {}
 ```
@@ -598,6 +598,8 @@ MVP may only use:
 ```text
 rollingFriction
 bounceMultiplier
+landingHorizontalRetention
+shotPowerMultiplier
 hazard
 ```
 

@@ -127,13 +127,15 @@ public final class AuthoredCourseStoreJson {
 		for (JsonElement element : requiredArray(json, "holes")) {
 			JsonObject hole = requiredObject(element, "hole entry");
 			int number = requiredInt(hole, "number");
-			JsonObject boundary = requiredObject(hole, "boundary");
+			JsonObject boundary = optionalObject(hole, "boundary");
 			JsonObject transition = requiredObject(hole, "transition");
 			store.setHoleTee(id, number, requiredVec3(hole, "tee"));
 			store.setHoleCup(id, number, requiredVec3(hole, "cup"));
 			store.setHolePar(id, number, requiredInt(hole, "par"));
-			store.setHoleBounds(id, number,
-				new HoleBoundary(requiredVec3(boundary, "min"), requiredVec3(boundary, "max")));
+			if (boundary != null) {
+				store.setHoleBounds(id, number,
+					new HoleBoundary(requiredVec3(boundary, "min"), requiredVec3(boundary, "max")));
+			}
 			store.setHoleTransition(id, number,
 				new HoleTransition(requiredVec3(transition, "playerPosition"),
 					requiredDouble(transition, "yaw"), requiredDouble(transition, "pitch")));

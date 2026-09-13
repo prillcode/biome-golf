@@ -9,6 +9,21 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.2.6] - 2026-09-12
+
+### Added
+
+- `/golf round restart` to restart a completed shared round at Hole 1 for all
+  remaining participants.
+- `/golf round done` to leave a completed round and return the player to world spawn.
+- Sand-specific lofted landing retention, shot-power reduction, and driver rejection.
+- Authored holes may now be finalized without explicit playable bounds; those holes
+  use an unbounded playable region.
+
+### Changed
+
+- `/golf hole restart` and `/golf hole abandon` remain scoped to active hole attempts.
+
 ## [0.2.4] - 2026-09-12
 
 ### Fixed

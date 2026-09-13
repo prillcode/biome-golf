@@ -12,6 +12,13 @@ import com.prillcode.minecraftgolf.golf.Vec3;
  */
 public record HoleBoundary(Vec3 min, Vec3 max) {
 
+	/** A finite sentinel boundary that leaves all valid Minecraft positions in bounds. */
+	public static HoleBoundary unbounded() {
+		return new HoleBoundary(
+			new Vec3(-Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE),
+			new Vec3(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE));
+	}
+
 	public HoleBoundary {
 		Objects.requireNonNull(min, "min");
 		Objects.requireNonNull(max, "max");

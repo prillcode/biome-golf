@@ -35,7 +35,7 @@ Do not create a second physics path, client-side score model, or generic multipl
 - The participant roster is open only in the lobby and fixed once play starts. Late joiners may observe/practice only after the active round ends; they do not enter a hole in progress.
 - Preserve `/golf hole start` as the backward-compatible one-player fast path when no multiplayer lobby/round exists. Its M5 start, three-hole progression, finalization, and replay behavior must remain unchanged.
 - One golfer leaving or abandoning withdraws only that golfer. The round ends only when no active participants remain or after normal course completion.
-- A completed multiplayer round may be replaced by a new lobby. It does not silently admit players or replay itself; the preserved one-player `/golf hole restart` replay remains the solo fast path.
+- A completed multiplayer round may be replaced by a new lobby. It does not silently admit players or replay itself; completed participants use the explicit `/golf round restart` or `/golf round done` commands.
 
 ### Ready Golf and advancement
 
@@ -56,7 +56,7 @@ Do not create a second physics path, client-side score model, or generic multipl
 ### Single-player compatibility
 
 - Existing practice behavior, course generation, Hole 1 replay reset, zero-stroke HUD semantics, automatic Hole 3 finalization, and final scorecard values must remain unchanged for one golfer.
-- Existing `/golf hole restart` remains player-scoped recovery. During multiplayer it may replace/reset only the caller's current-hole state and ball; it must not rewind another participant or the shared hole index.
+- Existing `/golf hole restart` remains player-scoped recovery. During multiplayer it may replace/reset only the caller's current-hole state and ball; it must not rewind another participant or the shared hole index. Completed rounds use `/golf round restart` for a shared Hole 1 replay.
 - Existing `/golf hole abandon` becomes participant withdrawal during a multiplayer round and retains the M5 return-to-practice behavior for a solo round.
 
 ## Bounded slices

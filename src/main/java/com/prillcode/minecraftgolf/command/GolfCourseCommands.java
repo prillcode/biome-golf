@@ -15,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Blocks;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.block.GolfBlocks;
@@ -360,8 +361,16 @@ public final class GolfCourseCommands {
 		}
 		int number = IntegerArgumentType.getInteger(ctx, "hole");
 		Vec3 cup = standingPoint(player);
+		AuthoredCourseStore store = AuthoredCourseService.instance().store();
+		Vec3 previousCup = null;
+		for (HoleSnapshot hole : store.draftSnapshot(draftId).holes()) {
+			if (hole.number() == number) {
+				previousCup = hole.cup();
+				break;
+			}
+		}
 		try {
-			AuthoredCourseService.instance().store().setHoleCup(draftId, number, cup);
+			store.setHoleCup(draftId, number, cup);
 		} catch (IllegalArgumentException exception) {
 			return fail(ctx, exception.getMessage());
 		}
@@ -372,6 +381,10 @@ public final class GolfCourseCommands {
 		ServerLevel level = player.level();
 		BlockPos cupBlockPos = BlockPos.containing(
 			cup.x(), cup.y() - GolfBallEntity.BALL_RADIUS, cup.z());
+		if (previousCup != null) {
+			clearMarker(level, BlockPos.containing(previousCup.x(),
+				previousCup.y() - GolfBallEntity.BALL_RADIUS, previousCup.z()));
+		}
 		boolean placed = (level.getBlockState(cupBlockPos).canBeReplaced()
 			|| level.getBlockState(cupBlockPos).getBlock() == GolfBlocks.GOLF_CUP)
 			&& level.setBlockAndUpdate(cupBlockPos, GolfBlocks.GOLF_CUP.defaultBlockState());
@@ -447,10 +460,27 @@ public final class GolfCourseCommands {
 	// ------------------------------------------------------------------
 
 	private static void placeFlag(ServerLevel level, BlockPos cupBlockPos) {
-		BlockPos flagPos = cupBlockPos.above();
-		if (level.getBlockState(flagPos).canBeReplaced()
-			|| level.getBlockState(flagPos).getBlock() == GolfBlocks.GOLF_FLAG) {
-			level.setBlockAndUpdate(flagPos, GolfBlocks.GOLF_FLAG.defaultBlockState());
+		BlockPos middlePos = cupBlockPos.above();
+		BlockPos topPos = middlePos.above();
+		if (level.getBlockState(middlePos).canBeReplaced()
+			|| level.getBlockState(middlePos).getBlock() == GolfBlocks.GOLF_FLAG) {
+			level.setBlockAndUpdate(middlePos, GolfBlocks.GOLF_FLAG.defaultBlockState());
+		}
+		if (level.getBlockState(topPos).canBeReplaced()
+			|| level.getBlockState(topPos).getBlock() == GolfBlocks.GOLF_FLAG_TOP) {
+			level.setBlockAndUpdate(topPos, GolfBlocks.GOLF_FLAG_TOP.defaultBlockState());
+		}
+	}
+
+	private static void clearMarker(ServerLevel level, BlockPos cupBlockPos) {
+		for (BlockPos markerPos : new BlockPos[] {
+			cupBlockPos, cupBlockPos.above(), cupBlockPos.above(2)
+		}) {
+			if (level.getBlockState(markerPos).getBlock() == GolfBlocks.GOLF_CUP
+				|| level.getBlockState(markerPos).getBlock() == GolfBlocks.GOLF_FLAG
+				|| level.getBlockState(markerPos).getBlock() == GolfBlocks.GOLF_FLAG_TOP) {
+				level.setBlockAndUpdate(markerPos, Blocks.AIR.defaultBlockState());
+			}
 		}
 	}
 

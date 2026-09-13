@@ -66,11 +66,13 @@ Set the hole's par:
 /golf hole par 1 4
 ```
 
-## 4. Capture the Playable Bounds
+## 4. Capture the Playable Bounds (Optional)
 
-The boundary is an axis-aligned X/Z rectangle. It is not rotated to follow the
-direction of a diagonal hole. Use F3 to watch coordinates while choosing corners,
-and press **F3+G** to show chunk gridlines as a visual placement reference.
+Bounds are optional. If omitted, the finalized hole is unbounded for out-of-bounds
+purposes. To add a boundary, use an axis-aligned X/Z rectangle. It is not rotated
+to follow the direction of a diagonal hole. Use F3 to watch coordinates while
+choosing corners, and press **F3+G** to show chunk gridlines as a visual placement
+reference.
 
 Stand at one corner outside the entire hole and run:
 
@@ -102,7 +104,7 @@ Each hole must have:
 - tee
 - cup
 - positive par
-- playable bounds containing the tee and cup
+- optional playable bounds containing the tee and cup
 
 If the course has multiple holes, define them as consecutive numbers starting at
 1. For example:
@@ -114,7 +116,7 @@ If the course has multiple holes, define them as consecutive numbers starting at
 /golf hole bounds 2
 ```
 
-Run the bounds command twice for every hole.
+Run the bounds command twice for any hole that should have an explicit boundary.
 
 ## 6. Finalize the Course
 

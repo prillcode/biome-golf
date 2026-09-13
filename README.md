@@ -13,6 +13,13 @@ after Holes 1 and 2. The server preserves cumulative scoring and automatically
 prints the final scorecard when Hole 3 ends. The solo flow remains available via
 `/golf hole start` when no lobby or round exists.
 
+During active play, `/golf hole restart` resets only the current hole and
+`/golf hole abandon` exits that attempt. After the round completes, one remaining
+golfer can use `/golf round restart` to restart Hole 1 for all remaining golfers,
+or use `/golf round done` to return individually to the Overworld world spawn.
+Players who do not want to replay an active multiplayer round can use
+`/golf round leave`.
+
 Operators can author additional courses on existing terrain. Use
 `/golf course create <id> <display name>`, `/golf course edit <id>`, then capture
 each hole with `/golf hole tee <number>`, `/golf hole cup <number>`,
@@ -21,6 +28,8 @@ each hole with `/golf hole tee <number>`, `/golf hole cup <number>`,
 with `/golf course finalize <id>`, and select with `/golf course select <id>`.
 Clone an existing course into an independent draft with
 `/golf course clone <source-id> <new-id> [display name]`.
+Hole bounds are optional when authoring; omit `/golf hole bounds` to leave that
+hole unbounded for out-of-bounds purposes.
 The built-in regression course is selected with `/golf course select m5`.
 Players can restore missing clubs with `/golf clubs equip`.
 

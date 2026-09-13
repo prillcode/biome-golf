@@ -302,15 +302,13 @@ public final class AuthoredCourseStore {
 			if (par == null) {
 				missing.add("par");
 			}
-			if (boundary == null) {
-				missing.add("boundary");
-			}
 			if (!missing.isEmpty()) {
 				throw new IllegalStateException("course '" + courseId + "' hole " + number
 					+ " is incomplete; missing " + String.join(", ", missing));
 			}
 			String holeId = holeId(courseId, number);
-			return new HoleDefinition(holeId, number, dimension, tee, cup, par, boundary,
+			return new HoleDefinition(holeId, number, dimension, tee, cup, par,
+				boundary != null ? boundary : HoleBoundary.unbounded(),
 				new GeneratedLayoutIdentity("authored:" + holeId, 1),
 				transition != null ? transition : HoleTransition.at(tee));
 		}
