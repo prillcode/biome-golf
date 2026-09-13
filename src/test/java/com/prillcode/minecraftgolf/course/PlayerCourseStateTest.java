@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
@@ -85,6 +86,22 @@ class PlayerCourseStateTest {
 	}
 
 	@Test
+	void completesAndBuildsScorecardForAnAuthoredNineHoleCourse() {
+		PlayerCourseState state = PlayerCourseState.start(course(9));
+
+		for (int hole = 1; hole <= 9; hole++) {
+			state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut()).advance();
+		}
+
+		CourseScorecard scorecard = state.finalScorecard();
+		assertEquals(9, scorecard.holes().size());
+		assertEquals(9, scorecard.totalStrokes());
+		assertEquals(36, scorecard.totalPar());
+		assertEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8, 9),
+			scorecard.holes().stream().map(HoleScore::holeNumber).toList());
+	}
+
+	@Test
 	void rejectsWrongHoleAndScoreRegressionUpdates() {
 		PlayerCourseState state = PlayerCourseState.start(course());
 		PlayerHoleState otherHole = PlayerHoleState.start(course().hole(2));
@@ -96,16 +113,21 @@ class PlayerCourseStateTest {
 	}
 
 	private static CourseDefinition course() {
+		return course(3);
+	}
+
+	private static CourseDefinition course(int holeCount) {
 		return new CourseDefinition("test", "Test Course", "minecraft:overworld",
 			new GeneratedLayoutIdentity("test-course", 1),
-			List.of(hole(1, 4), hole(2, 3), hole(3, 5)));
+			IntStream.rangeClosed(1, holeCount)
+				.mapToObj(number -> hole(number, number == 2 ? 3 : number == 3 ? 5 : 4)).toList());
 	}
 
 	private static HoleDefinition hole(int number, int par) {
 		Vec3 tee = new Vec3(number * 20.0, 64.25, 0.0);
 		Vec3 cup = new Vec3(number * 20.0 + 10.0, 64.25, 0.0);
 		return new HoleDefinition("test:" + number, number, "minecraft:overworld", tee, cup, par,
-			new HoleBoundary(new Vec3(0.0, 0.0, -10.0), new Vec3(100.0, 100.0, 10.0)),
+			new HoleBoundary(new Vec3(0.0, 0.0, -10.0), new Vec3(220.0, 100.0, 10.0)),
 			new GeneratedLayoutIdentity("test-hole-" + number, 1), HoleTransition.at(tee));
 	}
 }

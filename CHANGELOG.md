@@ -9,6 +9,16 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.2.7] - 2026-09-13
+
+### Fixed
+
+- Authored courses with more than three holes now finalize scorecards without
+  disconnecting players or crashing the server.
+- Solo hole starts no longer create hidden Ready Golf round state.
+- Round and hole cleanup now handles stale, abandoned, and one-player state
+  consistently.
+
 ## [0.2.6] - 2026-09-12
 
 ### Added

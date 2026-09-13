@@ -574,7 +574,7 @@ public final class ActiveHoleService {
 			if (courseState != null && courseState.isComplete()) {
 				CourseScorecard scorecard = courseState.finalScorecard();
 				return "[golf] course complete | " + scorecard.totalStrokes() + " strokes | "
-					+ formatToPar(scorecard.scoreToPar()) + " through 3 holes";
+					+ formatToPar(scorecard.scoreToPar()) + " through " + scorecard.holes().size() + " holes";
 			}
 			HoleDefinition definition = configuredHole();
 			return "[golf] no active hole | configured Hole " + definition.number()

@@ -3,7 +3,7 @@ package com.prillcode.minecraftgolf.course;
 import java.util.List;
 import java.util.Objects;
 
-/** Final three-hole scorecard calculated from authoritative terminal results. */
+/** Final scorecard calculated from authoritative terminal hole results. */
 public record CourseScorecard(String courseId, List<HoleScore> holes) {
 
 	public CourseScorecard {
@@ -13,13 +13,14 @@ public record CourseScorecard(String courseId, List<HoleScore> holes) {
 			throw new IllegalArgumentException("courseId must not be blank");
 		}
 		holes = List.copyOf(holes);
-		if (holes.size() != 3) {
-			throw new IllegalArgumentException("final M5 scorecard must contain exactly three holes");
+		if (holes.isEmpty()) {
+			throw new IllegalArgumentException("final scorecard must contain at least one hole");
 		}
 		for (int index = 0; index < holes.size(); index++) {
 			HoleScore score = Objects.requireNonNull(holes.get(index), "holes must not contain null");
 			if (score.holeNumber() != index + 1) {
-				throw new IllegalArgumentException("scorecard holes must be ordered 1, 2, 3");
+				throw new IllegalArgumentException(
+					"scorecard holes must be ordered from 1 through " + holes.size());
 			}
 		}
 	}
