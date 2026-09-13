@@ -74,7 +74,8 @@ public final class ShotNetworking {
 			case AIM_NOT_LEGAL -> "[golf] aim level with the ground";
 			case NOT_ACTIVE_BALL -> "[golf] use the ball assigned to the active hole attempt";
 			case MISSING_ACTIVE_BALL -> "[golf] your assigned ball is missing; use /golf hole restart";
-			case HOLE_COMPLETE -> "[golf] this hole is complete; use /golf hole restart to replay";
+			case HOLE_COMPLETE -> "[golf] this hole is complete; use /golf hole restart, or /golf round restart after the round ends";
+			case DRIVER_NOT_ALLOWED_ON_SAND -> "[golf] Driver cannot be used from sand; select another club";
 			case SUCCESS, UNKNOWN -> "";
 		};
 	}

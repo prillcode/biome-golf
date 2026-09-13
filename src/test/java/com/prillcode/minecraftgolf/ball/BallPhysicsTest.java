@@ -291,6 +291,16 @@ class BallPhysicsTest {
 	}
 
 	@Test
+	void loftedSandLandingNearlyStopsHorizontalVelocity() {
+		BallState state = new BallState(Vec3.of(0, 0.05, 0), Vec3.of(2, -2, 0), false, false);
+		BallState next = BallPhysics.step(state, coarse(),
+			new FloorWorld(SurfaceDefinition.SAND), ShotPhysicsProfile.LOFTED_CLUB);
+
+		assertEquals(2.0 * 0.25 * 0.03, next.velocity().x(), TOL);
+		assertEquals(2.06 * 0.6 * 0.30, next.velocity().y(), TOL);
+	}
+
+	@Test
 	void iceRollsFartherThanNormalGround() {
 		double ice = rollingOn(SurfaceDefinition.ICE, 2.0).velocity().x();
 		double normal = rollingOn(SurfaceDefinition.NORMAL, 2.0).velocity().x();
@@ -301,6 +311,14 @@ class BallPhysicsTest {
 	@Test
 	void sandSlowsRollQuickly() {
 		assertEquals(2.0 * 0.60, rollingOn(SurfaceDefinition.SAND, 2.0).velocity().x(), TOL);
+	}
+
+	@Test
+	void puttRollingAcrossSandContinuesWithRollingFriction() {
+		BallState next = rollingOn(SurfaceDefinition.SAND, 2.0);
+
+		assertEquals(2.0 * 0.60, next.velocity().x(), TOL);
+		assertFalse(next.resting());
 	}
 
 	@Test

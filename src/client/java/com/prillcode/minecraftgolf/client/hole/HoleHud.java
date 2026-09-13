@@ -100,9 +100,9 @@ public final class HoleHud {
 		} else if (state.phase() == Phase.ROUND_COMPLETE) {
 			graphics.text(client.font, "ROUND COMPLETE", x + PAD_X, textY, GOLD, true);
 			textY += LINE_HEIGHT;
-			graphics.text(client.font, "Replay: /golf hole restart", x + PAD_X, textY, MUTED, false);
+			graphics.text(client.font, "Replay: /golf round restart", x + PAD_X, textY, MUTED, false);
 			textY += LINE_HEIGHT;
-			graphics.text(client.font, "Exit: /golf hole abandon", x + PAD_X, textY, MUTED, false);
+			graphics.text(client.font, "Exit: /golf round done", x + PAD_X, textY, MUTED, false);
 		}
 	}
 

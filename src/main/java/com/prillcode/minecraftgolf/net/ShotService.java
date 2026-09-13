@@ -19,6 +19,7 @@ import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.item.GolfClubItem;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.ActiveHoleService.ShotPermission;
+import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
 
 /**
  * Server-side authoritative shot execution (M3, ARCH §8.2/§16): validates a
@@ -74,6 +75,10 @@ public final class ShotService {
 		if (club == null) {
 			return ShotOutcome.NO_CLUB;
 		}
+		SurfaceDefinition surface = ball.currentSurface();
+		if (isDriver(club) && isSand(surface)) {
+			return ShotOutcome.DRIVER_NOT_ALLOWED_ON_SAND;
+		}
 
 		double maxSpeed = PhysicsConfig.DEFAULT.maxLaunchSpeed();
 		// Defensive clamps happen inside the resolver; power/accuracy sent here may
@@ -84,6 +89,7 @@ public final class ShotService {
 		if (velocity == null) {
 			return ShotOutcome.AIM_NOT_LEGAL;
 		}
+		velocity = applySurfaceShotPower(velocity, surface);
 
 		// Claim on first strike; launch is the single server-authoritative mutation.
 		if (ball.owner() == null) {
@@ -101,6 +107,18 @@ public final class ShotService {
 		MinecraftGolf.LOGGER.info("{} shot via {} power={} acc={} (wind-free) launched v={}",
 				player.getName().getString(), club.id(), p, a, velocity);
 		return ShotOutcome.SUCCESS;
+	}
+
+	static boolean isDriver(ClubDefinition club) {
+		return "driver".equals(club.id());
+	}
+
+	static boolean isSand(SurfaceDefinition surface) {
+		return SurfaceDefinition.SAND.id().equals(surface.id());
+	}
+
+	static Vec3 applySurfaceShotPower(Vec3 velocity, SurfaceDefinition surface) {
+		return velocity.scale(surface.shotPowerMultiplier());
 	}
 
 	private static GolfBallEntity findBall(ServerLevel level, int id) {

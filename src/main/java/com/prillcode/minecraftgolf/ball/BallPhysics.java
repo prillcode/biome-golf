@@ -67,11 +67,11 @@ public final class BallPhysics {
 				if (normal.y() > GROUND_NORMAL_Y && impactSpeed < config.bounceFloorSpeed()) {
 					// Gentle landing: remove normal velocity and roll.
 					grounded = true;
-					velocity = landingTangent(reflected, normal, shotProfile);
+					velocity = landingTangent(reflected, normal, surface, shotProfile);
 				} else {
 					grounded = false;
 					double restitutionFactor = config.restitution() * surface.bounceMultiplier();
-					Vec3 tangent = landingTangent(reflected, normal, shotProfile);
+					Vec3 tangent = landingTangent(reflected, normal, surface, shotProfile);
 					Vec3 normalPart = normal.scale(reflected.along(normal) * restitutionFactor);
 					velocity = tangent.add(normalPart);
 				}
@@ -91,12 +91,19 @@ public final class BallPhysics {
 	}
 
 	private static Vec3 landingTangent(
-		Vec3 reflected, Vec3 normal, ShotPhysicsProfile shotProfile
+		Vec3 reflected, Vec3 normal, SurfaceDefinition surface, ShotPhysicsProfile shotProfile
 	) {
 		Vec3 tangent = reflected.tangent(normal);
-		return normal.y() > GROUND_NORMAL_Y
-			? tangent.scaleHorizontal(shotProfile.landingHorizontalRetention())
-			: tangent;
+		if (normal.y() <= GROUND_NORMAL_Y) {
+			return tangent;
+		}
+		double retention = shotProfile.landingHorizontalRetention();
+		// Low-angle rolling shots retain their normal landing behavior; only a
+		// lofted landing receives the surface-specific bunker penalty.
+		if (retention < 1.0) {
+			retention *= surface.landingHorizontalRetention();
+		}
+		return tangent.scaleHorizontal(retention);
 	}
 
 	/** Caps launch velocity at {@code maxLaunchSpeed} while preserving direction. */

@@ -21,6 +21,7 @@ import com.prillcode.minecraftgolf.ball.PhysicsConfig;
 import com.prillcode.minecraftgolf.ball.ShotPhysicsProfile;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
+import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
 import com.prillcode.minecraftgolf.world.GolfBlockSurfaceResolver;
 import com.prillcode.minecraftgolf.world.MinecraftBallCollisionWorld;
 
@@ -195,6 +196,12 @@ public class GolfBallEntity extends Entity {
 		return level().isClientSide()
 				? entityData.get(DATA_RESTING)
 				: state != null && state.resting();
+	}
+
+	/** Resolves the authoritative support surface at the ball's current position. */
+	public SurfaceDefinition currentSurface() {
+		Vec3 position = state == null ? currentCenter() : state.position();
+		return collisionWorld.surfaceAt(position);
 	}
 
 	/** Owner player UUID, or {@code null} when the ball is unclaimed. */

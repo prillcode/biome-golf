@@ -24,6 +24,8 @@ public enum ShotOutcome {
 	MISSING_ACTIVE_BALL,
 	/** The player's active hole is already complete or capped. */
 	HOLE_COMPLETE,
+	/** The driver is not allowed while the ball is supported by sand. */
+	DRIVER_NOT_ALLOWED_ON_SAND,
 	/** Shots off a club the player must be holding, and this is not one. */
 	UNKNOWN,
 	/** Launch executed. */
