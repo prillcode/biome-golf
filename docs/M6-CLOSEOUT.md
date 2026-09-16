@@ -13,7 +13,7 @@ the shared participant roster, current hole, advancement barrier, and final resu
 |---|---|
 | Round domain | Minecraft-free `ReadyGolfRound`/`ReadyGolfParticipant`/`RoundPhase`/`ParticipantStatus` with round identity, course, `LOBBY`/`PLAYING`/`COMPLETE` phases, per-golfer `PlayerCourseState`, stable join-order presentation, and atomic shared hole index. |
 | Round commands | `/golf round create`, `/golf round join`, `/golf round start`, `/golf round leave`, `/golf round status`. Coordinator starts the round; coordinator handoff in stable join order on leave/disconnect; empty lobby removed. Roster locked at start; late joiners may observe/practice only after the active round ends. |
-| Solo compatibility | `/golf hole start` remains the backward-compatible one-player fast path with unchanged M5 start, three-hole progression, and finalization. `/golf hole restart` stays player-scoped recovery; completed rounds use `/golf round restart` or `/golf round done`, while `/golf hole abandon` remains active-hole withdrawal. |
+| Solo compatibility | `/golf hole start` remains the backward-compatible one-player fast path with unchanged M5 start, three-hole progression, and finalization. `/golf hole restart` stays player-scoped recovery; `/golf round leave` is the unified solo and multiplayer exit action, while completed rounds may use `/golf round restart` to replay. |
 | Ready Golf play | No turn owner and no shot-order check; any non-terminal participant may shoot whenever their own assigned ball rests. Hole terminal states are hole-out, Pick Up, or stroke cap. One golfer's shot, penalty, restart, Pick Up, or hole-out never mutates another golfer's state. |
 | Advancement barrier | For Holes 1–2, `/golf nexthole` (from any active participant) succeeds only when every active participant is terminal, then transitions all once and idempotently. Terminal golfers see a waiting state and cannot force early advancement. Hole 3 finalizes the shared round automatically when the last active golfer becomes terminal. |
 | Multiplayer results | Server-generated per-hole and final result tables in deterministic participant order; each HUD remains based on that golfer's own score. Transition rollback/fail-safe keeps participants from splitting across holes if ball creation or teleport preparation fails. |
@@ -47,7 +47,7 @@ Verified against the post-fix JAR:
 ### Solo M5 regression (user-driven)
 
 - Regression tests 1–2 (hole start, restart) passed on the S5 JAR.
-- Test 3 (abandon → start) was initially blocked by the stale-state bug fixed in `68447e7` (solo `/golf hole abandon` left the golfer `WITHDRAWN` inside a `COMPLETE` round); after deploying the fix, the user confirmed test 3 passes against the fixed server (2026-09-10).
+- Test 3 (leave → start, formerly abandon → start) was initially blocked by the stale-state bug fixed in `68447e7` (the old solo abandon path left the golfer `WITHDRAWN` inside a `COMPLETE` round); after deploying the fix, the user confirmed test 3 passes against the fixed server (2026-09-10).
 
 ### Manual gameplay acceptance
 

@@ -12,7 +12,7 @@ full-sized club tuning.
 | Area | Result |
 |---|---|
 | Course domain | Minecraft-free `CourseDefinition`, ordered par 4/3/5 holes, `PlayerCourseState`, cumulative scorecard, terminal-only advancement, current-hole restart, and full replay reset. |
-| Runtime course flow | `/golf hole start` begins Hole 1; Holes 1 and 2 expose a clickable `/golf nexthole` transition; Hole 3 automatically finalizes the course and prints the authoritative three-hole scorecard. `/golf hole restart` restarts the current hole during play; completed rounds use `/golf round restart` or `/golf round done`. |
+| Runtime course flow | `/golf hole start` begins Hole 1; Holes 1 and 2 expose a clickable `/golf nexthole` transition; Hole 3 automatically finalizes the course and prints the authoritative three-hole scorecard. `/golf hole restart` restarts the current hole during play; completed rounds use `/golf round restart` or `/golf round leave`. |
 | HUD guidance | Server snapshots drive hole/par, strokes/cap, penalties, score, cumulative course score, cup direction, and authoritative ball-to-cup distance. Swing guidance remains upper-right and scoring remains upper-left. |
 | Practice range | Fixed manicured range with long-club markers, wedge target, putting area, bunker, water, ice, and slime lanes. Practice remains outside active course attempts. |
 | Natural course | Seed-gated coastal/forest campus with selective vegetation clearing, natural slopes and hazards, blue tee markers, wool tee boxes, irregular greens, supported cups, and distinct par 4, par 3, and par 5 routes. |

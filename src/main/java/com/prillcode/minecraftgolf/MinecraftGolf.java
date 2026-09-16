@@ -11,11 +11,13 @@ import com.prillcode.minecraftgolf.block.GolfBlocks;
 import com.prillcode.minecraftgolf.command.GolfCourseCommands;
 import com.prillcode.minecraftgolf.command.GolfDevCommands;
 import com.prillcode.minecraftgolf.command.GolfHoleCommands;
-import com.prillcode.minecraftgolf.dev.M5DevelopmentCourse;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.net.HoleStateNetworking;
 import com.prillcode.minecraftgolf.net.NextHoleNetworking;
+import com.prillcode.minecraftgolf.net.RoundScorecardNetworking;
+import com.prillcode.minecraftgolf.net.RoundLobbyNetworking;
+import com.prillcode.minecraftgolf.net.GolfMenuNetworking;
 import com.prillcode.minecraftgolf.net.ShotNetworking;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.AuthoredCourseService;
@@ -52,13 +54,13 @@ public class MinecraftGolf implements ModInitializer {
 		// command tree is op-gated and consumes only server-authoritative state.
 		GolfDevCommands.register();
 
-		// M5: the fixed, versioned three-hole development course and its player lifecycle.
-		ActiveHoleService.instance().initializeCourse(M5DevelopmentCourse.definition());
+		// Courses are selected explicitly by an operator after server startup.
 		GolfHoleCommands.register();
 
 		// M8 S2: authored course store persistence (world JSON, fail-closed) and
-		// operator authoring/selection commands. Boot default stays the M5 course.
+		// operator authoring/selection commands. No course is selected at boot.
 		AuthoredCourseService.register();
+		ActiveHoleService.register();
 		GolfCourseCommands.register();
 
 		// M3: typed shot-request networking (payload codec + server receiver).
@@ -67,6 +69,9 @@ public class MinecraftGolf implements ModInitializer {
 		// S03: clientbound hole-state snapshot networking; client receiver registered in MinecraftGolfClient.
 		HoleStateNetworking.register();
 		NextHoleNetworking.register();
+		RoundScorecardNetworking.register();
+		RoundLobbyNetworking.register();
+		GolfMenuNetworking.register();
 
 		// M7 S1: stop creative-mode destruction of the authored course (tee/cup vicinity
 		// guard); operator/dev-exempt so /golf dev preparecourse recovery still works.

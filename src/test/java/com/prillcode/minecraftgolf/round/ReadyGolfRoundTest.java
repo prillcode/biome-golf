@@ -247,6 +247,53 @@ class ReadyGolfRoundTest {
 		assertEquals(ParticipantStatus.WITHDRAWN, participant(remaining, PLAYER_ONE).status());
 		assertEquals(ParticipantStatus.ACTIVE, participant(remaining, PLAYER_TWO).status());
 		assertTrue(state(remaining, PLAYER_TWO).isComplete());
+		assertTrue(remaining.hasRemainingParticipants());
+
+		ReadyGolfRound empty = remaining.leaveCompleted(PLAYER_TWO);
+		assertFalse(empty.hasRemainingParticipants());
+	}
+
+	@Test
+	void disconnectingFromCompletedRoundDoesNotBlockRemainingReplay() {
+		ReadyGolfRound completed = completeRound(playingRound());
+
+		ReadyGolfRound remaining = completed.disconnect(PLAYER_TWO);
+
+		assertEquals(ParticipantStatus.WITHDRAWN, participant(remaining, PLAYER_TWO).status());
+		assertTrue(remaining.hasRemainingParticipants());
+		ReadyGolfRound replay = remaining.replayRemaining();
+		assertEquals(RoundPhase.PLAYING, replay.phase());
+		assertEquals(ParticipantStatus.ACTIVE, participant(replay, PLAYER_ONE).status());
+		assertEquals(ParticipantStatus.WITHDRAWN, participant(replay, PLAYER_TWO).status());
+	}
+
+	@Test
+	void completedRoundUsesRoundScopedCommandsNotActiveHoleLifecycle() {
+		ReadyGolfRound completed = completeRound(playingRound());
+
+		assertThrows(IllegalStateException.class, () -> completed.restartCurrentHole(PLAYER_ONE));
+		assertThrows(IllegalStateException.class, () -> completed.withdraw(PLAYER_ONE));
+		ReadyGolfRound done = completed.leaveCompleted(PLAYER_ONE);
+		assertEquals(ParticipantStatus.WITHDRAWN, participant(done, PLAYER_ONE).status());
+		assertEquals(ParticipantStatus.ACTIVE, participant(done, PLAYER_TWO).status());
+	}
+
+	@Test
+	void oneHoleRoundCompletesAndCanReplayWithoutPeerState() {
+		CourseDefinition oneHole = new CourseDefinition("one", "One Hole", "minecraft:overworld",
+			new GeneratedLayoutIdentity("one", 1), List.of(hole(1, 4)));
+		ReadyGolfRound round = ReadyGolfRound.create(ROUND_ID, oneHole, PLAYER_ONE)
+			.join(PLAYER_TWO).start(PLAYER_ONE);
+
+		round = update(round, PLAYER_ONE, state(round, PLAYER_ONE).currentHole().pickUp());
+		round = update(round, PLAYER_TWO, state(round, PLAYER_TWO).currentHole().pickUp());
+
+		assertEquals(RoundPhase.COMPLETE, round.phase());
+		assertEquals(1, state(round, PLAYER_ONE).finalScorecard().holes().size());
+		ReadyGolfRound replay = round.replayRemaining();
+		assertEquals(0, replay.currentHoleIndex());
+		assertEquals(0, state(replay, PLAYER_ONE).currentHole().strokes());
+		assertEquals(0, state(replay, PLAYER_TWO).currentHole().strokes());
 	}
 
 	@Test

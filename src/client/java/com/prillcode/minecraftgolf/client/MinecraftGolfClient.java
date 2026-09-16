@@ -14,13 +14,21 @@ import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.client.camera.PostShotCamera;
 import com.prillcode.minecraftgolf.client.hole.HoleHud;
 import com.prillcode.minecraftgolf.client.hole.HoleHudState;
+import com.prillcode.minecraftgolf.client.hole.CourseBrowserScreen;
+import com.prillcode.minecraftgolf.client.hole.CourseBrowserState;
+import com.prillcode.minecraftgolf.client.hole.LobbyHudState;
 import com.prillcode.minecraftgolf.client.hole.NextHolePrompt;
+import com.prillcode.minecraftgolf.client.hole.RoundScorecardScreen;
+import com.prillcode.minecraftgolf.client.hole.RoundScorecardState;
 import com.prillcode.minecraftgolf.client.input.PracticeKeybindings;
 import com.prillcode.minecraftgolf.client.render.GolfBallEntityRenderer;
 import com.prillcode.minecraftgolf.client.swing.SwingController;
 import com.prillcode.minecraftgolf.client.swing.SwingHud;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.net.HoleStatePayload;
+import com.prillcode.minecraftgolf.net.RoundScorecardPayload;
+import com.prillcode.minecraftgolf.net.CourseListPayload;
+import com.prillcode.minecraftgolf.net.LobbyStatePayload;
 
 public class MinecraftGolfClient implements ClientModInitializer {
 	@Override
@@ -51,11 +59,34 @@ public class MinecraftGolfClient implements ClientModInitializer {
 
 		// S03: receive authoritative hole-state snapshots from the server.
 		ClientPlayNetworking.registerGlobalReceiver(
-				HoleStatePayload.TYPE,
-				(payload, context) -> HoleHudState.update(payload));
+			HoleStatePayload.TYPE,
+			(payload, context) -> {
+				HoleHudState.update(payload);
+				if (payload.phase() != HoleStatePayload.Phase.ROUND_COMPLETE) {
+					RoundScorecardState.clear();
+				}
+			});
+		ClientPlayNetworking.registerGlobalReceiver(RoundScorecardPayload.TYPE, (payload, context) -> {
+			Minecraft.getInstance().execute(() -> {
+				RoundScorecardState.update(payload);
+				Minecraft.getInstance().setScreenAndShow(new RoundScorecardScreen());
+			});
+		});
+		ClientPlayNetworking.registerGlobalReceiver(CourseListPayload.TYPE, (payload, context) ->
+			Minecraft.getInstance().execute(() -> {
+				CourseBrowserState.update(payload);
+				Minecraft.getInstance().setScreenAndShow(new CourseBrowserScreen());
+			}));
+		ClientPlayNetworking.registerGlobalReceiver(LobbyStatePayload.TYPE, (payload, context) ->
+			LobbyHudState.update(payload));
 
 		// S03: clear stale display state on disconnect.
-		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> HoleHudState.clear());
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			HoleHudState.clear();
+			CourseBrowserState.clear();
+			LobbyHudState.clear();
+			RoundScorecardState.clear();
+		});
 
 		// S03: hole HUD panel — rendered top-left, separate from the swing HUD (top-right).
 		HudElementRegistry.addLast(

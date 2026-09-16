@@ -24,7 +24,6 @@ import com.prillcode.minecraftgolf.course.AuthoredCourseStore.DraftSnapshot;
 import com.prillcode.minecraftgolf.course.AuthoredCourseStore.HoleSnapshot;
 import com.prillcode.minecraftgolf.course.AuthoredHoleBounds;
 import com.prillcode.minecraftgolf.course.CourseDefinition;
-import com.prillcode.minecraftgolf.dev.M5DevelopmentCourse;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.hole.HoleBoundary;
@@ -43,7 +42,7 @@ import com.prillcode.minecraftgolf.server.AuthoredCourseService.PendingCorner;
  * /golf course finalize &lt;id&gt;                 validate and promote a draft to playable
  * /golf course delete &lt;id&gt;                   remove a draft or finalized course
  * /golf course edit &lt;id&gt;                     make a draft the player's current draft
- * /golf course select &lt;id&gt;                   switch the active course (or "m5" for built-in)
+ * /golf course select &lt;id&gt;                   switch the active authored course
  * /golf hole tee &lt;n&gt;                         set hole n tee at the player's position
  * /golf hole cup &lt;n&gt;                         set hole n cup and place the cup block
  * /golf hole par &lt;n&gt; &lt;par&gt;                   set hole n par
@@ -53,13 +52,10 @@ import com.prillcode.minecraftgolf.server.AuthoredCourseService.PendingCorner;
  * <p>All state is server-authoritative: mutations go through
  * {@link AuthoredCourseService}, which persists the store after every
  * successful change. Course selection switches {@link ActiveHoleService} at
- * runtime and is intentionally not persisted — after a restart the server is
- * back on the built-in M5 course until an operator selects again.</p>
+ * runtime and is intentionally not persisted — after a restart no course is
+ * active until an operator selects one.</p>
  */
 public final class GolfCourseCommands {
-
-	/** Special selection id restoring the built-in M5 development course. */
-	private static final String M5_SELECT_ID = "m5";
 
 	private static boolean registered;
 
@@ -270,7 +266,7 @@ public final class GolfCourseCommands {
 		CourseDefinition active = ActiveHoleService.instance().configuredCourseOrNull();
 		if (active != null && active.id().equals(id) && ActiveHoleService.instance().hasActivePlay()) {
 			return fail(ctx, "course '" + id
-				+ "' is the active course while play is in progress; abandon/complete current play first");
+				+ "' is the active course while play is in progress; leave/complete current play first");
 		}
 		try {
 			service.store().removeCourse(id);
@@ -305,17 +301,9 @@ public final class GolfCourseCommands {
 		ActiveHoleService holes = ActiveHoleService.instance();
 		if (holes.hasActivePlay()) {
 			return fail(ctx, "cannot switch courses while a round or hole attempt is active;"
-				+ " abandon/complete current play first");
+				+ " leave/complete current play first");
 		}
 		String id = StringArgumentType.getString(ctx, "id");
-		if (M5_SELECT_ID.equalsIgnoreCase(id.trim())) {
-			CourseDefinition definition = M5DevelopmentCourse.definition();
-			holes.initializeCourse(definition);
-			ctx.getSource().sendSuccess(() -> Component.literal("[golf] active course is now '"
-				+ definition.id() + "' (" + definition.displayName()
-				+ "); selection is not persisted — the server returns to M5 on restart"), true);
-			return 1;
-		}
 		CourseDefinition definition;
 		try {
 			definition = AuthoredCourseService.instance().store().finalizedCourse(id);
@@ -326,7 +314,7 @@ public final class GolfCourseCommands {
 		ctx.getSource().sendSuccess(() -> Component.literal("[golf] active course is now '" + definition.id()
 			+ "' (" + definition.displayName() + ") — " + definition.holes().size()
 			+ " hole(s), par " + definition.totalPar()
-			+ "; selection is not persisted — the server returns to M5 on restart"), true);
+			+ "; selection is not persisted — select it again after a restart"), true);
 		return 1;
 	}
 

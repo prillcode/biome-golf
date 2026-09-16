@@ -10,5 +10,7 @@
   "itemGroup.minecraft_golf.clubs": "Minecraft Golf — Clubs",
 
   "key.category.minecraft_golf.controls": "Minecraft Golf",
-  "key.minecraft_golf.drop_ball": "Drop Practice Ball"
+  "key.minecraft_golf.drop_ball": "Drop Practice Ball",
+  "key.minecraft_golf.start_round": "Golf Menu",
+  "key.minecraft_golf.leave_round": "Leave Ready Golf Round"
 }

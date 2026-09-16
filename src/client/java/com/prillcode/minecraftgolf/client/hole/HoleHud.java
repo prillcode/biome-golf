@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import com.prillcode.minecraftgolf.net.HoleStatePayload;
+import com.prillcode.minecraftgolf.net.LobbyStatePayload;
 import com.prillcode.minecraftgolf.net.HoleStatePayload.Phase;
 import com.prillcode.minecraftgolf.golf.CupDirection;
 
@@ -30,12 +31,18 @@ public final class HoleHud {
 
 	public static void render(GuiGraphicsExtractor graphics, DeltaTracker ignored) {
 		HoleStatePayload state = HoleHudState.get();
-		if (state == null || state.phase() == Phase.PRACTICE) {
+		if (state == null || (state.phase() == Phase.PRACTICE && state.holeNumber() != 0)) {
 			return;
 		}
 
 		Minecraft client = Minecraft.getInstance();
 		if (client.player == null) {
+			return;
+		}
+		LobbyStatePayload lobby = LobbyHudState.get();
+		if (lobby != null && lobby.phase() == LobbyStatePayload.Phase.LOBBY
+				&& lobby.participating()) {
+			renderLobby(graphics, client, lobby);
 			return;
 		}
 
@@ -48,9 +55,15 @@ public final class HoleHud {
 		outline(graphics, x, y, WIDTH, height, BORDER);
 
 		int textY = y + PAD_Y;
-		String holePar = "Hole " + state.holeNumber() + "  Par " + state.par();
+		String holePar = state.holeNumber() == 0
+			? "Practice Mode"
+			: "Hole " + state.holeNumber() + "  Par " + state.par();
 		graphics.text(client.font, holePar, x + PAD_X, textY, TEXT, true);
 		textY += LINE_HEIGHT;
+		if (state.holeNumber() == 0) {
+			graphics.text(client.font, "Chat: [Play a Round]", x + PAD_X, textY, GOLD, true);
+			textY += LINE_HEIGHT;
+		}
 
 		String strokes = "Strokes: " + state.strokes() + " / " + state.strokeLimit();
 		graphics.text(client.font, strokes, x + PAD_X, textY, MUTED, false);
@@ -102,12 +115,24 @@ public final class HoleHud {
 			textY += LINE_HEIGHT;
 			graphics.text(client.font, "Replay: /golf round restart", x + PAD_X, textY, MUTED, false);
 			textY += LINE_HEIGHT;
-			graphics.text(client.font, "Exit: /golf round done", x + PAD_X, textY, MUTED, false);
+			graphics.text(client.font, "Leave: /golf round leave", x + PAD_X, textY, MUTED, false);
 		}
 	}
 
+	private static void renderLobby(GuiGraphicsExtractor graphics, Minecraft client, LobbyStatePayload lobby) {
+		int x = EDGE_MARGIN, y = EDGE_MARGIN, height = 52 + (lobby.coordinator() ? 10 : 0);
+		graphics.fill(x, y, x + WIDTH, y + height, PANEL);
+		outline(graphics, x, y, WIDTH, height, BORDER);
+		graphics.text(client.font, "Ready Golf Lobby", x + PAD_X, y + PAD_Y, TEXT, true);
+		graphics.text(client.font, lobby.courseName(), x + PAD_X, y + 16, MUTED, false);
+		graphics.text(client.font, lobby.participantCount() + " of " + lobby.maximumParticipants() + " players ready",
+			x + PAD_X, y + 27, GOLD, false);
+		if (lobby.coordinator() && lobby.startable()) graphics.text(client.font, "[R] Start Round", x + PAD_X, y + 38, GOOD, true);
+		else if (lobby.participating()) graphics.text(client.font, "[L] Leave", x + PAD_X, y + 38, WARN, false);
+	}
+
 	private static int countLines(HoleStatePayload state) {
-		int lines = 2; // hole/par + strokes
+		int lines = state.holeNumber() == 0 ? 3 : 2; // practice action adds one line
 		if (state.courseTotalPar() > 0) lines++;
 		if (state.phase() == Phase.ACTIVE) lines++;
 		if (state.penaltyCount() > 0) lines++;

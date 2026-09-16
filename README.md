@@ -4,21 +4,21 @@ A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary M
 
 > **M8 — V1 Course and Hole Authoring is complete** (M0–M8 are complete; see `docs/M8-CLOSEOUT.md`; M9 is deferred)
 
-M6 Ready Golf play flow on the approved seed (`-1928790872702396508`): run
-`/golf dev preparecourse`, then one golfer creates a shared round with
+M6 Ready Golf play flow: select a finalized authored course with
+`/golf course select <id>`, then one golfer creates a shared round with
 `/golf round create`, others join with `/golf round join`, and the coordinator
 starts it with `/golf round start`. Golfers play Ready Golf (no forced turns).
 After completing each hole, use the clickable next-tee action or `/golf nexthole`
-after Holes 1 and 2. The server preserves cumulative scoring and automatically
-prints the final scorecard when Hole 3 ends. The solo flow remains available via
-`/golf hole start` when no lobby or round exists.
+after each non-final hole. The server preserves cumulative scoring and
+automatically prints the final scorecard at the end of the course. The solo flow
+remains available via `/golf hole start` when no lobby or round exists.
 
-During active play, `/golf hole restart` resets only the current hole and
-`/golf hole abandon` exits that attempt. After the round completes, one remaining
-golfer can use `/golf round restart` to restart Hole 1 for all remaining golfers,
-or use `/golf round done` to return individually to the Overworld world spawn.
-Players who do not want to replay an active multiplayer round can use
-`/golf round leave`.
+During active play, `/golf hole restart` resets only the current hole.
+`/golf round leave` is the single exit action: it leaves a lobby, abandons solo
+play, withdraws from an active multiplayer round, or exits a completed round and
+returns that golfer to the Overworld world spawn. After the round completes, one
+remaining golfer can use `/golf round restart` to restart Hole 1 for every
+remaining golfer.
 
 Operators can author additional courses on existing terrain. Use
 `/golf course create <id> <display name>`, `/golf course edit <id>`, then capture
@@ -30,7 +30,8 @@ Clone an existing course into an independent draft with
 `/golf course clone <source-id> <new-id> [display name]`.
 Hole bounds are optional when authoring; omit `/golf hole bounds` to leave that
 hole unbounded for out-of-bounds purposes.
-The built-in regression course is selected with `/golf course select m5`.
+After a server restart, no course is selected. An operator must run
+`/golf course select <id>` before starting a hole or round.
 Players can restore missing clubs with `/golf clubs equip`.
 
 ## Project purpose
@@ -76,6 +77,11 @@ and end-user mod distribution, see
 ```
 
 Connecting from the LAN: point a Java Edition client with Fabric Loader + the mod installed at the host's LAN IP, port `25565`. See `dev-server/README.md`.
+
+Players can drop a practice ball with `/golf practice ball` and remove their own
+unassigned practice balls with `/golf practice clear`.
+The administrative `/golf clear` command remains restricted and clears all loaded
+golf balls.
 
 ## Repository structure
 

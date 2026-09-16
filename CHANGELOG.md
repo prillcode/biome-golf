@@ -9,6 +9,44 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.3.0] - 2026-09-15
+
+### Changed
+
+- `/golf round leave` is now the single player-facing exit action for lobbies,
+  solo play, active Ready Golf, and completed rounds.
+- Removed `/golf hole abandon` and `/golf round done` to eliminate overlapping
+  lifecycle commands.
+
+### Fixed
+
+- Completed rounds can no longer be replaced while another golfer still owns
+  them, preventing stale scorecards and trapped remaining players.
+- Leaving and final-hole completion now clear stale client lobby state, and the
+  last departing golfer retires the completed round.
+- Disconnecting from a completed round no longer blocks remaining golfers from
+  replaying.
+- Solo round replay and current-hole replay now replace the authoritative hole
+  session correctly and preserve completed earlier holes.
+- Hole replay now uses the round-owned course and prepares replacement state
+  before committing the restart.
+
+## [0.2.9] - 2026-09-13
+
+### Added
+
+- Practice Mode course browser for finalized authored courses.
+- Server-authoritative Ready Golf lobby create, join, start, and leave UX.
+- Lobby participant status and coordinator actions in the HUD.
+
+## [0.2.8] - 2026-09-13
+
+### Fixed
+
+- The server no longer selects the retired M5 development course at startup.
+- Players now receive a safe no-course-selected state until an operator selects
+  an authored course.
+
 ## [0.2.7] - 2026-09-13
 
 ### Fixed
@@ -104,7 +142,8 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/prillcode/minecraft-golf/compare/v0.2.9...v0.3.0
 [0.2.4]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.4
 [0.2.3]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.3
 [0.2.2]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.2

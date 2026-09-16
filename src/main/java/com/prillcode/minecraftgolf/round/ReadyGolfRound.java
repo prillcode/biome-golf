@@ -127,6 +127,9 @@ public record ReadyGolfRound(
 		if (phase == RoundPhase.LOBBY) {
 			return removeLobbyParticipant(playerId);
 		}
+		if (phase == RoundPhase.COMPLETE) {
+			return leaveCompleted(playerId);
+		}
 		requirePhase(RoundPhase.PLAYING);
 		ReadyGolfParticipant participant = requireActiveParticipant(playerId);
 		return replaceParticipant(participant.withStatus(ParticipantStatus.SUSPENDED))
@@ -203,6 +206,11 @@ public record ReadyGolfRound(
 	/** True when at least one connected golfer still owns this round. */
 	public boolean hasActiveParticipants() {
 		return activeParticipantCount() > 0;
+	}
+
+	/** True while any active or suspended golfer still owns this round. */
+	public boolean hasRemainingParticipants() {
+		return participants.stream().anyMatch(ReadyGolfParticipant::isParticipating);
 	}
 
 	public long terminalActiveParticipantCount() {

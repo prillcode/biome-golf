@@ -1,6 +1,7 @@
 package com.prillcode.minecraftgolf.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
@@ -36,25 +37,29 @@ public final class GolfHoleCommands {
 			CommandBuildContext registryAccess, CommandSelection environment) {
 		dispatcher.register(Commands.literal("golf")
 			.then(Commands.literal("round")
-				.then(Commands.literal("create").executes(GolfHoleCommands::createRound))
+				.then(Commands.literal("create")
+					.executes(GolfHoleCommands::createRound)
+					.then(Commands.argument("courseId", StringArgumentType.word())
+						.executes(GolfHoleCommands::createRoundForCourse)))
 				.then(Commands.literal("join").executes(GolfHoleCommands::joinRound))
 				.then(Commands.literal("start").executes(GolfHoleCommands::startRound))
 				.then(Commands.literal("leave").executes(GolfHoleCommands::leaveRound))
 				.then(Commands.literal("restart").executes(GolfHoleCommands::restartRound))
-				.then(Commands.literal("done").executes(GolfHoleCommands::doneRound))
 				.then(Commands.literal("status").executes(GolfHoleCommands::roundStatus)))
+			.then(Commands.literal("browse").executes(GolfHoleCommands::browseCourses))
 			.then(Commands.literal("hole")
 				.then(Commands.literal("start").executes(GolfHoleCommands::start))
 				.then(Commands.literal("restart").executes(GolfHoleCommands::restart))
-				.then(Commands.literal("abandon").executes(GolfHoleCommands::abandon))
 				.then(Commands.literal("status").executes(GolfHoleCommands::status)))
 			.then(Commands.literal("clubs")
 				.then(Commands.literal("equip").executes(GolfHoleCommands::equipClubs)))
-			.then(Commands.literal("practiceball").executes(GolfHoleCommands::dropPracticeBall))
+			.then(Commands.literal("practice")
+				.then(Commands.literal("ball").executes(GolfHoleCommands::dropPracticeBall))
+				.then(Commands.literal("clear").executes(GolfHoleCommands::clearPracticeBalls)))
 			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp))
 			.then(Commands.literal("nexthole").executes(GolfHoleCommands::nextHole)));
 		MinecraftGolf.LOGGER.info(
-			"Registered Ready Golf round, hole lifecycle, practice ball, Pick Up, and next-hole commands");
+			"Registered Ready Golf round, hole lifecycle, practice ball, practice clear, Pick Up, and next-hole commands");
 	}
 
 	private static int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -70,6 +75,13 @@ public final class GolfHoleCommands {
 
 	private static int createRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		return sendResult(context, ActiveHoleService.instance().createRound(
+			context.getSource().getPlayerOrException()));
+	}
+
+	private static int createRoundForCourse(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().createRound(
+			StringArgumentType.getString(context, "courseId"),
 			context.getSource().getPlayerOrException()));
 	}
 
@@ -94,12 +106,6 @@ public final class GolfHoleCommands {
 			context.getSource().getPlayerOrException()));
 	}
 
-	private static int doneRound(CommandContext<CommandSourceStack> context)
-			throws CommandSyntaxException {
-		return sendResult(context, ActiveHoleService.instance().doneRound(
-			context.getSource().getPlayerOrException()));
-	}
-
 	private static int roundStatus(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		context.getSource().sendSuccess(
@@ -107,14 +113,14 @@ public final class GolfHoleCommands {
 		return 1;
 	}
 
+	private static int browseCourses(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		return sendResult(context, ActiveHoleService.instance().openCourseBrowser(player));
+	}
+
 	private static int restart(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		return sendResult(context, ActiveHoleService.instance().restart(player));
-	}
-
-	private static int abandon(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-		ServerPlayer player = context.getSource().getPlayerOrException();
-		return sendResult(context, ActiveHoleService.instance().abandon(player));
 	}
 
 	private static int status(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -134,6 +140,12 @@ public final class GolfHoleCommands {
 			throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		return sendResult(context, ActiveHoleService.instance().dropPracticeBall(player));
+	}
+
+	private static int clearPracticeBalls(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().clearPracticeBalls(
+			context.getSource().getPlayerOrException()));
 	}
 
 	private static int pickUp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

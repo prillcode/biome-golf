@@ -45,6 +45,19 @@ class HoleStatePayloadTest {
 	}
 
 	@Test
+	void noCourseSnapshotIsExplicitAndActionableByPresentation() {
+		HoleStatePayload p = HoleStatePayload.noCourse();
+
+		assertEquals(Phase.PRACTICE, p.phase());
+		assertEquals(0, p.holeNumber());
+		assertEquals(0, p.par());
+		assertEquals(0, p.strokeLimit());
+		assertFalse(p.roundAdvanceAvailable());
+		assertNull(p.completionReason());
+		assertNull(p.scoreTerm());
+	}
+
+	@Test
 	void activeSnapshot_propagatesStrokesAndPenalties() {
 		PlayerHoleState state = PlayerHoleState.start(PAR_FOUR)
 			.recordAcceptedShot()

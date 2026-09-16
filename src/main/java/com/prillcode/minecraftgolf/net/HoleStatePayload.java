@@ -66,6 +66,12 @@ public record HoleStatePayload(
 				0, 0, 0, false, null, null);
 	}
 
+	/** PRACTICE snapshot used before an operator selects an active course. */
+	public static HoleStatePayload noCourse() {
+		return new HoleStatePayload(Phase.PRACTICE, 0, 0, 0, 0, 0, 0,
+			0.0, 0.0, -1, 0, 0, 0, false, null, null);
+	}
+
 	/** ACTIVE snapshot: hole is in progress. */
 	public static HoleStatePayload active(PlayerHoleState state) {
 		return active(state, state.hole().tee());
