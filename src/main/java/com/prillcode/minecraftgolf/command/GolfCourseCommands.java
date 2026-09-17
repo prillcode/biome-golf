@@ -225,6 +225,7 @@ public final class GolfCourseCommands {
 
 	private static int cloneCourse(CommandContext<CommandSourceStack> ctx, String displayName)
 			throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		AuthoredCourseService service = AuthoredCourseService.instance();
 		String sourceId = StringArgumentType.getString(ctx, "sourceId");
@@ -246,6 +247,7 @@ public final class GolfCourseCommands {
 
 	private static int createCourse(CommandContext<CommandSourceStack> ctx, String displayName)
 			throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		AuthoredCourseService service = AuthoredCourseService.instance();
 		String id = StringArgumentType.getString(ctx, "id");
@@ -318,6 +320,7 @@ public final class GolfCourseCommands {
 	}
 
 	private static int finalizeCourse(CommandContext<CommandSourceStack> ctx) {
+		if (activePlayBlocksMutation(ctx)) return 0;
 		AuthoredCourseService service = AuthoredCourseService.instance();
 		String id = StringArgumentType.getString(ctx, "id");
 		CourseDefinition definition;
@@ -327,6 +330,7 @@ public final class GolfCourseCommands {
 			return fail(ctx, exception.getMessage());
 		}
 		service.save();
+		service.refreshProtection();
 		ctx.getSource().sendSuccess(() -> Component.literal("[golf] finalized course '" + definition.id()
 			+ "' (\"" + definition.displayName() + "\") — " + definition.holes().size()
 			+ " hole(s), par " + definition.totalPar()
@@ -335,6 +339,7 @@ public final class GolfCourseCommands {
 	}
 
 	private static int deleteCourse(CommandContext<CommandSourceStack> ctx) {
+		if (activePlayBlocksMutation(ctx)) return 0;
 		AuthoredCourseService service = AuthoredCourseService.instance();
 		String id;
 		try {
@@ -342,18 +347,15 @@ public final class GolfCourseCommands {
 		} catch (IllegalArgumentException exception) {
 			return fail(ctx, exception.getMessage());
 		}
-		CourseDefinition active = ActiveHoleService.instance().configuredCourseOrNull();
-		if (active != null && active.id().equals(id) && ActiveHoleService.instance().hasActivePlay()) {
-			return fail(ctx, "course '" + id
-				+ "' is the active course while play is in progress; leave/complete current play first");
-		}
 		try {
 			service.store().removeCourse(id);
 		} catch (IllegalArgumentException | IllegalStateException exception) {
 			return fail(ctx, exception.getMessage());
 		}
 		service.clearCurrentDraftFor(id);
+		ActiveHoleService.instance().clearConfiguredCourseIf(id);
 		service.save();
+		service.refreshProtection();
 		ctx.getSource().sendSuccess(() -> Component.literal("[golf] deleted course '" + id + "'"), true);
 		return 1;
 	}
@@ -412,6 +414,7 @@ public final class GolfCourseCommands {
 	// ------------------------------------------------------------------
 
 	private static int setTee(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		String draftId = currentDraftOrFail(ctx, player);
 		if (draftId == null) {
@@ -431,6 +434,7 @@ public final class GolfCourseCommands {
 	}
 
 	private static int setCup(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		String draftId = currentDraftOrFail(ctx, player);
 		if (draftId == null) {
@@ -478,6 +482,7 @@ public final class GolfCourseCommands {
 	}
 
 	private static int setPar(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		String draftId = currentDraftOrFail(ctx, player);
 		if (draftId == null) {
@@ -497,6 +502,7 @@ public final class GolfCourseCommands {
 	}
 
 	private static int captureBounds(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		AuthoredCourseService service = AuthoredCourseService.instance();
 		String draftId = currentDraftOrFail(ctx, player);
@@ -535,6 +541,11 @@ public final class GolfCourseCommands {
 	// ------------------------------------------------------------------
 	// Helpers
 	// ------------------------------------------------------------------
+	private static boolean activePlayBlocksMutation(CommandContext<CommandSourceStack> ctx) {
+		if (!ActiveHoleService.instance().hasActivePlay()) return false;
+		fail(ctx, "cannot modify authored courses while golf play is active; leave or complete current play first");
+		return true;
+	}
 
 	private static void placeFlag(ServerLevel level, BlockPos cupBlockPos) {
 		BlockPos middlePos = cupBlockPos.above();

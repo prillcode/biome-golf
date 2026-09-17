@@ -240,6 +240,10 @@ public final class AuthoredCourseStore {
 		if (normalized.isEmpty()) {
 			throw new IllegalArgumentException("course id must not be blank");
 		}
+		if (normalized.length() > CourseDefinition.MAX_ID_LENGTH) {
+			throw new IllegalArgumentException("course id must be at most "
+				+ CourseDefinition.MAX_ID_LENGTH + " characters");
+		}
 		if (!ID_PATTERN.matcher(normalized).matches()) {
 			throw new IllegalArgumentException("course id '" + id + "' must contain only lowercase"
 				+ " letters, digits, '_', '.', ':', '/', '-' and no whitespace");
@@ -290,6 +294,10 @@ public final class AuthoredCourseStore {
 		Objects.requireNonNull(value, name);
 		if (value.isBlank()) {
 			throw new IllegalArgumentException(name + " must not be blank");
+		}
+		if (name.equals("displayName") && value.length() > CourseDefinition.MAX_DISPLAY_NAME_LENGTH) {
+			throw new IllegalArgumentException("displayName must be at most "
+				+ CourseDefinition.MAX_DISPLAY_NAME_LENGTH + " characters");
 		}
 	}
 

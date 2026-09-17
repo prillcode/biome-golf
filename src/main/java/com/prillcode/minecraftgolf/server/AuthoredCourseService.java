@@ -23,7 +23,7 @@ import com.prillcode.minecraftgolf.golf.Vec3;
  * <p>The store persists as JSON at
  * {@code <world>/data/minecraft_golf_authored_courses.json} via
  * {@link AuthoredCourseStoreJson}. Loading is lazy on first access per server
- * start: a missing file means an empty store; a malformed file logs an error
+	 * start: a missing file means an empty store; a malformed file logs an error
  * and fails closed to an empty store without ever crashing server boot. Every
  * successful mutation is followed by {@link #save()}.</p>
  *
@@ -59,7 +59,8 @@ public final class AuthoredCourseService {
 
 	private void onServerStarted(MinecraftServer server) {
 		savePath = server.getWorldPath(LevelResource.ROOT).resolve("data").resolve(FILE_NAME);
-		store = null;
+		store = loadOrEmpty(savePath);
+		refreshProtection();
 	}
 
 	private void onServerStopping() {
@@ -67,6 +68,7 @@ public final class AuthoredCourseService {
 		savePath = null;
 		currentDrafts.clear();
 		pendingCorners.clear();
+		CourseBlockBreakGuard.clear();
 	}
 
 	/** The world-scoped store, loaded lazily on first access per server start. */
@@ -86,6 +88,11 @@ public final class AuthoredCourseService {
 			return;
 		}
 		saveQuietly(store, savePath);
+	}
+
+	public void refreshProtection() {
+		CourseBlockBreakGuard.replaceAuthoredCourses(store == null ? java.util.List.of()
+			: store.finalizedCourses());
 	}
 
 	/** Loads the store from {@code path}: missing file or malformed content → empty store. */

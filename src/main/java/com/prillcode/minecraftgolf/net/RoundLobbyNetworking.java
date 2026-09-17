@@ -31,15 +31,18 @@ public final class RoundLobbyNetworking {
 		ServerPlayer player = context.player();
 		ActiveHoleService service = ActiveHoleService.instance();
 		ActiveHoleService.StartResult result = switch (payload.action()) {
-			case CREATE -> service.createRound(payload.courseId(), player);
-			case JOIN -> service.joinRound(payload.courseId(), player);
-			case START -> service.startRound(player);
-			case LEAVE -> service.leaveRound(player);
+			case CREATE -> service.createRound(payload.targetId(), player);
+			case JOIN -> service.joinRound(java.util.UUID.fromString(payload.targetId()), player);
+			case START -> service.startRound(java.util.UUID.fromString(payload.targetId()), player);
+			case LEAVE -> service.leaveRound(java.util.UUID.fromString(payload.targetId()), player);
+			case RESTART_HOLE -> service.restart(java.util.UUID.fromString(payload.targetId()), player);
+			case REPLAY_ROUND -> service.restartRound(java.util.UUID.fromString(payload.targetId()), player);
 		};
 		player.sendSystemMessage(Component.literal(result.message()), !result.success());
 		if (result.success()) {
 			MinecraftGolf.LOGGER.info("Accepted Golf Menu lobby action {} from {}", payload.action(),
 				player.getName().getString());
 		}
+		if (!result.success()) service.sendFinalizedCourses(player);
 	}
 }

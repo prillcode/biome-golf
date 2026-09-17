@@ -76,6 +76,11 @@ public final class HoleHud {
 			textY += LINE_HEIGHT;
 		}
 
+		if (state.phase() == Phase.ACTIVE || state.phase() == Phase.MISSING_BALL) {
+			graphics.text(client.font, "Shots attempted: " + state.acceptedShots(), x + PAD_X, textY, MUTED, false);
+			textY += LINE_HEIGHT;
+		}
+
 		if (state.phase() == Phase.ACTIVE) {
 			String arrow = CupDirection.arrow(client.player.getX(), client.player.getZ(),
 				client.player.getYRot(), state.cupX(), state.cupZ());
@@ -90,7 +95,7 @@ public final class HoleHud {
 			textY += LINE_HEIGHT;
 		}
 
-		if (state.strokes() > 0) {
+		if (state.strokes() > 0 && (state.phase() == Phase.COMPLETE || state.phase() == Phase.ROUND_COMPLETE)) {
 			String score = "Score: " + formatToPar(state.scoreToPar());
 			int scoreColor = state.scoreToPar() < 0 ? GOOD : state.scoreToPar() > 0 ? WARN : MUTED;
 			graphics.text(client.font, score, x + PAD_X, textY, scoreColor, false);
@@ -135,8 +140,10 @@ public final class HoleHud {
 		int lines = state.holeNumber() == 0 ? 3 : 2; // practice action adds one line
 		if (state.courseTotalPar() > 0) lines++;
 		if (state.phase() == Phase.ACTIVE) lines++;
+		if (state.phase() == Phase.ACTIVE || state.phase() == Phase.MISSING_BALL) lines++;
 		if (state.penaltyCount() > 0) lines++;
-		if (state.strokes() > 0) lines++;
+		if (state.strokes() > 0 && (state.phase() == Phase.COMPLETE
+				|| state.phase() == Phase.ROUND_COMPLETE)) lines++;
 		if (state.phase() == Phase.MISSING_BALL) lines += 2;
 		else if (state.phase() == Phase.COMPLETE) {
 			lines++;

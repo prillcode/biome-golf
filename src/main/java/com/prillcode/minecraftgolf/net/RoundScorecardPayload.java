@@ -12,77 +12,80 @@ import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.course.CourseDefinition;
 import com.prillcode.minecraftgolf.course.CourseScorecard;
 
-/** Server-authoritative final scorecard for the completed round. */
-public record RoundScorecardPayload(String courseId, List<Integer> pars, List<PlayerRow> players)
+/** Server-authoritative final scorecard with explicit authored hole numbers. */
+public record RoundScorecardPayload(String courseId, List<HoleColumn> holes, List<PlayerRow> players)
 		implements CustomPacketPayload {
-	public static final int HOLE_COUNT = 18;
 	public static final Type<RoundScorecardPayload> TYPE = new Type<>(
-		Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "round_scorecard_v1"));
+		Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "round_scorecard_v2"));
 	public static final StreamCodec<FriendlyByteBuf, RoundScorecardPayload> STREAM_CODEC =
 		StreamCodec.of(RoundScorecardPayload::encode, RoundScorecardPayload::decode);
+
+	public record HoleColumn(int number, int par) {
+		public HoleColumn {
+			if (number < 1 || par < 1) throw new IllegalArgumentException("invalid scorecard hole");
+		}
+	}
 
 	public record PlayerRow(String name, List<Integer> strokes) {
 		public PlayerRow {
 			Objects.requireNonNull(name, "name");
-			Objects.requireNonNull(strokes, "strokes");
-			strokes = List.copyOf(strokes);
-			if (name.isBlank() || strokes.size() != HOLE_COUNT) {
-				throw new IllegalArgumentException("scorecard rows must have a name and 18 holes");
-			}
-			if (strokes.stream().anyMatch(value -> value < -1)) {
-				throw new IllegalArgumentException("unplayed holes must be -1");
+			strokes = List.copyOf(Objects.requireNonNull(strokes, "strokes"));
+			if (name.isBlank() || strokes.stream().anyMatch(value -> value < -1)) {
+				throw new IllegalArgumentException("invalid scorecard player row");
 			}
 		}
 	}
 
 	public RoundScorecardPayload {
 		Objects.requireNonNull(courseId, "courseId");
-		Objects.requireNonNull(pars, "pars");
-		Objects.requireNonNull(players, "players");
-		pars = List.copyOf(pars);
-		players = List.copyOf(players);
-		if (courseId.isBlank() || pars.size() != HOLE_COUNT || players.isEmpty() || players.size() > 4) {
-			throw new IllegalArgumentException("scorecard must contain 18 pars and 1-4 players");
+		holes = List.copyOf(Objects.requireNonNull(holes, "holes"));
+		players = List.copyOf(Objects.requireNonNull(players, "players"));
+		int holeCount = holes.size();
+		if (courseId.isBlank() || holes.isEmpty() || players.isEmpty() || players.size() > 4) {
+			throw new IllegalArgumentException("scorecard must contain holes and 1-4 players");
 		}
-		if (pars.stream().anyMatch(value -> value < 0)) {
-			throw new IllegalArgumentException("missing hole pars must be zero");
+		if (holes.stream().map(HoleColumn::number).distinct().count() != holes.size()
+				|| players.stream().anyMatch(player -> player.strokes().size() != holeCount)) {
+			throw new IllegalArgumentException("scorecard rows must match unique authored holes");
 		}
 	}
 
-	public static List<Integer> pars(CourseDefinition course) {
-		return java.util.stream.IntStream.range(0, HOLE_COUNT)
-			.mapToObj(index -> index < course.holes().size() ? course.holes().get(index).par() : 0)
-			.toList();
+	public static List<HoleColumn> holes(CourseDefinition course) {
+		return course.holes().stream().map(hole -> new HoleColumn(hole.number(), hole.par())).toList();
 	}
 
-	public static PlayerRow player(String name, CourseScorecard scorecard) {
-		List<Integer> strokes = java.util.stream.IntStream.range(0, HOLE_COUNT)
-			.mapToObj(index -> scorecard.holes().stream()
-				.filter(score -> score.holeNumber() == index + 1)
-				.map(score -> score.strokes()).findFirst().orElse(-1))
-			.toList();
-		return new PlayerRow(name, strokes);
+	public static PlayerRow player(String name, CourseScorecard scorecard, List<HoleColumn> holes) {
+		return new PlayerRow(name, holes.stream().map(hole -> scorecard.holes().stream()
+			.filter(score -> score.holeNumber() == hole.number()).map(score -> score.strokes())
+			.findFirst().orElse(-1)).toList());
 	}
 
 	private static void encode(FriendlyByteBuf buf, RoundScorecardPayload payload) {
 		buf.writeUtf(payload.courseId(), 128);
-		payload.pars().forEach(buf::writeByte);
-		buf.writeByte(payload.players().size());
+		buf.writeVarInt(payload.holes().size());
+		for (HoleColumn hole : payload.holes()) {
+			buf.writeVarInt(hole.number());
+			buf.writeVarInt(hole.par());
+		}
+		buf.writeVarInt(payload.players().size());
 		for (PlayerRow player : payload.players()) {
 			buf.writeUtf(player.name(), 64);
-			player.strokes().forEach(buf::writeByte);
+			for (int strokes : player.strokes()) buf.writeVarInt(strokes + 1);
 		}
 	}
 
 	private static RoundScorecardPayload decode(FriendlyByteBuf buf) {
 		String courseId = buf.readUtf(128);
-		List<Integer> pars = java.util.stream.IntStream.range(0, HOLE_COUNT)
-			.mapToObj(index -> (int) buf.readByte()).toList();
-		int playerCount = buf.readUnsignedByte();
+		int holeCount = buf.readVarInt();
+		if (holeCount < 1) throw new IllegalArgumentException("invalid scorecard hole count");
+		List<HoleColumn> holes = java.util.stream.IntStream.range(0, holeCount)
+			.mapToObj(index -> new HoleColumn(buf.readVarInt(), buf.readVarInt())).toList();
+		int playerCount = buf.readVarInt();
+		if (playerCount < 1 || playerCount > 4) throw new IllegalArgumentException("invalid scorecard player count");
 		List<PlayerRow> players = java.util.stream.IntStream.range(0, playerCount).mapToObj(index ->
-			new PlayerRow(buf.readUtf(64), java.util.stream.IntStream.range(0, HOLE_COUNT)
-				.mapToObj(hole -> (int) buf.readByte()).toList())).toList();
-		return new RoundScorecardPayload(courseId, pars, players);
+			new PlayerRow(buf.readUtf(64), java.util.stream.IntStream.range(0, holeCount)
+				.mapToObj(hole -> buf.readVarInt() - 1).toList())).toList();
+		return new RoundScorecardPayload(courseId, holes, players);
 	}
 
 	@Override

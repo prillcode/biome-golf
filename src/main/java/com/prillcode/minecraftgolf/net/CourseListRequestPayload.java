@@ -11,7 +11,7 @@ import com.prillcode.minecraftgolf.MinecraftGolf;
 public record CourseListRequestPayload() implements CustomPacketPayload {
 	public static final CourseListRequestPayload INSTANCE = new CourseListRequestPayload();
 	public static final Type<CourseListRequestPayload> TYPE = new Type<>(
-		Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "course_list_request"));
+		Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "round_browser_request_v2"));
 	public static final StreamCodec<FriendlyByteBuf, CourseListRequestPayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 	@Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }

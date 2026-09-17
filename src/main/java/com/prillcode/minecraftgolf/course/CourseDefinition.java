@@ -15,12 +15,18 @@ public record CourseDefinition(
 	GeneratedLayoutIdentity generatedLayout,
 	List<HoleDefinition> holes
 ) {
+	public static final int MAX_ID_LENGTH = 128;
+	public static final int MAX_DISPLAY_NAME_LENGTH = 256;
+
 	public CourseDefinition {
 		requireNonBlank(id, "id");
 		requireNonBlank(displayName, "displayName");
 		requireNonBlank(dimension, "dimension");
 		Objects.requireNonNull(generatedLayout, "generatedLayout");
 		Objects.requireNonNull(holes, "holes");
+		if (id.length() > MAX_ID_LENGTH || displayName.length() > MAX_DISPLAY_NAME_LENGTH) {
+			throw new IllegalArgumentException("course id or display name exceeds transport-safe length");
+		}
 		holes = List.copyOf(holes);
 		if (holes.isEmpty()) {
 			throw new IllegalArgumentException("course must contain at least one hole");

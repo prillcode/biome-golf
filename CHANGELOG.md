@@ -9,6 +9,33 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.3.1] - 2026-09-17
+
+### Added
+
+- Multiple independent Ready Golf lobbies and rounds can coexist, including on
+  the same course and hole, while unrelated golfers play solo rounds.
+- `/golf round list` and the optional browser expose every open lobby with
+  server-authoritative, UUID-targeted join actions.
+- Active-hole scoring now tracks accepted shots independently from penalties and
+  Pick Up totals.
+
+### Changed
+
+- Scorecards support variable authored hole numbers and course lengths.
+- Finalized-course block protection now covers all authored courses and dimensions
+  instead of relying on one globally selected course.
+- Round, reconnect, transition, and result handling is scoped to each golfer's
+  actual solo or shared round.
+
+### Fixed
+
+- Completed-solo reconnect no longer depends on a globally selected course.
+- Current-hole HUD and action-bar output no longer present provisional score to par
+  as a completed result.
+- Disconnect, final-hole cleanup, and startup failures no longer leak or overwrite
+  unrelated round state.
+
 ## [0.3.0] - 2026-09-15
 
 ### Changed
@@ -142,7 +169,8 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/prillcode/minecraft-golf/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/prillcode/minecraft-golf/compare/v0.2.9...v0.3.0
 [0.2.4]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.4
 [0.2.3]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.3

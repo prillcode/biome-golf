@@ -123,6 +123,7 @@ public final class GolfDevCommands {
 	}
 
 	private static int selectTestHole(CommandContext<CommandSourceStack> ctx) {
+		if (activePlayBlocksWorldMutation(ctx)) return 0;
 		int number = IntegerArgumentType.getInteger(ctx, "hole");
 		HoleDefinition hole = M5DevelopmentCourse.definition().hole(number);
 		ServerLevel level = ctx.getSource().getLevel();
@@ -150,6 +151,7 @@ public final class GolfDevCommands {
 	// ------------------------------------------------------------------
 
 	private static int prepareCourse(CommandContext<CommandSourceStack> ctx) {
+		if (activePlayBlocksWorldMutation(ctx)) return 0;
 		CommandSourceStack source = ctx.getSource();
 		ServerLevel level = source.getLevel();
 		DevelopmentCoursePlan plan = M5DevelopmentLayout.plan();
@@ -185,6 +187,7 @@ public final class GolfDevCommands {
 	// ------------------------------------------------------------------
 
 	private static int prepareHole(CommandContext<CommandSourceStack> ctx) {
+		if (activePlayBlocksWorldMutation(ctx)) return 0;
 		CommandSourceStack source = ctx.getSource();
 		ServerLevel level = source.getLevel();
 		HoleDefinition hole = ActiveHoleService.instance().configuredHoleOrNull();
@@ -215,6 +218,12 @@ public final class GolfDevCommands {
 	// ------------------------------------------------------------------
 	// /golf spawn
 	// ------------------------------------------------------------------
+	private static boolean activePlayBlocksWorldMutation(CommandContext<CommandSourceStack> ctx) {
+		if (!ActiveHoleService.instance().hasActivePlay()) return false;
+		ctx.getSource().sendFailure(Component.literal(
+			"[golf] cannot reconfigure or rebuild golf terrain while play is active"));
+		return true;
+	}
 
 	private static int spawnAtExecutor(CommandContext<CommandSourceStack> ctx) {
 		CommandSourceStack source = ctx.getSource();

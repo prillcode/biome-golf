@@ -30,6 +30,7 @@ class PlayerHoleStateTest {
 			.holeOut();
 
 		assertEquals(3, state.strokes());
+		assertEquals(3, state.acceptedShots());
 		assertEquals(-1, state.scoreToPar());
 		assertEquals(GolfScoreTerm.BIRDIE, state.scoreTerm());
 		assertEquals(HoleStatus.COMPLETE, state.status());
@@ -47,6 +48,7 @@ class PlayerHoleStateTest {
 		state = state.applyPenalty(PenaltyType.OUT_OF_BOUNDS);
 
 		assertEquals(10, state.strokes());
+		assertEquals(8, state.acceptedShots());
 		assertEquals(2, state.penaltyStrokes());
 		assertEquals(PenaltyType.WATER, state.penalties().get(0));
 		assertEquals(PenaltyType.OUT_OF_BOUNDS, state.penalties().get(1));
@@ -63,6 +65,7 @@ class PlayerHoleStateTest {
 		}
 
 		assertEquals(10, state.strokes());
+		assertEquals(10, state.acceptedShots());
 		assertEquals(HoleCompletionReason.STROKE_LIMIT, state.completionReason());
 		assertFalse(state.canPlay());
 	}
@@ -75,9 +78,18 @@ class PlayerHoleStateTest {
 			.pickUp();
 
 		assertEquals(10, state.strokes());
+		assertEquals(2, state.acceptedShots());
 		assertEquals(6, state.scoreToPar());
 		assertEquals(GolfScoreTerm.OVER_PAR, state.scoreTerm());
 		assertEquals(HoleCompletionReason.PICKED_UP, state.completionReason());
+	}
+
+	@Test
+	void constructorRejectsUnaccountedStrokesAndHoleOutWithoutAcceptedShot() {
+		assertThrows(IllegalArgumentException.class, () -> new PlayerHoleState(PAR_FOUR, 2, 1,
+			java.util.List.of(), HoleStatus.IN_PROGRESS, null));
+		assertThrows(IllegalArgumentException.class, () -> new PlayerHoleState(PAR_FOUR, 1, 0,
+			java.util.List.of(PenaltyType.WATER), HoleStatus.COMPLETE, HoleCompletionReason.HOLED_OUT));
 	}
 
 	@Test

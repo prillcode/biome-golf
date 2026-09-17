@@ -141,6 +141,8 @@ The host operating system should not affect the Fabric server architecture.
 | M6 | Multiplayer Ready Golf | Complete (see docs/M6-CLOSEOUT.md) |
 | M7 | MVP Hardening and Family Playtest | Complete (see docs/M7-CLOSEOUT.md) |
 | M8 | V1 Course and Hole Authoring | Complete (see docs/M8-CLOSEOUT.md) |
+| M8.5 | V1 Playability and Round UX Hardening | Superseded; implemented work is in the M8.6 baseline |
+| M8.6 | Concurrent Rounds, Join Clarity, and Scoring UX | Current (see docs/M8.6-PLAN.md) |
 | M9 | Additional Game Modes | Deferred |
 
 ---
@@ -1273,11 +1275,33 @@ client-only code enters the dedicated-server path.
 
 ---
 
+# M8.6 — Concurrent Rounds, Join Clarity, and Scoring UX
+
+## Status
+
+Current. Execute the bounded slices and locked contracts in `docs/M8.6-PLAN.md`.
+M8.5 is not a separate active milestone; its committed implementation is the M8.6
+baseline, and relevant remaining verification has been folded into M8.6.
+
+## Goal
+
+Allow multiple independent Ready Golf rounds and unrelated solo attempts to coexist,
+make lobby discovery and lifecycle actions complete through server commands/chat, clarify
+active-hole scoring presentation, and fix completed-solo reconnect without weakening
+server authority or expanding into matchmaking, alternate modes, or full client-light
+migration.
+
+## Exit Criteria
+
+Use the final success criteria and full verification ladder in `docs/M8.6-PLAN.md`.
+
+---
+
 # M9 — Additional Game Modes
 
 ## Status
 
-Deferred until M8 authoring is complete and the next alternate mode is prioritized.
+Deferred until M8.6 closes and the next alternate mode is prioritized.
 
 ## Candidate Scope
 
@@ -1330,5 +1354,7 @@ Document the failure or proposed deviation before continuing.
 # Current Starting Point
 
 M0–M8 are complete (see the milestone closeout records through
-`docs/M8-CLOSEOUT.md`). M9 — Additional Game Modes remains deferred until the next
-alternate mode is explicitly prioritized.
+`docs/M8-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
+work forms the baseline for the current M8.6 concurrent-round hardening milestone.
+M9 — Additional Game Modes remains deferred until M8.6 closes and an alternate mode is
+explicitly prioritized.

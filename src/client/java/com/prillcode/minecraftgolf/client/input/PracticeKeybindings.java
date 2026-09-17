@@ -50,6 +50,6 @@ public final class PracticeKeybindings {
 	private static void sendAction(RoundLobbyActionPayload.Action action) {
 		if (LobbyHudState.get() != null && LobbyHudState.get().participating()
 				&& ClientPlayNetworking.canSend(RoundLobbyActionPayload.TYPE))
-			ClientPlayNetworking.send(new RoundLobbyActionPayload(action, LobbyHudState.get().courseId()));
+			ClientPlayNetworking.send(new RoundLobbyActionPayload(action, LobbyHudState.get().roundId().toString()));
 	}
 }

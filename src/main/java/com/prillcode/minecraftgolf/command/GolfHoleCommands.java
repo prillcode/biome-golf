@@ -11,12 +11,17 @@ import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.Commands.CommandSelection;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+
+import java.util.UUID;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.ActiveHoleService.StartResult;
+import com.prillcode.minecraftgolf.round.RoundLobbyProjection;
 
 /** Player-facing lifecycle commands for the server-authoritative M5 course. */
 public final class GolfHoleCommands {
@@ -42,7 +47,11 @@ public final class GolfHoleCommands {
 					.executes(GolfHoleCommands::createRound)
 					.then(Commands.argument("courseId", StringArgumentType.word())
 						.executes(GolfHoleCommands::createRoundForCourse)))
-				.then(Commands.literal("join").executes(GolfHoleCommands::joinRound))
+				.then(Commands.literal("list").executes(GolfHoleCommands::listRounds))
+				.then(Commands.literal("join")
+					.executes(GolfHoleCommands::joinRound)
+					.then(Commands.argument("roundId", StringArgumentType.word())
+						.executes(GolfHoleCommands::joinSpecificRound)))
 				.then(Commands.literal("start").executes(GolfHoleCommands::startRound))
 				.then(Commands.literal("leave").executes(GolfHoleCommands::leaveRound))
 				.then(Commands.literal("restart").executes(GolfHoleCommands::restartRound))
@@ -97,6 +106,44 @@ public final class GolfHoleCommands {
 	private static int joinRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		return sendResult(context, ActiveHoleService.instance().joinRound(
 			context.getSource().getPlayerOrException()));
+	}
+
+	private static int joinSpecificRound(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		try {
+			return sendResult(context, ActiveHoleService.instance().joinRound(
+				UUID.fromString(StringArgumentType.getString(context, "roundId")), player));
+		} catch (IllegalArgumentException exception) {
+			context.getSource().sendFailure(Component.literal("[golf] round id must be a full server-issued UUID"));
+			return 0;
+		}
+	}
+
+	private static int listRounds(CommandContext<CommandSourceStack> context) {
+		RoundLobbyProjection projection = ActiveHoleService.instance()
+			.roundProjection(context.getSource().getServer());
+		context.getSource().sendSuccess(() -> Component.literal("[golf] Open Ready Golf lobbies:")
+			.withStyle(ChatFormatting.GOLD), false);
+		if (projection.lobbies().isEmpty()) {
+			context.getSource().sendSuccess(() -> Component.literal(
+				"None. Create one with /golf round create <courseId>"), false);
+		}
+		for (RoundLobbyProjection.LobbyEntry lobby : projection.lobbies()) {
+			String command = "/golf round join " + lobby.roundId();
+			context.getSource().sendSuccess(() -> Component.literal(lobby.courseName() + " | "
+				+ lobby.coordinatorName() + " | " + lobby.participantCount() + "/" + lobby.capacity() + " | ")
+				.append(Component.literal("[Join]").withStyle(style -> style.withColor(ChatFormatting.GREEN)
+					.withClickEvent(new ClickEvent.RunCommand(command))))
+				.append(Component.literal(" " + command)), false);
+		}
+		context.getSource().sendSuccess(() -> Component.literal("[golf] Finalized courses:"), false);
+		for (RoundLobbyProjection.CourseEntry course : projection.courses()) {
+			context.getSource().sendSuccess(() -> Component.literal(course.id() + " | " + course.displayName()
+				+ " | " + course.holeCount() + " holes, par " + course.totalPar()
+				+ " | create: /golf round create " + course.id()), false);
+		}
+		return 1;
 	}
 
 	private static int startRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import com.prillcode.minecraftgolf.net.GolfMenuActionPayload;
 import com.prillcode.minecraftgolf.net.HoleStatePayload;
 import com.prillcode.minecraftgolf.net.LobbyStatePayload;
+import com.prillcode.minecraftgolf.net.RoundLobbyActionPayload;
 
 /** Context-sensitive, client-only action menu. The server remains authoritative. */
 public final class GolfMenuScreen extends Screen {
@@ -20,19 +21,25 @@ public final class GolfMenuScreen extends Screen {
 		LobbyStatePayload lobby = LobbyHudState.get();
 		int y = height / 2 - 30;
 		if (hole != null && hole.phase() == HoleStatePayload.Phase.ROUND_COMPLETE) {
-			button("Replay Round", GolfMenuActionPayload.Action.REPLAY_ROUND, y);
-			button("Leave Round", GolfMenuActionPayload.Action.LEAVE_ROUND, y + 26);
+			if (lobby != null && lobby.phase() == LobbyStatePayload.Phase.COMPLETE) {
+				roundButton("Replay Round", RoundLobbyActionPayload.Action.REPLAY_ROUND, lobby, y);
+				roundButton("Leave Round", RoundLobbyActionPayload.Action.LEAVE, lobby, y + 26);
+			} else {
+				button("Replay Round", GolfMenuActionPayload.Action.REPLAY_ROUND, y);
+				button("Leave Round", GolfMenuActionPayload.Action.LEAVE_ROUND, y + 26);
+			}
 		} else if (lobby != null && lobby.phase() == LobbyStatePayload.Phase.LOBBY
 				&& lobby.participating()) {
 			if (lobby.coordinator() && lobby.startable()) {
-				button("Start Round", GolfMenuActionPayload.Action.START_ROUND, y);
-			} else if (lobby.participating()) {
-				button("Leave", GolfMenuActionPayload.Action.LEAVE_ROUND, y);
+				roundButton("Start Round", RoundLobbyActionPayload.Action.START, lobby, y);
+				roundButton("Leave", RoundLobbyActionPayload.Action.LEAVE, lobby, y + 26);
+			} else {
+				roundButton("Leave", RoundLobbyActionPayload.Action.LEAVE, lobby, y);
 			}
 		} else if (lobby != null && lobby.phase() == LobbyStatePayload.Phase.PLAYING
 				&& lobby.participating()) {
-			button("Replay Hole", GolfMenuActionPayload.Action.REPLAY_HOLE, y);
-			button("Leave Round", GolfMenuActionPayload.Action.LEAVE_ROUND, y + 26);
+			roundButton("Replay Hole", RoundLobbyActionPayload.Action.RESTART_HOLE, lobby, y);
+			roundButton("Leave Round", RoundLobbyActionPayload.Action.LEAVE, lobby, y + 26);
 		} else if (hole != null && hole.phase() != HoleStatePayload.Phase.PRACTICE) {
 			button("Replay Hole", GolfMenuActionPayload.Action.REPLAY_HOLE, y);
 			button("Leave Round", GolfMenuActionPayload.Action.LEAVE_ROUND, y + 26);
@@ -41,6 +48,16 @@ public final class GolfMenuScreen extends Screen {
 		}
 		addRenderableWidget(Button.builder(Component.literal("Close"), button -> onClose())
 			.bounds(width / 2 - 60, Math.min(height - 28, y + 58), 120, 20).build());
+	}
+
+	private void roundButton(String label, RoundLobbyActionPayload.Action action,
+			LobbyStatePayload lobby, int y) {
+		addRenderableWidget(Button.builder(Component.literal(label), ignored -> {
+			if (ClientPlayNetworking.canSend(RoundLobbyActionPayload.TYPE)) {
+				ClientPlayNetworking.send(new RoundLobbyActionPayload(action, lobby.roundId().toString()));
+			}
+			onClose();
+		}).bounds(width / 2 - 100, y, 200, 20).build());
 	}
 
 	private void button(String label, GolfMenuActionPayload.Action action, int y) {

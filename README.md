@@ -2,16 +2,20 @@
 
 A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary Minecraft worlds — arcade-realistic, skill-based, and played through real terrain.
 
-> **M8 — V1 Course and Hole Authoring is complete** (M0–M8 are complete; see `docs/M8-CLOSEOUT.md`; M9 is deferred)
+> **M8.6 — Concurrent Rounds, Join Clarity, and Scoring UX is current.** M0–M8 are
+> complete, M8.5's implemented work is the committed baseline, and M9 remains deferred.
+> See `docs/M8.6-PLAN.md`.
 
-M6 Ready Golf play flow: use the persistent default course or select a temporary
-runtime override with `/golf course select <id>`, then one golfer creates a shared round with
-`/golf round create`, others join with `/golf round join`, and the coordinator
-starts it with `/golf round start`. Golfers play Ready Golf (no forced turns).
+Ready Golf play flow: use `/golf round list` to see every open lobby and finalized
+course. Create a shared round with `/golf round create <courseId>`, join a specific
+lobby with `/golf round join <roundId>`, and have that lobby's coordinator start it
+with `/golf round start`. Multiple independent rounds may coexist, including on the
+same course and hole. Golfers play Ready Golf without forced turns.
 After completing each hole, use the on-screen next-hole prompt, clickable chat action,
 or `/golf nexthole` after each non-final hole. The server preserves cumulative scoring and
-automatically prints the final scorecard at the end of the course. When no lobby
-or round exists, solo play is available with `/golf hole start [hole]` or
+automatically prints the final scorecard at the end of the course. When the player
+does not belong to a lobby or round, solo play is available alongside unrelated
+Ready Golf rounds with `/golf hole start [hole]` or
 `/golf course play [course-id] [hole]`. Explicit course play replaces an existing solo
 attempt, including a completed attempt, and can start at an authored hole directly:
 `/golf course play re9 8`. Invalid replacement requests leave the current attempt intact.

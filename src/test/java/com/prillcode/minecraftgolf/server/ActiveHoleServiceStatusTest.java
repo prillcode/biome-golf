@@ -15,7 +15,15 @@ import com.prillcode.minecraftgolf.hole.HoleBoundary;
 import com.prillcode.minecraftgolf.hole.HoleDefinition;
 import com.prillcode.minecraftgolf.hole.PlayerHoleState;
 
-class ActiveHoleServiceStatusTest {
+	class ActiveHoleServiceStatusTest {
+	@Test
+	void terminalCurrentHoleIsIncludedBeforeAdvance() {
+		PlayerCourseState state = PlayerCourseState.start(course());
+		PlayerHoleState first = completeHole(state.currentHole(), 3);
+		state = state.updateCurrentHole(first);
+
+		assertEquals(" | course 3 strokes (-1)", ActiveHoleService.cumulativeStatus(state, first));
+	}
 
 	@Test
 	void completedCourseStatusDoesNotCountRetainedFinalHoleTwice() {

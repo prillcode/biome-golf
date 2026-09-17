@@ -71,6 +71,10 @@ public record PlayerCourseState(
 		if (updated.strokes() < currentHole.strokes()) {
 			throw new IllegalArgumentException("updated hole state cannot reduce strokes");
 		}
+		if (updated.acceptedShots() < currentHole.acceptedShots()
+				|| updated.penaltyStrokes() < currentHole.penaltyStrokes()) {
+			throw new IllegalArgumentException("updated hole state cannot reduce accepted shots or penalties");
+		}
 		return new PlayerCourseState(course, startHoleIndex, currentHoleIndex, completedHoles, updated, status);
 	}
 

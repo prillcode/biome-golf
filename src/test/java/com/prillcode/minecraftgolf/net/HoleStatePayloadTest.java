@@ -29,7 +29,7 @@ class HoleStatePayloadTest {
 	@Test
 	void practiceSnapshot_hasCorrectPhaseAndHoleMetadata() {
 		HoleStatePayload p = HoleStatePayload.practice(PAR_FOUR);
-		assertEquals("minecraft_golf:hole_state_v3", p.type().id().toString());
+		assertEquals("minecraft_golf:hole_state_v4", p.type().id().toString());
 		assertEquals(Phase.PRACTICE, p.phase());
 		assertEquals(1, p.holeNumber());
 		assertEquals(4, p.par());
@@ -66,8 +66,9 @@ class HoleStatePayloadTest {
 		HoleStatePayload p = HoleStatePayload.active(state);
 		assertEquals(Phase.ACTIVE, p.phase());
 		assertEquals(2, p.strokes());
+		assertEquals(2, p.acceptedShots());
 		assertEquals(0, p.penaltyCount());
-		assertEquals(-2, p.scoreToPar());
+		assertEquals(0, p.scoreToPar());
 		assertEquals(113, p.distanceToCupBlocks());
 		assertNull(p.completionReason());
 		assertNull(p.scoreTerm());
@@ -121,6 +122,7 @@ class HoleStatePayloadTest {
 
 		HoleStatePayload p = HoleStatePayload.active(state);
 		assertEquals(2, p.strokes());
+		assertEquals(1, p.acceptedShots());
 		assertEquals(1, p.penaltyCount());
 	}
 

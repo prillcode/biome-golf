@@ -1,7 +1,5 @@
 package com.prillcode.minecraftgolf.server;
 
-import java.util.List;
-
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -13,10 +11,10 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.block.GolfBlocks;
-import com.prillcode.minecraftgolf.course.CourseDefinition;
 import com.prillcode.minecraftgolf.course.CourseProtection;
 import com.prillcode.minecraftgolf.course.CourseProtectionConfig;
-import com.prillcode.minecraftgolf.course.ProtectedZone;
+import com.prillcode.minecraftgolf.course.CourseProtectionIndex;
+import com.prillcode.minecraftgolf.course.CourseDefinition;
 import com.prillcode.minecraftgolf.hole.HoleDefinition;
 
 /**
@@ -33,9 +31,25 @@ import com.prillcode.minecraftgolf.hole.HoleDefinition;
 public final class CourseBlockBreakGuard {
 
 	private static boolean registered;
+	private static final CourseProtectionIndex INDEX = new CourseProtectionIndex();
 
 	private CourseBlockBreakGuard() {
 	}
+
+	public static void replaceAuthoredCourses(java.util.List<CourseDefinition> courses) {
+		INDEX.replaceAuthoredCourses(courses);
+	}
+
+	public static void replaceConfiguredCourse(CourseDefinition course) {
+		INDEX.replaceConfiguredCourse(course);
+	}
+
+	public static void replaceConfiguredHole(HoleDefinition hole) {
+		INDEX.replaceConfiguredHole(hole);
+	}
+
+	public static void clearConfigured() { INDEX.clearConfigured(); }
+	public static void clear() { INDEX.clear(); }
 
 	/** Installs the block-break guard; safe on dedicated and integrated servers. */
 	public static void register() {
@@ -52,25 +66,8 @@ public final class CourseBlockBreakGuard {
 	/** Fabric BEFORE handler: returns true to allow the break, false to cancel it. */
 	private static boolean onBeforeBlockBreak(Level world, Player player, BlockPos pos,
 			BlockState state, BlockEntity blockEntity) {
-		// Zone membership from authored metadata; guard applies only in the course dimension.
-		ActiveHoleService service = ActiveHoleService.instance();
-		CourseDefinition course = service.configuredCourseOrNull();
-		String dimension;
-		List<ProtectedZone> zones;
-		if (course != null) {
-			dimension = course.dimension();
-			zones = CourseProtection.zonesFor(course, CourseProtectionConfig.DEFAULT);
-		} else {
-			HoleDefinition hole = service.configuredHoleOrNull();
-			if (hole == null) {
-				return true;
-			}
-			dimension = hole.dimension();
-			zones = CourseProtection.zonesFor(hole, CourseProtectionConfig.DEFAULT);
-		}
-		if (!world.dimension().identifier().toString().equals(dimension)) {
-			return true;
-		}
+		var zones = INDEX.zones(world.dimension().identifier().toString());
+		if (zones.isEmpty()) return true;
 		boolean hasDevPermission = player instanceof ServerPlayer serverPlayer
 			&& Commands.LEVEL_GAMEMASTERS.check(serverPlayer.permissions());
 		boolean cupBlock = state.getBlock() == GolfBlocks.GOLF_CUP;
