@@ -20,9 +20,9 @@ class ShotServiceTest {
 
 		Vec3 reduced = ShotService.applySurfaceShotPower(launch, SurfaceDefinition.SAND);
 
-		assertEquals(1.0, reduced.x(), TOL);
-		assertEquals(0.5, reduced.y(), TOL);
-		assertEquals(-1.5, reduced.z(), TOL);
+		assertEquals(1.5, reduced.x(), TOL);
+		assertEquals(0.75, reduced.y(), TOL);
+		assertEquals(-2.25, reduced.z(), TOL);
 	}
 
 	@Test

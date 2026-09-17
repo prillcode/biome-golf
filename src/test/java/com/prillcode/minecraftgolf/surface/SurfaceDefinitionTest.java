@@ -34,7 +34,7 @@ class SurfaceDefinitionTest {
 		assertEquals(0.60, SurfaceDefinition.SAND.rollingFriction(), TOL);
 		assertEquals(0.30, SurfaceDefinition.SAND.bounceMultiplier(), TOL);
 		assertEquals(0.03, SurfaceDefinition.SAND.landingHorizontalRetention(), TOL);
-		assertEquals(0.50, SurfaceDefinition.SAND.shotPowerMultiplier(), TOL);
+		assertEquals(0.75, SurfaceDefinition.SAND.shotPowerMultiplier(), TOL);
 		assertTrue(SurfaceDefinition.SAND.hazard());
 
 		assertEquals(0.55, SurfaceDefinition.HONEY.rollingFriction(), TOL);

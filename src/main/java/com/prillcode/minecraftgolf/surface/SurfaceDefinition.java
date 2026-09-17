@@ -39,7 +39,7 @@ public record SurfaceDefinition(String id, double rollingFriction, double bounce
 	/** Standard ground/fairway: baseline friction and bounce, not a hazard. */
 	public static final SurfaceDefinition NORMAL = new SurfaceDefinition("normal", 0.95, 1.0, 1.0, 1.0, false);
 	/** Bunker: heavy friction, dead bounce; hazard in golf rules. */
-	public static final SurfaceDefinition SAND = new SurfaceDefinition("sand", 0.60, 0.30, 0.03, 0.50, true);
+	public static final SurfaceDefinition SAND = new SurfaceDefinition("sand", 0.60, 0.30, 0.03, 0.75, true);
 	/** Ice: near-frictionless roll, lively bounce; not a hazard. */
 	public static final SurfaceDefinition ICE = new SurfaceDefinition("ice", 0.995, 0.95, 1.0, 1.0, false);
 	/** Slime: springy bounce above 1.0; not a hazard. */
