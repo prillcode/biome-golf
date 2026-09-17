@@ -25,8 +25,8 @@ import com.prillcode.minecraftgolf.hole.HoleBoundary;
 import com.prillcode.minecraftgolf.hole.HoleDefinition;
 
 /**
- * Gson round-trip of {@link AuthoredCourseStore} contents (drafts + finalized
- * courses). This is only the persistence model; Minecraft SavedData wiring is
+ * Gson round-trip of {@link AuthoredCourseStore} contents (drafts, finalized
+ * courses, and the persistent default). This is only the persistence model; Minecraft SavedData wiring is
  * deferred. Loading always replays data through the store so every domain
  * invariant is re-validated; malformed or tampered data fails closed with an
  * {@link IllegalArgumentException} carrying a precise message.
@@ -50,6 +50,7 @@ public final class AuthoredCourseStoreJson {
 		}
 		root.add("drafts", draftArray);
 		root.add("finalized", finalizedArray);
+		store.defaultCourseId().ifPresent(id -> root.addProperty("defaultCourseId", id));
 		try (Writer writer = Files.newBufferedWriter(path)) {
 			GSON.toJson(root, writer);
 		}
@@ -81,6 +82,9 @@ public final class AuthoredCourseStoreJson {
 		}
 		for (JsonElement element : requiredArray(root, "finalized")) {
 			finalizedFromJson(store, requiredObject(element, "finalized entry"));
+		}
+		if (has(root, "defaultCourseId")) {
+			store.setDefaultCourse(requiredString(root, "defaultCourseId"));
 		}
 		return store;
 	}

@@ -43,6 +43,8 @@ import com.prillcode.minecraftgolf.server.AuthoredCourseService.PendingCorner;
  * /golf course delete &lt;id&gt;                   remove a draft or finalized course
  * /golf course edit &lt;id&gt;                     make a draft the player's current draft
  * /golf course select &lt;id&gt;                   switch the active authored course
+ * /golf course play [&lt;id&gt;] [&lt;hole&gt;]          start solo play
+ * /golf course default set|status|clear        manage the persistent world default
  * /golf hole tee &lt;n&gt;                         set hole n tee at the player's position
  * /golf hole cup &lt;n&gt;                         set hole n cup and place the cup block
  * /golf hole par &lt;n&gt; &lt;par&gt;                   set hole n par
@@ -51,9 +53,8 @@ import com.prillcode.minecraftgolf.server.AuthoredCourseService.PendingCorner;
  *
  * <p>All state is server-authoritative: mutations go through
  * {@link AuthoredCourseService}, which persists the store after every
- * successful change. Course selection switches {@link ActiveHoleService} at
- * runtime and is intentionally not persisted — after a restart no course is
- * active until an operator selects one.</p>
+ * successful change. Runtime course selection switches
+ * {@link ActiveHoleService} without changing the persistent world default.</p>
  */
 public final class GolfCourseCommands {
 
@@ -74,32 +75,53 @@ public final class GolfCourseCommands {
 			CommandBuildContext registryAccess, CommandSelection environment) {
 		dispatcher.register(Commands.literal("golf")
 			.then(Commands.literal("course")
-				.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+				.then(Commands.literal("play")
+					.executes(GolfCourseCommands::playDefaultCourse)
+					.then(Commands.argument("courseId", StringArgumentType.word())
+						.executes(GolfCourseCommands::playCourse)
+						.then(Commands.argument("hole", IntegerArgumentType.integer(1))
+							.executes(GolfCourseCommands::playCourseHole))))
+				.then(Commands.literal("default")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.then(Commands.literal("set")
+						.then(Commands.argument("id", StringArgumentType.word())
+							.executes(GolfCourseCommands::setDefaultCourse)))
+					.then(Commands.literal("status").executes(GolfCourseCommands::defaultCourseStatus))
+					.then(Commands.literal("clear").executes(GolfCourseCommands::clearDefaultCourse)))
 				.then(Commands.literal("create")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("id", StringArgumentType.word())
 						.executes(GolfCourseCommands::createCourse)
 						.then(Commands.argument("displayName", StringArgumentType.greedyString())
 							.executes(GolfCourseCommands::createCourseNamed))))
 				.then(Commands.literal("clone")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("sourceId", StringArgumentType.word())
 						.then(Commands.argument("newId", StringArgumentType.word())
 							.executes(GolfCourseCommands::cloneCourse)
 							.then(Commands.argument("displayName", StringArgumentType.greedyString())
 								.executes(GolfCourseCommands::cloneCourseNamed)))))
-				.then(Commands.literal("list").executes(GolfCourseCommands::listCourses))
+				.then(Commands.literal("list")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.executes(GolfCourseCommands::listCourses))
 				.then(Commands.literal("status")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("id", StringArgumentType.word())
 						.executes(GolfCourseCommands::courseStatus)))
 				.then(Commands.literal("finalize")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("id", StringArgumentType.word())
 						.executes(GolfCourseCommands::finalizeCourse)))
 				.then(Commands.literal("delete")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("id", StringArgumentType.word())
 						.executes(GolfCourseCommands::deleteCourse)))
 				.then(Commands.literal("edit")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("id", StringArgumentType.word())
 						.executes(GolfCourseCommands::editCourse)))
 				.then(Commands.literal("select")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("id", StringArgumentType.word())
 						.executes(GolfCourseCommands::selectCourse))))
 			.then(Commands.literal("hole")
@@ -118,13 +140,70 @@ public final class GolfCourseCommands {
 					.then(Commands.argument("hole", IntegerArgumentType.integer(1))
 						.executes(GolfCourseCommands::captureBounds)))));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf course authoring commands (create, clone, list, status, finalize, delete, edit, select)"
+			"Registered /golf course play/default and authoring commands (create, clone, list, status, finalize, delete, edit, select)"
 				+ " and /golf hole metadata commands (tee, cup, par, bounds)");
 	}
 
 	// ------------------------------------------------------------------
 	// /golf course ...
 	// ------------------------------------------------------------------
+
+	private static int playDefaultCourse(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		return sendResult(ctx, ActiveHoleService.instance().start(ctx.getSource().getPlayerOrException(), 1));
+	}
+
+	private static int playCourse(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		return playCourse(ctx, 1);
+	}
+
+	private static int playCourseHole(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		return playCourse(ctx, IntegerArgumentType.getInteger(ctx, "hole"));
+	}
+
+	private static int playCourse(CommandContext<CommandSourceStack> ctx, int holeNumber)
+			throws CommandSyntaxException {
+		return sendResult(ctx, ActiveHoleService.instance().start(
+			StringArgumentType.getString(ctx, "courseId"), holeNumber,
+			ctx.getSource().getPlayerOrException()));
+	}
+
+	private static int setDefaultCourse(CommandContext<CommandSourceStack> ctx) {
+		AuthoredCourseService service = AuthoredCourseService.instance();
+		try {
+			service.store().setDefaultCourse(StringArgumentType.getString(ctx, "id"));
+		} catch (IllegalArgumentException exception) {
+			return fail(ctx, exception.getMessage());
+		}
+		service.save();
+		String id = service.store().defaultCourseId().orElseThrow();
+		ctx.getSource().sendSuccess(() -> Component.literal(
+			"[golf] persistent default course is now '" + id + "'"), true);
+		return 1;
+	}
+
+	private static int defaultCourseStatus(CommandContext<CommandSourceStack> ctx) {
+		AuthoredCourseStore store = AuthoredCourseService.instance().store();
+		String id = store.defaultCourseId().orElse(null);
+		if (id == null) {
+			ctx.getSource().sendSuccess(() -> Component.literal("[golf] no persistent default course is set"), false);
+			return 1;
+		}
+		CourseDefinition definition = store.finalizedCourse(id);
+		ctx.getSource().sendSuccess(() -> Component.literal("[golf] persistent default course is '"
+			+ id + "' (" + definition.displayName() + ")"), false);
+		return 1;
+	}
+
+	private static int clearDefaultCourse(CommandContext<CommandSourceStack> ctx) {
+		AuthoredCourseService service = AuthoredCourseService.instance();
+		String previous = service.store().defaultCourseId().orElse(null);
+		service.store().clearDefaultCourse();
+		service.save();
+		ctx.getSource().sendSuccess(() -> Component.literal(previous == null
+			? "[golf] no persistent default course was set"
+			: "[golf] cleared persistent default course '" + previous + "'"), true);
+		return 1;
+	}
 
 	private static int createCourse(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
 		return createCourse(ctx, StringArgumentType.getString(ctx, "id"));
@@ -153,7 +232,7 @@ public final class GolfCourseCommands {
 		String clonedId;
 		try {
 			clonedId = service.store().cloneCourse(sourceId, newId, displayName);
-		} catch (IllegalArgumentException | IllegalStateException exception) {
+		} catch (IllegalArgumentException exception) {
 			return fail(ctx, exception.getMessage());
 		}
 		service.setCurrentDraft(player.getUUID(), clonedId);
@@ -174,7 +253,7 @@ public final class GolfCourseCommands {
 		String normalizedId;
 		try {
 			normalizedId = service.store().createCourse(id, displayName, dimension);
-		} catch (IllegalArgumentException | IllegalStateException exception) {
+		} catch (IllegalArgumentException exception) {
 			return fail(ctx, exception.getMessage());
 		}
 		service.setCurrentDraft(player.getUUID(), normalizedId);
@@ -270,7 +349,7 @@ public final class GolfCourseCommands {
 		}
 		try {
 			service.store().removeCourse(id);
-		} catch (IllegalArgumentException exception) {
+		} catch (IllegalArgumentException | IllegalStateException exception) {
 			return fail(ctx, exception.getMessage());
 		}
 		service.clearCurrentDraftFor(id);
@@ -315,6 +394,16 @@ public final class GolfCourseCommands {
 			+ "' (" + definition.displayName() + ") — " + definition.holes().size()
 			+ " hole(s), par " + definition.totalPar()
 			+ "; selection is not persisted — select it again after a restart"), true);
+		return 1;
+	}
+
+	private static int sendResult(CommandContext<CommandSourceStack> ctx,
+			ActiveHoleService.StartResult result) {
+		if (!result.success()) {
+			ctx.getSource().sendFailure(Component.literal(result.message()));
+			return 0;
+		}
+		ctx.getSource().sendSuccess(() -> Component.literal(result.message()), false);
 		return 1;
 	}
 

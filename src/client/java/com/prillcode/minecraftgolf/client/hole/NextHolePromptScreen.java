@@ -32,9 +32,9 @@ final class NextHolePromptScreen extends Screen {
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
 			float partialTick) {
 		extractTransparentBackground(graphics);
-		graphics.centeredText(font, "All golfers are complete", width / 2, height / 2 - 36,
+		graphics.centeredText(font, "Hole complete", width / 2, height / 2 - 36,
 			0xFFFFFFFF);
-		graphics.centeredText(font, "Advance everyone together?", width / 2, height / 2 - 22,
+		graphics.centeredText(font, "Go to the next hole?", width / 2, height / 2 - 22,
 			0xFFCCCCCC);
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 	}

@@ -187,7 +187,11 @@ public final class GolfDevCommands {
 	private static int prepareHole(CommandContext<CommandSourceStack> ctx) {
 		CommandSourceStack source = ctx.getSource();
 		ServerLevel level = source.getLevel();
-		HoleDefinition hole = ActiveHoleService.instance().configuredHole();
+		HoleDefinition hole = ActiveHoleService.instance().configuredHoleOrNull();
+		if (hole == null) {
+			source.sendFailure(Component.literal("[golf] no active course selected; use /golf course select <id> first"));
+			return 0;
+		}
 		String currentDimension = level.dimension().identifier().toString();
 		if (!hole.dimension().equals(currentDimension)) {
 			source.sendFailure(Component.literal("[golf] configured hole is in " + hole.dimension()

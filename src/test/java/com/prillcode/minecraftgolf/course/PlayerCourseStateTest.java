@@ -102,6 +102,30 @@ class PlayerCourseStateTest {
 	}
 
 	@Test
+	void startsAtSelectedHoleAndScoresOnlyRemainingHoles() {
+		PlayerCourseState state = PlayerCourseState.start(course(), 2);
+		assertEquals(1, state.startHoleIndex());
+		assertEquals(2, state.currentHole().hole().number());
+		assertEquals(8, state.scheduledPar());
+
+		while (!state.isComplete()) {
+			state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut()).advance();
+		}
+
+		CourseScorecard scorecard = state.finalScorecard();
+		assertEquals(List.of(2, 3), scorecard.holes().stream().map(HoleScore::holeNumber).toList());
+		assertEquals(2, scorecard.totalStrokes());
+		assertEquals(8, scorecard.totalPar());
+		assertEquals(2, state.reset().currentHole().hole().number());
+	}
+
+	@Test
+	void rejectsStartHoleOutsideAuthoredCourse() {
+		assertThrows(IllegalArgumentException.class, () -> PlayerCourseState.start(course(), 0));
+		assertThrows(IllegalArgumentException.class, () -> PlayerCourseState.start(course(), 4));
+	}
+
+	@Test
 	void rejectsWrongHoleAndScoreRegressionUpdates() {
 		PlayerCourseState state = PlayerCourseState.start(course());
 		PlayerHoleState otherHole = PlayerHoleState.start(course().hole(2));

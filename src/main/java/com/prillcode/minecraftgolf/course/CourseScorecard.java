@@ -16,12 +16,14 @@ public record CourseScorecard(String courseId, List<HoleScore> holes) {
 		if (holes.isEmpty()) {
 			throw new IllegalArgumentException("final scorecard must contain at least one hole");
 		}
+		int previousHoleNumber = 0;
 		for (int index = 0; index < holes.size(); index++) {
 			HoleScore score = Objects.requireNonNull(holes.get(index), "holes must not contain null");
-			if (score.holeNumber() != index + 1) {
+			if (score.holeNumber() != previousHoleNumber + 1 && previousHoleNumber != 0) {
 				throw new IllegalArgumentException(
-					"scorecard holes must be ordered from 1 through " + holes.size());
+					"scorecard holes must use consecutive authored hole numbers");
 			}
+			previousHoleNumber = score.holeNumber();
 		}
 	}
 

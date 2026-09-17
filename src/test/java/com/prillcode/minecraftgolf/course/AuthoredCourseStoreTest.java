@@ -241,6 +241,23 @@ class AuthoredCourseStoreTest {
 		assertEquals(2, store.finalizedCourses().size());
 	}
 
+	@Test
+	void defaultCourseMustBeFinalizedAndCannotBeDeleted() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("links", "Links", DIMENSION);
+		completeHole(store, "links", 1, 4);
+
+		assertThrows(IllegalArgumentException.class, () -> store.setDefaultCourse("links"));
+		store.finalize("links");
+		store.setDefaultCourse("LINKS");
+
+		assertEquals("links", store.defaultCourseId().orElseThrow());
+		assertThrows(IllegalStateException.class, () -> store.removeCourse("links"));
+		store.clearDefaultCourse();
+		store.removeCourse("links");
+		assertTrue(store.defaultCourseId().isEmpty());
+	}
+
 	private static void completeHole(AuthoredCourseStore store, String courseId, int number, int par) {
 		store.setHoleTee(courseId, number, tee(number - 1));
 		store.setHoleCup(courseId, number, cup(number - 1));

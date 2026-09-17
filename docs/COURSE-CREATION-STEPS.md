@@ -129,29 +129,52 @@ When all holes are complete and the status output looks correct:
 Finalization validates the complete course and makes it playable. Invalid courses
 are rejected with an explanation; fix the draft and try again.
 
-## 7. Select and Play-Test
+## 7. Set the Default and Play-Test
 
-Select the finalized course:
+Set the finalized course as the persistent server/world default:
 
 ```text
-/golf course select sonscourse
+/golf course default set sonscourse
 ```
 
-Start the first hole:
+Start the first hole, or begin at a specific hole:
 
 ```text
 /golf hole start
+/golf hole start 10
 ```
 
-Play through the course using the normal hole and round commands. The course
+Players can also choose a finalized course for only their current solo attempt:
+
+```text
+/golf course play sonscourse
+/golf course play sonscourse 10
+```
+
+Explicit course play atomically replaces an existing solo attempt, including a completed
+course, and starts scoring at the requested authored hole. For example:
+
+```text
+/golf course play re9 8
+```
+
+The persistent default and runtime course selection are unchanged. An unknown, draft,
+invalid, dimension-incompatible, or unsafe replacement is rejected and the current solo
+attempt remains active. The bare `/golf course play` and `/golf hole start [hole]` commands
+remain guarded and do not replace an attempt. A player in a Ready Golf lobby or round must
+first use `/golf round leave`.
+
+After each non-final hole, the client offers a **Go to next hole** prompt and the server
+adds a clickable chat link; `/golf nexthole` remains available as a fallback. Play through
+the course using the normal hole and round commands. The course
 definition is saved in the world at:
 
 ```text
 world/data/minecraft_golf_authored_courses.json
 ```
 
-Course definitions survive server restarts. The active course selection does not;
-after a restart, select the authored course again.
+Course definitions and the default survive server restarts. The operator-only
+`/golf course select <id>` command remains a non-persistent runtime override.
 
 ## Useful Commands
 
@@ -159,12 +182,17 @@ after a restart, select the authored course again.
 /golf course list
 /golf course status <id>
 /golf course select <id>
+/golf course default set <id>
+/golf course default status
+/golf course default clear
+/golf course play [<id>] [<hole>]
 /golf course delete <id>
 /golf clubs equip
 ```
 
-Course deletion is refused while a round or hole attempt is active. Complete or
-abandon active play first.
+Course deletion is refused while a round or hole attempt is active or while the
+course is the persistent default. Complete or abandon active play first, and
+change or clear the default before deleting it.
 
 ## Not Available Yet
 

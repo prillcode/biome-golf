@@ -57,8 +57,9 @@ public record RoundScorecardPayload(String courseId, List<Integer> pars, List<Pl
 
 	public static PlayerRow player(String name, CourseScorecard scorecard) {
 		List<Integer> strokes = java.util.stream.IntStream.range(0, HOLE_COUNT)
-			.mapToObj(index -> index < scorecard.holes().size()
-				? scorecard.holes().get(index).strokes() : -1)
+			.mapToObj(index -> scorecard.holes().stream()
+				.filter(score -> score.holeNumber() == index + 1)
+				.map(score -> score.strokes()).findFirst().orElse(-1))
 			.toList();
 		return new PlayerRow(name, strokes);
 	}

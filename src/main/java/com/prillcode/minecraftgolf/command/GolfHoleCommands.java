@@ -1,6 +1,7 @@
 package com.prillcode.minecraftgolf.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -48,7 +49,10 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("status").executes(GolfHoleCommands::roundStatus)))
 			.then(Commands.literal("browse").executes(GolfHoleCommands::browseCourses))
 			.then(Commands.literal("hole")
-				.then(Commands.literal("start").executes(GolfHoleCommands::start))
+				.then(Commands.literal("start")
+					.executes(GolfHoleCommands::start)
+					.then(Commands.argument("hole", IntegerArgumentType.integer(1))
+						.executes(GolfHoleCommands::startAtHole)))
 				.then(Commands.literal("restart").executes(GolfHoleCommands::restart))
 				.then(Commands.literal("status").executes(GolfHoleCommands::status)))
 			.then(Commands.literal("clubs")
@@ -71,6 +75,11 @@ public final class GolfHoleCommands {
 		}
 		context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
 		return 1;
+	}
+
+	private static int startAtHole(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().start(
+			context.getSource().getPlayerOrException(), IntegerArgumentType.getInteger(context, "hole")));
 	}
 
 	private static int createRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

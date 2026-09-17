@@ -2,6 +2,7 @@ package com.prillcode.minecraftgolf.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -81,5 +82,20 @@ class AuthoredCourseServiceTest {
 		AuthoredCourseService.saveQuietly(store, path);
 		assertEquals(5, AuthoredCourseService.loadOrEmpty(path)
 			.draftSnapshot("links").holes().getFirst().par());
+	}
+
+	@Test
+	void onlyFinalizedCoursesAreSelectable() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("draft", "Draft", "minecraft:overworld");
+
+		assertThrows(IllegalArgumentException.class, () -> store.finalizedCourse("draft"));
+		assertThrows(IllegalArgumentException.class, () -> store.finalizedCourse("missing"));
+
+		store.setHoleTee("draft", 1, new Vec3(1.5, 65.25, 2.5));
+		store.setHoleCup("draft", 1, new Vec3(30.5, 64.25, 40.5));
+		store.setHolePar("draft", 1, 4);
+		assertEquals("draft", store.finalize("draft").id());
+		assertEquals(1, store.finalizedCourse("draft").holes().size());
 	}
 }

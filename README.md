@@ -4,14 +4,17 @@ A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary M
 
 > **M8 — V1 Course and Hole Authoring is complete** (M0–M8 are complete; see `docs/M8-CLOSEOUT.md`; M9 is deferred)
 
-M6 Ready Golf play flow: select a finalized authored course with
-`/golf course select <id>`, then one golfer creates a shared round with
+M6 Ready Golf play flow: use the persistent default course or select a temporary
+runtime override with `/golf course select <id>`, then one golfer creates a shared round with
 `/golf round create`, others join with `/golf round join`, and the coordinator
 starts it with `/golf round start`. Golfers play Ready Golf (no forced turns).
-After completing each hole, use the clickable next-tee action or `/golf nexthole`
-after each non-final hole. The server preserves cumulative scoring and
-automatically prints the final scorecard at the end of the course. The solo flow
-remains available via `/golf hole start` when no lobby or round exists.
+After completing each hole, use the on-screen next-hole prompt, clickable chat action,
+or `/golf nexthole` after each non-final hole. The server preserves cumulative scoring and
+automatically prints the final scorecard at the end of the course. When no lobby
+or round exists, solo play is available with `/golf hole start [hole]` or
+`/golf course play [course-id] [hole]`. Explicit course play replaces an existing solo
+attempt, including a completed attempt, and can start at an authored hole directly:
+`/golf course play re9 8`. Invalid replacement requests leave the current attempt intact.
 
 During active play, `/golf hole restart` resets only the current hole.
 `/golf round leave` is the single exit action: it leaves a lobby, abandons solo
@@ -19,6 +22,10 @@ play, withdraws from an active multiplayer round, or exits a completed round and
 returns that golfer to the Overworld world spawn. After the round completes, one
 remaining golfer can use `/golf round restart` to restart Hole 1 for every
 remaining golfer.
+
+`/golf course play` without an ID and `/golf hole start [hole]` remain guarded and do not
+replace an attempt. Ready Golf participants and lobby members must use `/golf round leave`
+before explicit solo course play; it never silently changes multiplayer state.
 
 Operators can author additional courses on existing terrain. Use
 `/golf course create <id> <display name>`, `/golf course edit <id>`, then capture
@@ -30,8 +37,10 @@ Clone an existing course into an independent draft with
 `/golf course clone <source-id> <new-id> [display name]`.
 Hole bounds are optional when authoring; omit `/golf hole bounds` to leave that
 hole unbounded for out-of-bounds purposes.
-After a server restart, no course is selected. An operator must run
-`/golf course select <id>` before starting a hole or round.
+Operators can persist the server/world fallback with
+`/golf course default set <id>`, inspect it with `/golf course default status`,
+and remove it with `/golf course default clear`. A runtime selection takes
+precedence over this default and resets when the server stops.
 Players can restore missing clubs with `/golf clubs equip`.
 
 ## Project purpose

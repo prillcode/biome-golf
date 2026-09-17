@@ -74,6 +74,30 @@ class AuthoredCourseStoreJsonTest {
 	}
 
 	@Test
+	void roundTripsPersistentDefaultCourse() throws IOException {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("links", "Links", DIMENSION);
+		completeHole(store, "links", 1, 4);
+		store.finalize("links");
+		store.setDefaultCourse("links");
+
+		Path path = directory.resolve("courses.json");
+		AuthoredCourseStoreJson.save(store, path);
+
+		assertEquals("links", AuthoredCourseStoreJson.load(path).defaultCourseId().orElseThrow());
+	}
+
+	@Test
+	void rejectsDefaultThatDoesNotReferenceFinalizedCourse() throws IOException {
+		Path path = directory.resolve("bad-default.json");
+		Files.writeString(path, """
+			{"drafts": [], "finalized": [], "defaultCourseId": "missing"}
+			""");
+
+		assertThrows(IllegalArgumentException.class, () -> AuthoredCourseStoreJson.load(path));
+	}
+
+	@Test
 	void loadsFinalizedHoleWithoutBoundsAsUnbounded() throws IOException {
 		Path path = directory.resolve("unbounded.json");
 		Files.writeString(path, """

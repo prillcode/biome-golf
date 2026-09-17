@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.prillcode.minecraftgolf.golf.Vec3;
@@ -33,6 +34,7 @@ public final class AuthoredCourseStore {
 
 	private final Map<String, CourseDraft> drafts = new LinkedHashMap<>();
 	private final Map<String, CourseDefinition> finalized = new LinkedHashMap<>();
+	private String defaultCourseId;
 
 	/** Creates a new empty draft. Returns the normalized course id. */
 	public String createCourse(String id, String displayName, String dimension) {
@@ -137,6 +139,10 @@ public final class AuthoredCourseStore {
 	/** Removes a draft or finalized course entirely. */
 	public void removeCourse(String courseId) {
 		String id = lookupId(courseId);
+		if (id.equals(defaultCourseId)) {
+			throw new IllegalStateException("course '" + id
+				+ "' is the server default; clear or change the default before deleting it");
+		}
 		if (drafts.remove(id) == null && finalized.remove(id) == null) {
 			throw new IllegalArgumentException("no course with id '" + id + "'");
 		}
@@ -208,6 +214,23 @@ public final class AuthoredCourseStore {
 
 	public List<CourseDefinition> finalizedCourses() {
 		return List.copyOf(finalized.values());
+	}
+
+	/** Selects a finalized course as this world's persistent default. */
+	public void setDefaultCourse(String courseId) {
+		String id = normalizeId(courseId);
+		if (!finalized.containsKey(id)) {
+			throw new IllegalArgumentException("no finalized course with id '" + id + "'");
+		}
+		defaultCourseId = id;
+	}
+
+	public Optional<String> defaultCourseId() {
+		return Optional.ofNullable(defaultCourseId);
+	}
+
+	public void clearDefaultCourse() {
+		defaultCourseId = null;
 	}
 
 	/** Normalizes and validates a course id per the documented rule. */

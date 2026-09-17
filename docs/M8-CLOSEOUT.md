@@ -14,7 +14,7 @@ three-hole course remains the regression fixture.
 | Persistence | Authored course drafts and finalized definitions persist in each world's `data/minecraft_golf_authored_courses.json`; malformed or incompatible data fails closed. |
 | Operator workflow | Operators can create, list, inspect, edit, finalize, delete, and select authored courses with `/golf course ...`. Hole tee, cup, par, and bounds metadata are captured with `/golf hole ...`. |
 | Bounds | Two captured X/Z corners create an axis-aligned playable boundary spanning the world's full build height. Bounds are optional; omitted authored holes use an unbounded playable region. Explicit bounds validate tee, cup, and transition positions before finalization. |
-| Runtime safety | Course selection and deletion are refused during active play. Selection is intentionally runtime-only and returns to M5 after restart. |
+| Runtime safety | Course selection and deletion are refused during active play. Selection is intentionally runtime-only; no course is active after restart. |
 | Equipment recovery | `/golf clubs equip` resets the complete seven-club set into hotbar slots 1-7, removes duplicate club stacks, and preserves displaced non-club items when inventory space allows. Hole start retains the same automatic missing-club grant. |
 
 ## Manual Acceptance
@@ -26,7 +26,8 @@ The user confirmed all required M8 checks on the Docker development server:
 - selected and played the authored hole end-to-end, including cup completion and scoring;
 - confirmed invalid course definitions are rejected with clear validation feedback;
 - restarted the server and confirmed the authored course remained in the course list;
-- selected `m5` and confirmed the existing M5 regression course still plays correctly.
+- explicitly selected the authored `m5` regression course and confirmed it still
+  plays correctly; the course was not selected implicitly after restart.
 
 ## Verification
 

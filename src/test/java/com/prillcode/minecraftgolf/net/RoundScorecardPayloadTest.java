@@ -35,4 +35,18 @@ class RoundScorecardPayloadTest {
 		assertEquals(-1, payload.players().getFirst().strokes().get(1));
 		assertEquals(0, payload.pars().get(1));
 	}
+
+	@Test
+	void positionsPartialScorecardByAuthoredHoleNumber() {
+		CourseScorecard scorecard = new CourseScorecard("test", List.of(
+			new HoleScore("test:10", 10, 4, 5, 0, HoleCompletionReason.HOLED_OUT),
+			new HoleScore("test:11", 11, 4, 4, 0, HoleCompletionReason.HOLED_OUT)));
+
+		RoundScorecardPayload.PlayerRow row = RoundScorecardPayload.player("Aaron", scorecard);
+
+		assertEquals(-1, row.strokes().get(0));
+		assertEquals(-1, row.strokes().get(8));
+		assertEquals(5, row.strokes().get(9));
+		assertEquals(4, row.strokes().get(10));
+	}
 }
