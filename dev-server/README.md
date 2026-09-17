@@ -65,6 +65,11 @@ A healthy container with an old JAR is not valid test evidence. Check startup lo
 2. Point the client at the host's LAN IP, port `25565` (localhost:25565 on the Docker host itself).
 3. LAN clients need a Minecraft account (the server enforces online mode).
 
+For the local authenticated client, run `./gradlew build` and copy the versioned
+JAR to `~/.minecraft/mods/` after client-facing changes. Fully restart Minecraft
+after copying; an already-running client keeps the previous JAR loaded. This is a
+separate deployment step from Docker's `dev-server-sync.sh`.
+
 To find the host's LAN IP: `ip addr` on Linux, `ipconfig` on Windows.
 
 ## Data, restart, and reset
@@ -95,13 +100,16 @@ is explicit, seed-gated, two-phase, and bounded by the overall envelope
 
 ```text
 /golf dev preparecourse
+/golf course select m5
 /golf hole start
 /golf nexthole
 ```
 
-Prepare the layout, start Hole 1 normally, and use the clickable completion action
-or `/golf nexthole` after Holes 1 and 2. Hole 3 automatically finalizes and prints
-the scorecard. `/golf dev testhole <1|2|3>` is an
+Prepare the layout, explicitly select the finalized authored `m5` course, and start
+Hole 1 normally. After a server restart, repeat the course-selection command; the
+active course is runtime-only. Use the clickable completion action or `/golf nexthole`
+after non-final holes. The final hole automatically finalizes and prints the
+scorecard. `/golf dev testhole <1|2|3>` is an
 operator-only isolated-hole tool and does not exercise sequencing or the final
 scorecard. Repeating `preparecourse` after the vegetation cleanup has settled must
 report zero changed blocks.

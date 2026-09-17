@@ -30,6 +30,26 @@ Docker server     ../scripts/dev-server-sync.sh && ../scripts/dev-server-up.sh
 manual gameplay   (where applicable, per milestone)
 ```
 
+### Local Client Deployment
+
+When testing with the authenticated launcher client rather than `./gradlew runClient`,
+building is not enough. After every client-facing change:
+
+```bash
+./gradlew build
+cp build/libs/minecraft-golf-<version>.jar ~/.minecraft/mods/minecraft-golf-<version>.jar
+sha256sum build/libs/minecraft-golf-<version>.jar ~/.minecraft/mods/minecraft-golf-<version>.jar
+```
+
+Fully exit and relaunch Minecraft after copying; the launcher loads mod JARs only at
+startup. The Loom development client uses the compiled classes directly and does not
+test the JAR installed in `~/.minecraft/mods/`.
+
+For Docker testing, also run `./scripts/dev-server-sync.sh` followed by
+`./scripts/dev-server-restart.sh`, then verify the container hash and health. Do not
+claim client gameplay verification until the local client JAR has been updated and
+the client has been restarted.
+
 - **Stop on failure.** If any verification step fails, stop and fix it (or escalate to the user). Do not mark work complete with failing checks.
 - **Stop before deviating.** If implementation would require deviating from `docs/ARCHITECTURE.md`, stop and document the deviation rather than silently choosing differently.
 - **Document ideas, don't implement them.** Found something interesting outside the current milestone? Add it to a future milestone's notes in `docs/MILESTONES.md` (or a backlog file) — do not build it now.
