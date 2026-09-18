@@ -1,6 +1,7 @@
 package com.prillcode.minecraftgolf.club;
 
 import com.prillcode.minecraftgolf.golf.Vec3;
+import com.prillcode.minecraftgolf.ball.ShotPhysicsProfile;
 
 /**
  * Resolves a shot's initial velocity from a club, an aim direction, and the
@@ -60,6 +61,13 @@ public final class ShotResolver {
 	public static Vec3 initialVelocity(
 			ClubDefinition club, double aimYawDegrees, double aimPitchDegrees,
 			double power, double accuracy, double maxSpeed) {
+		return initialVelocity(club, aimYawDegrees, aimPitchDegrees, power, accuracy,
+			maxSpeed, ShotPhysicsProfile.STANDARD);
+	}
+
+	public static Vec3 initialVelocity(
+			ClubDefinition club, double aimYawDegrees, double aimPitchDegrees,
+			double power, double accuracy, double maxSpeed, ShotPhysicsProfile profile) {
 		if (aimPitchDegrees > 45.0) {
 			return null;
 		}
@@ -67,8 +75,8 @@ public final class ShotResolver {
 		power = legalPower(power);
 		accuracy = legalAccuracy(accuracy);
 
-		double horizontal = club.fullPowerHorizontalSpeed() * power;
-		double up = club.fullPowerUpwardSpeed() * power;
+		double horizontal = club.fullPowerHorizontalSpeed() * power * profile.launchHorizontalMultiplier();
+		double up = club.fullPowerUpwardSpeed() * power * profile.launchVerticalMultiplier();
 		double speed = Math.hypot(horizontal, up);
 		if (speed > maxSpeed) {
 			double clampScale = maxSpeed / speed;

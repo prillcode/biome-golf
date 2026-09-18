@@ -14,6 +14,7 @@ import net.minecraft.world.phys.AABB;
 
 import com.prillcode.minecraftgolf.client.camera.PostShotCamera;
 import com.prillcode.minecraftgolf.club.ClubDefinition;
+import com.prillcode.minecraftgolf.club.ShotType;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.item.GolfClubItem;
 import com.prillcode.minecraftgolf.net.ShotRequestPayload;
@@ -43,6 +44,7 @@ public final class SwingController {
 	private float lockedPower;
 	private float lockedAccuracy = 0.5f;
 	private String notice = "";
+	private ShotType shotType = ShotType.STANDARD;
 	private int noticeTicks;
 
 	public SwingController(PostShotCamera postShotCamera) {
@@ -139,7 +141,8 @@ public final class SwingController {
 				client.player.getYRot(),
 				client.player.getXRot(),
 				lockedPower,
-				lockedAccuracy);
+				lockedAccuracy,
+				shotType);
 		if (!ClientPlayNetworking.canSend(ShotRequestPayload.TYPE)) {
 			cancel("Server cannot receive golf shots");
 			return;
@@ -219,7 +222,27 @@ public final class SwingController {
 		phase = Phase.IDLE;
 		targetBall = null;
 		club = null;
+		shotType = ShotType.STANDARD;
 		phaseTicks = 0;
+	}
+
+	/** Cycles legal choices; the server still validates the requested type. */
+	public void cycleShotType(Minecraft client) {
+		if (client.player == null) return;
+		GolfClubItem held = heldClub(client.player);
+		if (held == null) return;
+		List<ShotType> choices = new java.util.ArrayList<>();
+		choices.add(ShotType.STANDARD);
+		choices.addAll(ShotType.choicesFor(held.club()));
+		shotType = choices.get((choices.indexOf(shotType) + 1) % choices.size());
+		showNotice("Shot: " + shotType.displayName());
+	}
+
+	public String shotTypeText(LocalPlayer player) {
+		GolfClubItem held = heldClub(player);
+		if (held == null) return "";
+		return "Shot: " + (shotType.allowedFor(held.club())
+			? shotType.displayName() : ShotType.STANDARD.displayName());
 	}
 
 	public Phase phase() {

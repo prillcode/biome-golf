@@ -142,7 +142,8 @@ The host operating system should not affect the Fabric server architecture.
 | M7 | MVP Hardening and Family Playtest | Complete (see docs/M7-CLOSEOUT.md) |
 | M8 | V1 Course and Hole Authoring | Complete (see docs/M8-CLOSEOUT.md) |
 | M8.5 | V1 Playability and Round UX Hardening | Superseded; implemented work is in the M8.6 baseline |
-| M8.6 | Concurrent Rounds, Join Clarity, and Scoring UX | Current (see docs/M8.6-PLAN.md) |
+| M8.6 | Concurrent Rounds, Join Clarity, and Scoring UX | Complete (see docs/M8.6-CLOSEOUT.md) |
+| M8.7 | Shot Variety and Trajectory Control | Planned (see docs/M8.7-PLAN.md) |
 | M9 | Additional Game Modes | Deferred |
 
 ---
@@ -1279,7 +1280,8 @@ client-only code enters the dedicated-server path.
 
 ## Status
 
-Current. Execute the bounded slices and locked contracts in `docs/M8.6-PLAN.md`.
+Complete. See `docs/M8.6-CLOSEOUT.md` for the implementation, verification, and
+family playtest record.
 M8.5 is not a separate active milestone; its committed implementation is the M8.6
 baseline, and relevant remaining verification has been folded into M8.6.
 
@@ -1297,11 +1299,232 @@ Use the final success criteria and full verification ladder in `docs/M8.6-PLAN.m
 
 ---
 
+# M8.7 — Shot Variety and Trajectory Control
+
+## Status
+
+Planned. Do not begin implementation until this plan is explicitly started. M8.6 is
+complete; M9 remains deferred until the shot-variety work is accepted or deliberately
+rescheduled.
+
+## Goal
+
+Add two intentional trajectory choices without changing golf scoring, round lifecycle,
+or the server-authoritative shot model:
+
+- Chip shots for mid irons, short irons, and wedges: lower launch, softer landing, and
+  more rollout.
+- Stinger shots for long irons, fairway woods, and drivers: lower flight, more forward
+  momentum, and useful clearance beneath low-hanging terrain.
+
+The existing Standard shot remains the default and preserves current play behavior.
+
+## Keybind Decision
+
+Use configurable keybind `C` as a contextual controlled-shot toggle. It does not mean
+that every club has a separate named shot selected by the player:
+
+- Standard -> Controlled when pressed once.
+- Controlled with a mid iron, short iron, or wedge resolves to **Chip**.
+- Controlled with a long iron, fairway wood, or driver resolves to **Stinger**.
+- Controlled with a putter is unavailable and falls back to Standard.
+- Pressing `C` again returns to Standard.
+
+The swing HUD must show the selected mode before and during the three-click swing, for
+example `Shot: Standard`, `Shot: Chip`, or `Shot: Stinger`. The key is configurable so
+players can rebind it if `C` conflicts with another client control. `L` remains a valid
+future/default rebind for “low shot,” but is not the primary default because the same
+contextual action produces either a chip or a stinger.
+
+## Server-Authoritative Contracts
+
+- The client sends shot intent, including the requested shot type; it never sends a
+  resulting trajectory, landing point, distance, or score.
+- The server validates the requested type against the held club before launching.
+- Invalid combinations are rejected or normalized to Standard without consuming a
+  scoring shot.
+- Standard behavior remains unchanged for clients or payloads that do not request an
+  alternate shot type.
+- Accepted-shot counting, penalties, Pick Up, hole completion, and scorecards do not
+  change based on shot type.
+- Shot type is per-shot intent. It must not persist as hidden server gameplay state
+  after the launch.
+- Solo and Ready Golf use the same resolution and validation path.
+
+## Technical Direction
+
+The current architecture already has the required extension seams:
+
+- `ShotResolver` owns deterministic launch-vector calculation.
+- `ShotPhysicsProfile` carries per-shot landing retention and rolling behavior.
+- `BallPhysics` separately handles airborne motion, impact, and rolling friction.
+- `ShotService` is the single server-side validation and launch authority.
+
+Add a small Minecraft-free shot-type/profile model rather than duplicating shot
+resolution. Chip and Stinger profiles should independently tune:
+
+- vertical launch component or launch-angle multiplier;
+- horizontal launch retention;
+- landing horizontal retention; and
+- rolling friction multiplier.
+
+Lowering the launch component alone is insufficient. The desired rollout requires the
+landing profile to preserve forward speed and the rolling profile to avoid excessive
+early stopping. Existing surface behavior, bunker penalties, water recovery, and
+collision rules remain active.
+
+If the shot request schema changes, version the payload identifier, for example from
+`shot_request` to `shot_request_v2`, and keep server validation defensive against stale
+or malformed clients.
+
+## Allowed Shot Matrix
+
+| Held club | Standard | Controlled result |
+|---|---:|---|
+| Driver | Yes | Stinger |
+| Fairway Wood | Yes | Stinger |
+| Long Iron | Yes | Stinger |
+| Mid Iron | Yes | Chip |
+| Short Iron | Yes | Chip |
+| Wedge | Yes | Chip |
+| Putter | Yes | Unavailable; use Standard |
+
+The matrix is server-owned and must be represented by tests rather than inferred only
+from client UI labels.
+
+## Bounded Slices
+
+Each slice must pass its verification before the next begins. Stop and document any
+required deviation from `docs/ARCHITECTURE.md`.
+
+### S0 - Baseline and Shot Contracts
+
+**Goal:** Pin current Standard behavior before adding alternate trajectories.
+
+**Deliverables:**
+
+- Record the current test/build and JAR baseline.
+- Add a Minecraft-free shot-type model and allowed-club matrix.
+- Define deterministic Standard, Chip, and Stinger profile expectations without
+  prematurely locking final tuning constants.
+
+**Verification:** `./gradlew test` and existing Standard shot regression tests.
+
+### S1 - Server Resolution and Payload Evolution
+
+**Goal:** Make shot type server-authoritative and safe across client versions.
+
+**Deliverables:**
+
+- Add shot type to the finalized shot intent payload using a versioned identifier if the
+  wire schema changes.
+- Validate held club, requested type, legal aim, power, accuracy, and launch speed on
+  the server.
+- Route Standard, Chip, and Stinger through one `ShotService`/`ShotResolver` path.
+- Preserve scoring and ownership semantics exactly.
+
+**Verification:** payload round-trip tests, invalid-combination tests, stale/default
+behavior tests, and `./gradlew test`.
+
+### S2 - Contextual Client Selection
+
+**Goal:** Make the shot choice understandable and usable during the existing swing.
+
+**Deliverables:**
+
+- Add configurable `C` keybind to toggle Standard/Controlled.
+- Resolve the visible controlled label from the held club without trusting the client as
+  gameplay authority.
+- Show the selected shot in the swing HUD and make unavailable Putter behavior clear.
+- Preserve the existing three-click meter and post-shot camera flow.
+
+**Verification:** client compilation, code-path inspection, Loom client startup, and
+  manual keybind/swing observation.
+
+### S3 - Trajectory and Rollout Calibration
+
+**Goal:** Tune the physics so the two shot types have clearly different, useful roles.
+
+**Deliverables:**
+
+- Chip: lower than Standard for the same club/power, lands with more forward speed, and
+  rolls farther on normal fairway/green surfaces.
+- Stinger: materially lower apex than Standard for the same club/power, retains forward
+  speed, and can pass under a tested low canopy when geometry permits.
+- No shot type bypasses max launch speed, collision, surface, hazard, or stop-speed
+  rules.
+
+**Verification:** deterministic `ShotResolver` and `BallPhysics` tests for launch ratios,
+  landing retention, and rollout; then Loom/Docker manual calibration on fairway, rough,
+  green, bunker, water, and low-overhead terrain.
+
+### S4 - Integrated Playtest and Closeout
+
+**Goal:** Prove the new shots are useful without destabilizing existing golf.
+
+**Required manual matrix:**
+
+- Standard shots remain unchanged for every club.
+- Chip works with mid iron, short iron, and wedge.
+- Stinger works with long iron, fairway wood, and driver.
+- Invalid alternate-shot combinations are rejected or clearly normalized.
+- Chip rollout is visibly greater than Standard at comparable launch conditions.
+- Stinger clears/strikes low terrain according to actual collision geometry.
+- Solo and concurrent Ready Golf behavior remain isolated and score correctly.
+- Penalties, Pick Up, hole completion, replay, reconnect, and scorecards remain intact.
+
+**Exit evidence:** automated tests, Loom client/server startup, Docker health, installed
+client deployment, family/LAN playtest, and `docs/M8.7-CLOSEOUT.md`.
+
+## Verification Ladder
+
+```text
+plain-Java shot/profile tests
+        -> ./gradlew test
+        -> ./gradlew clean test build
+        -> Loom dedicated server
+        -> Loom client
+        -> Docker sync/restart/health
+        -> installed-client JAR hash and full restart
+        -> manual solo and concurrent Ready Golf playtest
+        -> M8.7 closeout
+```
+
+## Non-Goals
+
+Do not implement as part of M8.7:
+
+- Scramble, Match Play, Best Ball, or any alternate scoring mode;
+- wind, advanced lies, spin control, shot shaping, or a landing predictor;
+- automatic terrain-aware shot selection or tree avoidance;
+- new clubs, multiple tee boxes, course authoring, or course persistence;
+- client-authored outcomes or a second physics/entity path;
+- changes to Ready Golf barriers, round membership, scoring rules, or ball ownership;
+- full unmodified-client support for custom balls, clubs, camera, or swing controls.
+
+## Exit Criteria
+
+M8.7 is complete when:
+
+1. Standard, Chip, and Stinger are server-authoritative and validated by club.
+2. Chip is available for mid iron, short iron, and wedge clubs with lower flight and
+   useful rollout.
+3. Stinger is available for long iron, fairway wood, and driver with lower flight and
+   useful rollout.
+4. `C` toggles the contextual controlled shot and the HUD communicates the active mode.
+5. Invalid combinations cannot launch an unauthorized alternate trajectory.
+6. Existing scoring, round isolation, collision, hazard, reconnect, and scorecard
+   behavior remains intact.
+7. Automated, Loom, Docker, installed-client, and family/LAN verification passes.
+8. M8.7 closeout records tuning decisions, residual limitations, and the final artifact.
+
+---
+
 # M9 — Additional Game Modes
 
 ## Status
 
-Deferred until M8.6 closes and the next alternate mode is prioritized.
+Deferred until the next alternate mode is prioritized.
 
 ## Candidate Scope
 
@@ -1353,8 +1576,8 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M8 are complete (see the milestone closeout records through
-`docs/M8-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
-work forms the baseline for the current M8.6 concurrent-round hardening milestone.
-M9 — Additional Game Modes remains deferred until M8.6 closes and an alternate mode is
+M0–M8.6 are complete (see the milestone closeout records through
+`docs/M8.6-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
+work forms part of the completed M8.6 concurrent-round hardening milestone. M9 —
+Additional Game Modes remains deferred until M8.7 closes and an alternate mode is
 explicitly prioritized.

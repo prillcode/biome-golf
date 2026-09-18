@@ -14,6 +14,9 @@ import net.minecraft.resources.Identifier;
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.client.hole.GolfMenuScreen;
 import com.prillcode.minecraftgolf.client.hole.LobbyHudState;
+import com.prillcode.minecraftgolf.client.hole.HoleHudState;
+import com.prillcode.minecraftgolf.client.swing.SwingController;
+import com.prillcode.minecraftgolf.net.HoleStatePayload;
 import com.prillcode.minecraftgolf.net.RoundLobbyActionPayload;
 
 /** Client-only practice shortcuts; server commands retain authority and permissions. */
@@ -31,15 +34,26 @@ public final class PracticeKeybindings {
 			"key.minecraft_golf.start_round", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, CATEGORY));
 	private final KeyMapping leaveRound = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.minecraft_golf.leave_round", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_L, CATEGORY));
+	private final KeyMapping shotCycle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+			"key.minecraft_golf.shot_cycle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, CATEGORY));
+	private final SwingController swing;
+
+	public PracticeKeybindings(SwingController swing) {
+		this.swing = swing;
+	}
 
 	public void tick(Minecraft client) {
 		while (dropBall.consumeClick()) {
 			if (client.player != null && client.getConnection() != null) {
-				// The player-facing command validates practice mode and performs the spawn
-				// server-side. Operator /golf spawn remains a separate debug tool.
-				client.getConnection().sendCommand("golf practice ball");
+				HoleStatePayload state = HoleHudState.get();
+				if (state != null && state.phase() == HoleStatePayload.Phase.ACTIVE && state.tapInAvailable()) {
+					client.getConnection().sendCommand("golf tapin");
+				} else {
+					client.getConnection().sendCommand("golf practice ball");
+				}
 			}
 		}
+		while (shotCycle.consumeClick()) swing.cycleShotType(client);
 		while (golfMenu.consumeClick()) {
 			if (client.gui.screen() == null) client.setScreenAndShow(new GolfMenuScreen());
 		}

@@ -8,7 +8,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class SwingHud {
 
 	private static final int WIDTH = 180;
-	private static final int HEIGHT = 78;
+	private static final int HEIGHT = 90;
 	private static final int BAR_X_OFFSET = 10;
 	private static final int BAR_WIDTH = 160;
 	private static final int BAR_HEIGHT = 7;
@@ -53,12 +53,13 @@ public final class SwingHud {
 		graphics.text(client.font, "Power", x + 8, y + 20, MUTED, false);
 		drawPowerBar(graphics, x + BAR_X_OFFSET, y + 31, controller.power());
 
-		graphics.text(client.font, "Accuracy", x + 8, y + 41, MUTED, false);
-		drawAccuracyBar(graphics, x + BAR_X_OFFSET, y + 52, controller.accuracy());
+		graphics.text(client.font, controller.shotTypeText(client.player), x + 8, y + 41, TEXT, true);
+		graphics.text(client.font, "Accuracy", x + 8, y + 54, MUTED, false);
+		drawAccuracyBar(graphics, x + BAR_X_OFFSET, y + 65, controller.accuracy());
 
 		String state = controller.stateText();
 		int stateX = Math.max(x + 8, x + WIDTH - 8 - client.font.width(state));
-		graphics.text(client.font, state, stateX, y + 64, TEXT, true);
+		graphics.text(client.font, state, stateX, y + 77, TEXT, true);
 	}
 
 	private static void drawPowerBar(GuiGraphicsExtractor graphics, int x, int y, float value) {

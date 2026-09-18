@@ -26,6 +26,8 @@ public enum ShotOutcome {
 	HOLE_COMPLETE,
 	/** The driver is not allowed while the ball is supported by sand. */
 	DRIVER_NOT_ALLOWED_ON_SAND,
+	/** The requested trajectory is not legal for the held club. */
+	INVALID_SHOT_TYPE,
 	/** Shots off a club the player must be holding, and this is not one. */
 	UNKNOWN,
 	/** Launch executed. */

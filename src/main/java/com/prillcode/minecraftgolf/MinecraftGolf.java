@@ -2,7 +2,9 @@ package com.prillcode.minecraftgolf;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.server.level.ServerPlayer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import com.prillcode.minecraftgolf.server.CourseBlockBreakGuard;
 public class MinecraftGolf implements ModInitializer {
 	public static final String MOD_ID = "minecraft_golf";
 	public static final String MOD_NAME = "Minecraft Golf";
+	private static final String WELCOME_TAG = MOD_ID + ":welcome_seen";
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -78,8 +81,15 @@ public class MinecraftGolf implements ModInitializer {
 		CourseBlockBreakGuard.register();
 
 		// S5: reconnect a suspended golfer and send the authoritative snapshot on join.
-		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-			ActiveHoleService.instance().onPlayerConnected(handler.getPlayer()));
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			ServerPlayer player = handler.getPlayer();
+			player.sendSystemMessage(Component.literal(player.entityTags().contains(WELCOME_TAG)
+				? "Welcome back to BirdieBiome!"
+				: "BirdieBiome welcomes you!"));
+			player.sendSystemMessage(Component.literal("Use /golf help to get started."));
+			player.addTag(WELCOME_TAG);
+			ActiveHoleService.instance().onPlayerConnected(player);
+		});
 
 		// S5: apply the Ready Golf suspension policy on disconnect.
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->

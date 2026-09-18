@@ -53,7 +53,8 @@ public final class ShotNetworking {
 				payload.aimYawDeg(),
 				payload.aimPitchDeg(),
 				payload.power(),
-				payload.accuracy());
+				payload.accuracy(),
+				payload.shotType());
 
 		if (outcome != ShotOutcome.SUCCESS) {
 			player.sendSystemMessage(Component.literal(describeFailure(outcome)), true);
@@ -76,6 +77,7 @@ public final class ShotNetworking {
 			case MISSING_ACTIVE_BALL -> "[golf] your assigned ball is missing; use /golf hole restart";
 			case HOLE_COMPLETE -> "[golf] this hole is complete; use /golf hole restart, or /golf round restart after the round ends";
 			case DRIVER_NOT_ALLOWED_ON_SAND -> "[golf] Driver cannot be used from sand; select another club";
+			case INVALID_SHOT_TYPE -> "[golf] that shot type is not available for the held club";
 			case SUCCESS, UNKNOWN -> "";
 		};
 	}

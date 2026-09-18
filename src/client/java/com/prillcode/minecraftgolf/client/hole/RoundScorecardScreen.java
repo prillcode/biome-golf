@@ -12,7 +12,7 @@ import com.prillcode.minecraftgolf.net.RoundScorecardPayload;
 
 /** Paginated end-round presentation; all scores and pars come from the server payload. */
 public final class RoundScorecardScreen extends Screen {
-	private static final int HOLES_PER_PAGE = 9;
+	private static final int HOLES_PER_PAGE = 18;
 	private int page;
 
 	public RoundScorecardScreen() { super(Component.literal("Final scorecard")); }
@@ -70,7 +70,7 @@ public final class RoundScorecardScreen extends Screen {
 		graphics.text(font, par.toString(), left, 70, 0xFFCCCCCC, false);
 		int y = 88;
 		for (RoundScorecardPayload.PlayerRow player : payload.players()) {
-			StringBuilder row = new StringBuilder(player.name().substring(0, Math.min(player.name().length(), 10)));
+			StringBuilder row = new StringBuilder(player.name().substring(0, Math.min(player.name().length(), 8)));
 			while (row.length() < 11) row.append(' ');
 			for (int index = start; index < end; index++) {
 				int strokes = player.strokes().get(index);

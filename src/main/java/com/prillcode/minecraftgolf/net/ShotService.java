@@ -14,6 +14,7 @@ import com.prillcode.minecraftgolf.ball.PhysicsConfig;
 import com.prillcode.minecraftgolf.ball.ShotPhysicsProfile;
 import com.prillcode.minecraftgolf.club.ClubDefinition;
 import com.prillcode.minecraftgolf.club.ShotResolver;
+import com.prillcode.minecraftgolf.club.ShotType;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.item.GolfClubItem;
@@ -42,7 +43,7 @@ public final class ShotService {
 	 * @return the {@link ShotOutcome}; {@code SUCCESS} when a launch occurred
 	 */
 	public static ShotOutcome attempt(ServerPlayer player, int ballId,
-			float aimYawDeg, float aimPitchDeg, float power, float accuracy) {
+			float aimYawDeg, float aimPitchDeg, float power, float accuracy, ShotType requestedType) {
 		ServerLevel level = (ServerLevel) player.level();
 		GolfBallEntity ball = findBall(level, ballId);
 		if (ball == null) {
@@ -75,6 +76,10 @@ public final class ShotService {
 		if (club == null) {
 			return ShotOutcome.NO_CLUB;
 		}
+		ShotType shotType = requestedType == null ? ShotType.STANDARD : requestedType;
+		if (!shotType.allowedFor(club)) {
+			return ShotOutcome.INVALID_SHOT_TYPE;
+		}
 		SurfaceDefinition surface = ball.currentSurface();
 		if (isDriver(club) && isSand(surface)) {
 			return ShotOutcome.DRIVER_NOT_ALLOWED_ON_SAND;
@@ -85,7 +90,8 @@ public final class ShotService {
 		// already be client-clamped but must never be trusted raw.
 		double p = ShotResolver.legalPower(power);
 		double a = ShotResolver.legalAccuracy(accuracy);
-		Vec3 velocity = ShotResolver.initialVelocity(club, aimYawDeg, aimPitchDeg, p, a, maxSpeed);
+		Vec3 velocity = ShotResolver.initialVelocity(club, aimYawDeg, aimPitchDeg, p, a, maxSpeed,
+			shotType.profile(club));
 		if (velocity == null) {
 			return ShotOutcome.AIM_NOT_LEGAL;
 		}
@@ -98,14 +104,12 @@ public final class ShotService {
 		Vec3 shotOrigin = ball.ballState() == null
 				? new Vec3(ball.position().x, ball.position().y, ball.position().z)
 				: ball.ballState().position();
-		ball.launch(velocity, club.putting()
-			? ShotPhysicsProfile.STANDARD
-			: ShotPhysicsProfile.LOFTED_CLUB);
+		ball.launch(velocity, shotType.profile(club));
 		if (holePermission == ShotPermission.SCORING) {
 			ActiveHoleService.instance().recordAcceptedShot(player, ball, shotOrigin);
 		}
 		MinecraftGolf.LOGGER.info("{} shot via {} power={} acc={} (wind-free) launched v={}",
-				player.getName().getString(), club.id(), p, a, velocity);
+				player.getName().getString(), club.id() + "/" + shotType, p, a, velocity);
 		return ShotOutcome.SUCCESS;
 	}
 

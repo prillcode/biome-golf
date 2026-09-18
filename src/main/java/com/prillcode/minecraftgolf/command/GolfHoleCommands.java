@@ -41,7 +41,8 @@ public final class GolfHoleCommands {
 
 	private static void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher,
 			CommandBuildContext registryAccess, CommandSelection environment) {
-		dispatcher.register(Commands.literal("golf")
+			dispatcher.register(Commands.literal("golf")
+			.then(Commands.literal("help").executes(GolfHoleCommands::help))
 			.then(Commands.literal("round")
 				.then(Commands.literal("create")
 					.executes(GolfHoleCommands::createRound)
@@ -70,6 +71,7 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("ball").executes(GolfHoleCommands::dropPracticeBall))
 				.then(Commands.literal("clear").executes(GolfHoleCommands::clearPracticeBalls)))
 			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp))
+			.then(Commands.literal("tapin").executes(GolfHoleCommands::tapIn))
 			.then(Commands.literal("nexthole").executes(GolfHoleCommands::nextHole)));
 		MinecraftGolf.LOGGER.info(
 			"Registered Ready Golf round, hole lifecycle, practice ball, practice clear, Pick Up, and next-hole commands");
@@ -83,6 +85,16 @@ public final class GolfHoleCommands {
 			return 0;
 		}
 		context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
+		return 1;
+	}
+
+	private static int help(CommandContext<CommandSourceStack> context) {
+		context.getSource().sendSuccess(() -> Component.literal("[golf] Minecraft Golf commands:")
+				.withStyle(ChatFormatting.GOLD), false);
+		context.getSource().sendSuccess(() -> Component.literal("Getting started: /golf round list | /golf round join"), false);
+		context.getSource().sendSuccess(() -> Component.literal("Rounds: /golf round create <courseId> | /golf round start | /golf round status | /golf round leave"), false);
+		context.getSource().sendSuccess(() -> Component.literal("Playing: /golf hole status | /golf hole restart | /golf pickup | /golf nexthole"), false);
+		context.getSource().sendSuccess(() -> Component.literal("Solo: /golf course play [courseId] [hole] | /golf hole start [hole]"), false);
 		return 1;
 	}
 
@@ -207,6 +219,11 @@ public final class GolfHoleCommands {
 	private static int pickUp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		return sendResult(context, ActiveHoleService.instance().pickUp(player));
+	}
+
+	private static int tapIn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().tapIn(
+			context.getSource().getPlayerOrException()));
 	}
 
 	private static int nextHole(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

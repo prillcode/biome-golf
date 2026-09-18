@@ -45,6 +45,7 @@ import com.prillcode.minecraftgolf.hole.HoleScoringDisplay;
 import com.prillcode.minecraftgolf.hole.PenaltyType;
 import com.prillcode.minecraftgolf.hole.PlayerHoleSession;
 import com.prillcode.minecraftgolf.hole.PlayerHoleState;
+import com.prillcode.minecraftgolf.hole.TapInRules;
 import com.prillcode.minecraftgolf.item.GolfClubItem;
 import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.net.HoleStateNetworking;
@@ -1187,6 +1188,41 @@ public final class ActiveHoleService {
 		return new StartResult(true, "[golf] Pick Up Ball — score recorded as " + updated.strokes());
 	}
 
+	/** Performs one server-authoritative stroke for a stationary ball beside the cup. */
+	public StartResult tapIn(ServerPlayer player) {
+		PlayerHoleSession session = lifecycle.session(player.getUUID()).orElse(null);
+		if (session == null || session.state().isComplete()) {
+			return new StartResult(false, "[golf] no active hole is eligible for a tap-in");
+		}
+		GolfBallEntity ball = assignedBall(player, session.ballUuid())
+			.filter(GolfBallEntity.class::isInstance).map(GolfBallEntity.class::cast).orElse(null);
+		if (ball == null || ball.owner() == null || !player.getUUID().equals(ball.owner())) {
+			return new StartResult(false, "[golf] your active golf ball is missing");
+		}
+		if (!ball.isResting()) {
+			return new StartResult(false, "[golf] wait for the ball to stop before tapping in");
+		}
+		Vec3 position = ball.ballState().position();
+		if (!TapInRules.withinOneBlock(position, session.state().hole().cup())) {
+			return new StartResult(false, "[golf] tap-in is available only within one block of the cup");
+		}
+
+		PlayerHoleSession updatedSession = session.recordAcceptedShot(position);
+		PlayerHoleState updated = updatedSession.state();
+		if (!updated.isComplete()) {
+			updatedSession = updatedSession.holeOut();
+			updated = updatedSession.state();
+		}
+		lifecycle.update(player.getUUID(), updatedSession);
+		updateCourseState(player.getUUID(), updated);
+		ball.placeAtRest(updated.hole().cup());
+		sendCompletion(player, updated);
+		sendCompleteSnapshot(player, updated);
+		notifyTerminalBarrierForPlayer(player.level().getServer(), player.getUUID());
+		return new StartResult(true, "[golf] Tap in accepted (+1 stroke) — hole complete in "
+			+ updated.strokes() + " strokes");
+	}
+
 	public StartResult nextHole(ServerPlayer player) {
 		PlayerCourseState state = courseState(player.getUUID());
 		if (state == null) {
@@ -1677,8 +1713,22 @@ public final class ActiveHoleService {
 	}
 
 	private void sendActiveSnapshot(ServerPlayer player, PlayerHoleState state, Vec3 ballPosition) {
-		HoleStateNetworking.send(player, withCourseTotals(player.getUUID(),
-			HoleStatePayload.active(state, ballPosition), state));
+		boolean eligible = assignedBall(player, lifecycle.session(player.getUUID())
+			.map(PlayerHoleSession::ballUuid).orElse(null))
+			.filter(GolfBallEntity.class::isInstance)
+			.map(GolfBallEntity.class::cast)
+			.filter(GolfBallEntity::isResting)
+			.map(ball -> TapInRules.withinOneBlock(ballPosition, state.hole().cup()))
+			.orElse(false);
+		HoleStatePayload payload = withCourseTotals(player.getUUID(),
+			HoleStatePayload.active(state, ballPosition).withTapInAvailable(eligible), state);
+		HoleStateNetworking.send(player, payload);
+		if (payload.tapInAvailable()) {
+			Component action = Component.literal("[Tap in (+1 stroke)]")
+				.withStyle(style -> style.withColor(ChatFormatting.GREEN).withUnderlined(true)
+					.withClickEvent(new ClickEvent.RunCommand("/golf tapin")));
+			player.sendSystemMessage(Component.literal("[golf] near the cup — ").append(action));
+		}
 	}
 
 	private void sendMissingSnapshot(ServerPlayer player, PlayerHoleState state) {

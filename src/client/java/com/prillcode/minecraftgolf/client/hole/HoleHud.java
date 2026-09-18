@@ -87,6 +87,10 @@ public final class HoleHud {
 			String cupDirection = "Cup: " + arrow + "  " + state.distanceToCupBlocks() + " blocks";
 			graphics.text(client.font, cupDirection, x + PAD_X, textY, GOLD, true);
 			textY += LINE_HEIGHT;
+			if (state.tapInAvailable()) {
+				graphics.text(client.font, "Tap in (+1 stroke): press B", x + PAD_X, textY, GOOD, true);
+				textY += LINE_HEIGHT;
+			}
 		}
 
 		if (state.penaltyCount() > 0) {
@@ -140,6 +144,7 @@ public final class HoleHud {
 		int lines = state.holeNumber() == 0 ? 3 : 2; // practice action adds one line
 		if (state.courseTotalPar() > 0) lines++;
 		if (state.phase() == Phase.ACTIVE) lines++;
+		if (state.phase() == Phase.ACTIVE && state.tapInAvailable()) lines++;
 		if (state.phase() == Phase.ACTIVE || state.phase() == Phase.MISSING_BALL) lines++;
 		if (state.penaltyCount() > 0) lines++;
 		if (state.strokes() > 0 && (state.phase() == Phase.COMPLETE

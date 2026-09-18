@@ -6,6 +6,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.network.FriendlyByteBuf;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
+import com.prillcode.minecraftgolf.club.ShotType;
 
 /**
  * Client → server finalized shot intent (M3, ARCH §8.1/§20).
@@ -19,13 +20,14 @@ import com.prillcode.minecraftgolf.MinecraftGolf;
  * @param aimPitchDeg Minecraft pitch (0 level; positive down)
  * @param power       0..1 fraction of full club power
  * @param accuracy    0..1 on-target lane; 0.5 is a perfect hit
+ * @param shotType    server-validated trajectory intent
  */
 public record ShotRequestPayload(
-		int ballId, float aimYawDeg, float aimPitchDeg, float power, float accuracy)
+		int ballId, float aimYawDeg, float aimPitchDeg, float power, float accuracy, ShotType shotType)
 		implements CustomPacketPayload {
 
 	public static final Type<ShotRequestPayload> TYPE =
-			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "shot_request"));
+			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "shot_request_v2"));
 
 	public static final StreamCodec<FriendlyByteBuf, ShotRequestPayload> STREAM_CODEC =
 			StreamCodec.of(ShotRequestPayload::encode, ShotRequestPayload::decode);
@@ -36,11 +38,13 @@ public record ShotRequestPayload(
 		buf.writeFloat(p.aimPitchDeg());
 		buf.writeFloat(p.power());
 		buf.writeFloat(p.accuracy());
+		buf.writeByte(p.shotType().ordinal());
 	}
 
 	private static ShotRequestPayload decode(FriendlyByteBuf buf) {
 		return new ShotRequestPayload(
-				buf.readInt(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat());
+				buf.readInt(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
+				ShotType.fromWire(buf.readUnsignedByte()));
 	}
 
 	@Override

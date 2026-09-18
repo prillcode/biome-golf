@@ -41,7 +41,7 @@ public class MinecraftGolfClient implements ClientModInitializer {
 
 		PostShotCamera postShotCamera = new PostShotCamera();
 		SwingController swing = new SwingController(postShotCamera);
-		PracticeKeybindings practiceKeys = new PracticeKeybindings();
+		PracticeKeybindings practiceKeys = new PracticeKeybindings(swing);
 		NextHolePrompt nextHolePrompt = new NextHolePrompt();
 		ClientTickEvents.END_CLIENT_TICK.register(swing::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(practiceKeys::tick);
