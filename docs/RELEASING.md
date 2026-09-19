@@ -29,3 +29,5 @@ attached.
 - One version, one tag, one CHANGELOG entry. Do not reuse or move a published tag.
 - The tagged commit is the exact source of the released JAR, so run the verification
   ladder before tagging.
+- Tag a commit that contains this workflow. GitHub Actions reads the workflow file from
+  the tagged commit, so a tag on an older commit will not trigger a release.
