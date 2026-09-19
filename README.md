@@ -2,8 +2,8 @@
 
 A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary Minecraft worlds — arcade-realistic, skill-based, and played through real terrain.
 
-> **M8.6 — Concurrent Rounds, Join Clarity, and Scoring UX is complete.** M0–M8.6 are
-> complete, and M9 remains deferred. See `docs/M8.6-CLOSEOUT.md`.
+> **M8.7 — Shot Variety and Trajectory Control is complete.** M0–M8.7 are complete, and
+> M9 remains deferred. See `docs/M8.7-CLOSEOUT.md`.
 
 Ready Golf play flow: use `/golf round list` to see every open lobby and finalized
 course. Create a shared round with `/golf round create <courseId>`, join a specific
