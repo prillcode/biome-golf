@@ -13,6 +13,7 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 
 import com.prillcode.minecraftgolf.client.camera.PostShotCamera;
+import com.prillcode.minecraftgolf.client.DistanceDisplayState;
 import com.prillcode.minecraftgolf.club.ClubDefinition;
 import com.prillcode.minecraftgolf.club.ShotType;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
@@ -273,7 +274,8 @@ public final class SwingController {
 		GolfClubItem held = heldClub(player);
 		return held == null
 				? ""
-				: String.format(Locale.ROOT, "~%.0f blocks", held.club().nominalCarry());
+				: "~" + DistanceDisplayState.format(held.club().nominalCarry())
+						+ (held.club().putting() ? " roll" : "");
 	}
 
 	public String stateText() {

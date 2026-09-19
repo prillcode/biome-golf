@@ -25,6 +25,10 @@ class ShotPhysicsProfileTest {
 	void alternateProfilesHaveDistinctLaunchAndRollContracts() {
 		assertTrue(ShotPhysicsProfile.CHIP.launchVerticalMultiplier() < 1.0);
 		assertTrue(ShotPhysicsProfile.STINGER.launchVerticalMultiplier() < 1.0);
+		assertEquals(0.65, ShotPhysicsProfile.STINGER.rollingFrictionMultiplier());
+		assertEquals(0.60, ShotPhysicsProfile.STINGER.landingHorizontalRetention());
+		assertTrue(ShotPhysicsProfile.STINGER.rollingFrictionMultiplier()
+			< ShotPhysicsProfile.LOFTED_CLUB.rollingFrictionMultiplier());
 		assertTrue(ShotPhysicsProfile.FLOP.launchVerticalMultiplier() > 1.0);
 		assertTrue(ShotPhysicsProfile.CHIP.rollingFrictionMultiplier()
 			< ShotPhysicsProfile.LOFTED_CLUB.rollingFrictionMultiplier());

@@ -12,5 +12,7 @@
   "key.category.minecraft_golf.controls": "Minecraft Golf",
   "key.minecraft_golf.drop_ball": "Drop Practice Ball",
   "key.minecraft_golf.start_round": "Golf Menu",
-  "key.minecraft_golf.leave_round": "Leave Ready Golf Round"
+  "key.minecraft_golf.leave_round": "Leave Ready Golf Round",
+  "key.minecraft_golf.shot_cycle": "Cycle Shot Type",
+  "key.minecraft_golf.distance_units": "Toggle Distance Units"
 }

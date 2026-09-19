@@ -144,7 +144,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.5 | V1 Playability and Round UX Hardening | Superseded; implemented work is in the M8.6 baseline |
 | M8.6 | Concurrent Rounds, Join Clarity, and Scoring UX | Complete (see docs/M8.6-CLOSEOUT.md) |
 | M8.7 | Shot Variety and Trajectory Control | Complete (see docs/M8.7-CLOSEOUT.md) |
-| M8.8 | Distance Display Units | In progress (explicitly authorized independent presentation slice; see docs/M8.8-PLAN.md) |
+| M8.8 | Distance Display Units | Complete (see docs/M8.8-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 
 ---
@@ -1320,6 +1320,27 @@ Use the final success criteria and full verification ladder in `docs/M8.7-PLAN.m
 
 ---
 
+# M8.8 — Distance Display Units
+
+## Status
+
+Complete. See `docs/M8.8-CLOSEOUT.md` for the implementation, verification, and the
+remaining manual HUD boundary. M8.8 was explicitly authorized as an independent
+presentation slice before M8.7 closeout; M8.7's scope was unchanged.
+
+## Goal
+
+Display golf distances in familiar yards by default (fixed `1 block = 1.75 yards`
+conversion) while keeping blocks authoritative for gameplay, networking, physics,
+scoring, and course geometry, and expose server-authoritative current-shot travel in the
+Hole HUD.
+
+## Exit Criteria
+
+Use the final success criteria and full verification ladder in `docs/M8.8-PLAN.md`.
+
+---
+
 # M9 — Additional Game Modes
 
 ## Status
@@ -1376,8 +1397,9 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M8.7 are complete (see the milestone closeout records through
-`docs/M8.7-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
-work forms part of the completed M8.6 concurrent-round hardening milestone. M8.8 —
-Distance Display Units is the active presentation slice; M9 — Additional Game Modes
-remains deferred until an alternate mode is explicitly prioritized.
+M0–M8.8 are complete (see the milestone closeout records through
+`docs/M8.8-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
+work forms part of the completed M8.6 concurrent-round hardening milestone. M8.7 added
+server-authoritative shot variety and tap-in; M8.8 added the yard distance display. M9 —
+Additional Game Modes remains deferred until an alternate mode is explicitly
+prioritized.

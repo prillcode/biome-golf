@@ -29,7 +29,7 @@ class HoleStatePayloadTest {
 	@Test
 	void practiceSnapshot_hasCorrectPhaseAndHoleMetadata() {
 		HoleStatePayload p = HoleStatePayload.practice(PAR_FOUR);
-		assertEquals("minecraft_golf:hole_state_v5", p.type().id().toString());
+		assertEquals("minecraft_golf:hole_state_v6", p.type().id().toString());
 		assertEquals(Phase.PRACTICE, p.phase());
 		assertEquals(1, p.holeNumber());
 		assertEquals(4, p.par());
@@ -40,6 +40,7 @@ class HoleStatePayloadTest {
 		assertEquals(90.0, p.cupX());
 		assertEquals(90.0, p.cupZ());
 		assertEquals(-1, p.distanceToCupBlocks());
+		assertEquals(-1, p.shotDistanceBlocks());
 		assertNull(p.completionReason());
 		assertNull(p.scoreTerm());
 	}
@@ -70,6 +71,7 @@ class HoleStatePayloadTest {
 		assertEquals(0, p.penaltyCount());
 		assertEquals(0, p.scoreToPar());
 		assertEquals(113, p.distanceToCupBlocks());
+		assertEquals(0, p.shotDistanceBlocks());
 		assertNull(p.completionReason());
 		assertNull(p.scoreTerm());
 	}
@@ -81,6 +83,26 @@ class HoleStatePayloadTest {
 		HoleStatePayload p = HoleStatePayload.active(state, new Vec3(87.0, 20.0, 86.0));
 
 		assertEquals(5, p.distanceToCupBlocks());
+		assertEquals(0, p.shotDistanceBlocks());
+	}
+
+	@Test
+	void activeSnapshotCarriesAuthoritativeShotDistance() {
+		PlayerHoleState state = PlayerHoleState.start(PAR_FOUR);
+
+		HoleStatePayload p = HoleStatePayload.active(state,
+			new Vec3(87.0, 20.0, 86.0), 42);
+
+		assertEquals(42, p.shotDistanceBlocks());
+	}
+
+	@Test
+	void practiceSnapshotCanCarryShotDistanceWithoutHoleState() {
+		HoleStatePayload p = HoleStatePayload.noCourse().withShotDistanceBlocks(18);
+
+		assertEquals(Phase.PRACTICE, p.phase());
+		assertEquals(0, p.holeNumber());
+		assertEquals(18, p.shotDistanceBlocks());
 	}
 
 	@Test

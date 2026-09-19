@@ -34,6 +34,7 @@ public record HoleStatePayload(
 		double cupX,
 		double cupZ,
 		int distanceToCupBlocks,
+		int shotDistanceBlocks,
 		int courseStrokes,
 		int courseParPlayed,
 		int courseTotalPar,
@@ -54,7 +55,7 @@ public record HoleStatePayload(
 	}
 
 	public static final Type<HoleStatePayload> TYPE =
-			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_state_v5"));
+			new Type<>(Identifier.fromNamespaceAndPath(MinecraftGolf.MOD_ID, "hole_state_v6"));
 
 	public static final StreamCodec<FriendlyByteBuf, HoleStatePayload> STREAM_CODEC =
 			StreamCodec.of(HoleStatePayload::encode, HoleStatePayload::decode);
@@ -66,28 +67,34 @@ public record HoleStatePayload(
 		return new HoleStatePayload(Phase.PRACTICE,
 				hole.number(), hole.par(), hole.strokeLimit(),
 				0, 0, 0, 0, hole.cup().x(), hole.cup().z(), -1,
-				0, 0, 0, false, false, null, null);
+				-1, 0, 0, 0, false, false, null, null);
 	}
 
 	/** PRACTICE snapshot used before an operator selects an active course. */
 	public static HoleStatePayload noCourse() {
 		return new HoleStatePayload(Phase.PRACTICE, 0, 0, 0, 0, 0, 0, 0,
-			0.0, 0.0, -1, 0, 0, 0, false, false, null, null);
+			0.0, 0.0, -1, -1, 0, 0, 0, false, false, null, null);
 	}
 
 	/** ACTIVE snapshot: hole is in progress. */
 	public static HoleStatePayload active(PlayerHoleState state) {
-		return active(state, state.hole().tee());
+		return active(state, state.hole().tee(), 0);
 	}
 
 	/** ACTIVE snapshot with distance measured from the authoritative ball position. */
 	public static HoleStatePayload active(PlayerHoleState state, Vec3 ballPosition) {
+		return active(state, ballPosition, 0);
+	}
+
+	/** ACTIVE snapshot with authoritative current shot travel distance. */
+	public static HoleStatePayload active(PlayerHoleState state, Vec3 ballPosition,
+			int shotDistanceBlocks) {
 		return new HoleStatePayload(Phase.ACTIVE,
 				state.hole().number(), state.hole().par(), state.hole().strokeLimit(),
 				state.strokes(), state.acceptedShots(), state.penaltyStrokes(),
 				0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				distanceToCupBlocks(ballPosition, state.hole().cup()), 0, 0, 0, false,
+				distanceToCupBlocks(ballPosition, state.hole().cup()), shotDistanceBlocks, 0, 0, 0, false,
 				TapInRules.withinOneBlock(ballPosition, state.hole().cup()), null, null);
 	}
 
@@ -98,7 +105,7 @@ public record HoleStatePayload(
 				state.strokes(), state.acceptedShots(), state.penaltyStrokes(),
 				0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				-1, 0, 0, 0, false, false,
+				-1, -1, 0, 0, 0, false, false,
 				null, null);
 	}
 
@@ -109,7 +116,7 @@ public record HoleStatePayload(
 				state.strokes(), state.acceptedShots(), state.penaltyStrokes(),
 				state.strokes() > 0 ? state.scoreToPar() : 0,
 				state.hole().cup().x(), state.hole().cup().z(),
-				-1, 0, 0, 0, false, false,
+				-1, -1, 0, 0, 0, false, false,
 				state.completionReason(),
 				state.strokes() > 0 ? state.scoreTerm() : null);
 	}
@@ -117,22 +124,29 @@ public record HoleStatePayload(
 	/** Adds authoritative cumulative course totals to an existing phase snapshot. */
 	public HoleStatePayload withCourseTotals(int totalStrokes, int parPlayed, int totalPar) {
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, acceptedShots, penaltyCount,
-			scoreToPar, cupX, cupZ, distanceToCupBlocks, totalStrokes, parPlayed, totalPar,
+			scoreToPar, cupX, cupZ, distanceToCupBlocks, shotDistanceBlocks, totalStrokes, parPlayed, totalPar,
 			roundAdvanceAvailable, tapInAvailable, completionReason, scoreTerm);
 	}
 
 	/** Marks this authoritative snapshot as eligible for player-initiated round advancement. */
 	public HoleStatePayload withRoundAdvanceAvailable(boolean available) {
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, acceptedShots, penaltyCount,
-			scoreToPar, cupX, cupZ, distanceToCupBlocks, courseStrokes, courseParPlayed,
+			scoreToPar, cupX, cupZ, distanceToCupBlocks, shotDistanceBlocks, courseStrokes, courseParPlayed,
 			courseTotalPar, available, tapInAvailable, completionReason, scoreTerm);
 	}
 
 	/** Replaces the display-safe eligibility projection without changing scoring state. */
 	public HoleStatePayload withTapInAvailable(boolean available) {
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, acceptedShots, penaltyCount,
-			scoreToPar, cupX, cupZ, distanceToCupBlocks, courseStrokes, courseParPlayed,
+			scoreToPar, cupX, cupZ, distanceToCupBlocks, shotDistanceBlocks, courseStrokes, courseParPlayed,
 			courseTotalPar, roundAdvanceAvailable, available, completionReason, scoreTerm);
+	}
+
+	/** Replaces the display-only current-shot travel distance. */
+	public HoleStatePayload withShotDistanceBlocks(int distanceBlocks) {
+		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes, acceptedShots, penaltyCount,
+			scoreToPar, cupX, cupZ, distanceToCupBlocks, distanceBlocks, courseStrokes, courseParPlayed,
+			courseTotalPar, roundAdvanceAvailable, tapInAvailable, completionReason, scoreTerm);
 	}
 
 	/** Marks a terminal Hole 3 snapshot as the retained final-round display. */
@@ -142,7 +156,8 @@ public record HoleStatePayload(
 		}
 		return new HoleStatePayload(Phase.ROUND_COMPLETE, holeNumber, par, strokeLimit,
 			strokes, acceptedShots, penaltyCount, scoreToPar, cupX, cupZ, distanceToCupBlocks,
-			courseStrokes, courseParPlayed, courseTotalPar, false, false, completionReason, scoreTerm);
+			shotDistanceBlocks, courseStrokes, courseParPlayed, courseTotalPar, false, false,
+			completionReason, scoreTerm);
 	}
 
 	// ── Codec ────────────────────────────────────────────────────────────────
@@ -159,6 +174,7 @@ public record HoleStatePayload(
 		buf.writeDouble(p.cupX());
 		buf.writeDouble(p.cupZ());
 		buf.writeInt(p.distanceToCupBlocks());
+		buf.writeInt(p.shotDistanceBlocks());
 		buf.writeInt(p.courseStrokes());
 		buf.writeInt(p.courseParPlayed());
 		buf.writeInt(p.courseTotalPar());
@@ -188,6 +204,7 @@ public record HoleStatePayload(
 		double cupX = buf.readDouble();
 		double cupZ = buf.readDouble();
 		int distanceToCupBlocks = buf.readInt();
+		int shotDistanceBlocks = buf.readInt();
 		int courseStrokes = buf.readInt();
 		int courseParPlayed = buf.readInt();
 		int courseTotalPar = buf.readInt();
@@ -200,7 +217,7 @@ public record HoleStatePayload(
 				? GolfScoreTerm.values()[buf.readByte()]
 				: null;
 		return new HoleStatePayload(phase, holeNumber, par, strokeLimit, strokes,
-				acceptedShots, penaltyCount, scoreToPar, cupX, cupZ, distanceToCupBlocks,
+				acceptedShots, penaltyCount, scoreToPar, cupX, cupZ, distanceToCupBlocks, shotDistanceBlocks,
 				courseStrokes, courseParPlayed, courseTotalPar, roundAdvanceAvailable, tapInAvailable,
 				completionReason, scoreTerm);
 	}

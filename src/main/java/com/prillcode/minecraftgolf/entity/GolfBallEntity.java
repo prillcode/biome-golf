@@ -19,6 +19,7 @@ import com.prillcode.minecraftgolf.ball.BallPhysics;
 import com.prillcode.minecraftgolf.ball.BallState;
 import com.prillcode.minecraftgolf.ball.PhysicsConfig;
 import com.prillcode.minecraftgolf.ball.ShotPhysicsProfile;
+import com.prillcode.minecraftgolf.ball.ShotDistanceTracker;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
@@ -65,6 +66,7 @@ public class GolfBallEntity extends Entity {
 	private static final String NBT_OWNER = "golf_owner"; // owner player UUID, or "" when unowned
 	private static final String NBT_LANDING_RETENTION = "golf_landing_retention";
 	private static final String NBT_ROLLING_MULTIPLIER = "golf_rolling_multiplier";
+	private static final String NBT_SHOT_DISTANCE = "golf_shot_distance";
 
 	/**
 	 * Owner player UUID or {@code null} while the ball is unclaimed.
@@ -79,6 +81,7 @@ public class GolfBallEntity extends Entity {
 	/** Authoritative state; null until the first server tick. */
 	private BallState state;
 	private ShotPhysicsProfile shotProfile = ShotPhysicsProfile.STANDARD;
+	private final ShotDistanceTracker shotDistance = new ShotDistanceTracker();
 
 	/** Whether the state has been anchored to the entity's current position. */
 	private boolean initialized;
@@ -136,6 +139,7 @@ public class GolfBallEntity extends Entity {
 		BallState next = BallPhysics.step(state, PHYSICS_CONFIG, collisionWorld, shotProfile);
 		if (!next.equals(state)) {
 			state = next;
+			shotDistance.advance(previousPosition, next.position());
 			applyPosition(state.position());
 		}
 		ActiveHoleService.instance().onBallMoved(this, previousPosition, next.position());
@@ -165,6 +169,7 @@ public class GolfBallEntity extends Entity {
 			return;
 		}
 		this.shotProfile = java.util.Objects.requireNonNull(profile, "profile");
+		shotDistance.reset();
 		if (state == null) {
 			state = BallState.atRest(currentCenter());
 		}
@@ -181,6 +186,7 @@ public class GolfBallEntity extends Entity {
 			return;
 		}
 		state = BallState.atRest(position);
+		shotDistance.reset();
 		initialized = true;
 		entityData.set(DATA_RESTING, true);
 		applyPosition(position);
@@ -190,6 +196,11 @@ public class GolfBallEntity extends Entity {
 	/** Current authoritative state, or null before the first server tick. */
 	public BallState ballState() {
 		return state;
+	}
+
+	/** Horizontal distance traveled by the current/most recent shot, in blocks. */
+	public int shotDistanceBlocks() {
+		return shotDistance.roundedBlocks();
 	}
 
 	public boolean isResting() {
@@ -297,6 +308,7 @@ public class GolfBallEntity extends Entity {
 				input.getDoubleOr(NBT_VZ, 0.0));
 		savedGrounded = input.getBooleanOr(NBT_GROUNDED, false);
 		savedResting = input.getBooleanOr(NBT_RESTING, false);
+		shotDistance.setBlocks(input.getDoubleOr(NBT_SHOT_DISTANCE, 0.0));
 		shotProfile = new ShotPhysicsProfile(
 			input.getDoubleOr(NBT_LANDING_RETENTION, 1.0),
 			input.getDoubleOr(NBT_ROLLING_MULTIPLIER, 1.0));
@@ -320,6 +332,7 @@ public class GolfBallEntity extends Entity {
 		output.putBoolean(NBT_RESTING, state.resting());
 		output.putDouble(NBT_LANDING_RETENTION, shotProfile.landingHorizontalRetention());
 		output.putDouble(NBT_ROLLING_MULTIPLIER, shotProfile.rollingFrictionMultiplier());
+		output.putDouble(NBT_SHOT_DISTANCE, shotDistance.blocks());
 		output.putString(NBT_OWNER, ownerUuid == null ? "" : ownerUuid.toString());
 	}
 }

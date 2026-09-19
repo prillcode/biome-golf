@@ -1040,7 +1040,11 @@ public final class ActiveHoleService {
 			return;
 		}
 		PlayerHoleSession session = lifecycle.session(owner).orElse(null);
-		if (session == null || session.state().isComplete() || !session.ballUuid().equals(ball.getUUID())) {
+		if (session == null) {
+			sendPracticeShotProgress(ball);
+			return;
+		}
+		if (session.state().isComplete() || !session.ballUuid().equals(ball.getUUID())) {
 			return;
 		}
 		// S5: a suspended or withdrawn golfer's hole state is frozen; their ball may
@@ -1063,15 +1067,18 @@ public final class ActiveHoleService {
 			if (!CupDetector.contains(to, cup)) {
 				overspeedCupEntries.remove(ball.getUUID());
 			}
+			sendShotProgress(ball, session, to);
 			return;
 		}
 		if (speed > CupDetector.MAX_ENTRY_SPEED && CupDetector.intersects(from, to, cup)) {
 			overspeedCupEntries.add(ball.getUUID());
 			MinecraftGolf.LOGGER.info("Golf ball {} crossed cup {} too fast at {} blocks/tick",
 				ball.getUUID(), session.state().hole().id(), speed);
+			sendShotProgress(ball, session, to);
 			return;
 		}
 		if (!CupDetector.entered(from, to, cup, speed)) {
+			sendShotProgress(ball, session, to);
 			return;
 		}
 
@@ -1101,8 +1108,11 @@ public final class ActiveHoleService {
 			return;
 		}
 		PlayerHoleSession session = lifecycle.session(owner).orElse(null);
-		if (session == null || session.state().isComplete()
-				|| !session.ballUuid().equals(ball.getUUID())) {
+		if (session == null) {
+			sendPracticeShotProgress(ball);
+			return;
+		}
+		if (session.state().isComplete() || !session.ballUuid().equals(ball.getUUID())) {
 			return;
 		}
 		if (!isActiveParticipant(owner)) {
@@ -1112,7 +1122,8 @@ public final class ActiveHoleService {
 		if (player == null) {
 			return;
 		}
-		sendActiveSnapshot(player, session.state(), ball.ballState().position());
+		sendActiveSnapshot(player, session.state(), ball.ballState().position(),
+			ball.shotDistanceBlocks(), false);
 		StartResult travel = travelToNextShot(player, ball);
 		player.sendSystemMessage(Component.literal(travel.message()));
 	}
@@ -1535,7 +1546,11 @@ public final class ActiveHoleService {
 			Vec3 ballPosition = entity instanceof GolfBallEntity ball && ball.ballState() != null
 				? ball.ballState().position()
 				: new Vec3(entity.getX(), entity.getY(), entity.getZ());
-			sendActiveSnapshot(player, state, ballPosition);
+			if (entity instanceof GolfBallEntity ball) {
+				sendActiveSnapshot(player, state, ballPosition, ball.shotDistanceBlocks(), true);
+			} else {
+				sendActiveSnapshot(player, state, ballPosition);
+			}
 		}
 	}
 
@@ -1713,6 +1728,11 @@ public final class ActiveHoleService {
 	}
 
 	private void sendActiveSnapshot(ServerPlayer player, PlayerHoleState state, Vec3 ballPosition) {
+		sendActiveSnapshot(player, state, ballPosition, 0, true);
+	}
+
+	private void sendActiveSnapshot(ServerPlayer player, PlayerHoleState state, Vec3 ballPosition,
+			int shotDistanceBlocks, boolean notifyTapIn) {
 		boolean eligible = assignedBall(player, lifecycle.session(player.getUUID())
 			.map(PlayerHoleSession::ballUuid).orElse(null))
 			.filter(GolfBallEntity.class::isInstance)
@@ -1721,13 +1741,29 @@ public final class ActiveHoleService {
 			.map(ball -> TapInRules.withinOneBlock(ballPosition, state.hole().cup()))
 			.orElse(false);
 		HoleStatePayload payload = withCourseTotals(player.getUUID(),
-			HoleStatePayload.active(state, ballPosition).withTapInAvailable(eligible), state);
+			HoleStatePayload.active(state, ballPosition, shotDistanceBlocks)
+				.withTapInAvailable(eligible), state);
 		HoleStateNetworking.send(player, payload);
-		if (payload.tapInAvailable()) {
+		if (notifyTapIn && payload.tapInAvailable()) {
 			Component action = Component.literal("[Tap in (+1 stroke)]")
 				.withStyle(style -> style.withColor(ChatFormatting.GREEN).withUnderlined(true)
 					.withClickEvent(new ClickEvent.RunCommand("/golf tapin")));
 			player.sendSystemMessage(Component.literal("[golf] near the cup — ").append(action));
+		}
+	}
+
+	private void sendShotProgress(GolfBallEntity ball, PlayerHoleSession session, Vec3 position) {
+		ServerPlayer player = ball.level().getServer().getPlayerList().getPlayer(ball.owner());
+		if (player != null) {
+			sendActiveSnapshot(player, session.state(), position, ball.shotDistanceBlocks(), false);
+		}
+	}
+
+	private void sendPracticeShotProgress(GolfBallEntity ball) {
+		ServerPlayer player = ball.level().getServer().getPlayerList().getPlayer(ball.owner());
+		if (player != null) {
+			HoleStateNetworking.send(player,
+				HoleStatePayload.noCourse().withShotDistanceBlocks(ball.shotDistanceBlocks()));
 		}
 	}
 

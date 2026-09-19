@@ -9,9 +9,11 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
+import com.prillcode.minecraftgolf.client.DistanceDisplayState;
 import com.prillcode.minecraftgolf.client.hole.GolfMenuScreen;
 import com.prillcode.minecraftgolf.client.hole.LobbyHudState;
 import com.prillcode.minecraftgolf.client.hole.HoleHudState;
@@ -36,6 +38,8 @@ public final class PracticeKeybindings {
 			"key.minecraft_golf.leave_round", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_L, CATEGORY));
 	private final KeyMapping shotCycle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.minecraft_golf.shot_cycle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, CATEGORY));
+	private final KeyMapping distanceUnits = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+			"key.minecraft_golf.distance_units", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, CATEGORY));
 	private final SwingController swing;
 
 	public PracticeKeybindings(SwingController swing) {
@@ -54,6 +58,12 @@ public final class PracticeKeybindings {
 			}
 		}
 		while (shotCycle.consumeClick()) swing.cycleShotType(client);
+		while (distanceUnits.consumeClick()) {
+			if (client.player != null) {
+				client.player.sendOverlayMessage(
+						Component.literal("Distance units: " + DistanceDisplayState.toggle().label()));
+			}
+		}
 		while (golfMenu.consumeClick()) {
 			if (client.gui.screen() == null) client.setScreenAndShow(new GolfMenuScreen());
 		}

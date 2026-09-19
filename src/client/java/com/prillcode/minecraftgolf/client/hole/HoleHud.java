@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import com.prillcode.minecraftgolf.net.HoleStatePayload;
 import com.prillcode.minecraftgolf.net.LobbyStatePayload;
 import com.prillcode.minecraftgolf.net.HoleStatePayload.Phase;
+import com.prillcode.minecraftgolf.client.DistanceDisplayState;
 import com.prillcode.minecraftgolf.golf.CupDirection;
 
 /** Client-only HUD panel showing authoritative hole progress from server snapshots (S03). */
@@ -64,6 +65,11 @@ public final class HoleHud {
 			graphics.text(client.font, "Chat: [Play a Round]", x + PAD_X, textY, GOLD, true);
 			textY += LINE_HEIGHT;
 		}
+		if (state.phase() == Phase.PRACTICE && state.shotDistanceBlocks() >= 0) {
+			graphics.text(client.font, "Shot: " + DistanceDisplayState.format(state.shotDistanceBlocks()),
+				x + PAD_X, textY, MUTED, false);
+			textY += LINE_HEIGHT;
+		}
 
 		String strokes = "Strokes: " + state.strokes() + " / " + state.strokeLimit();
 		graphics.text(client.font, strokes, x + PAD_X, textY, MUTED, false);
@@ -82,9 +88,13 @@ public final class HoleHud {
 		}
 
 		if (state.phase() == Phase.ACTIVE) {
+			String shotDistance = "Shot: " + DistanceDisplayState.format(state.shotDistanceBlocks());
+			graphics.text(client.font, shotDistance, x + PAD_X, textY, MUTED, false);
+			textY += LINE_HEIGHT;
 			String arrow = CupDirection.arrow(client.player.getX(), client.player.getZ(),
 				client.player.getYRot(), state.cupX(), state.cupZ());
-			String cupDirection = "Cup: " + arrow + "  " + state.distanceToCupBlocks() + " blocks";
+			String cupDirection = "Cup: " + arrow + "  "
+				+ DistanceDisplayState.format(state.distanceToCupBlocks());
 			graphics.text(client.font, cupDirection, x + PAD_X, textY, GOLD, true);
 			textY += LINE_HEIGHT;
 			if (state.tapInAvailable()) {
@@ -142,7 +152,9 @@ public final class HoleHud {
 
 	private static int countLines(HoleStatePayload state) {
 		int lines = state.holeNumber() == 0 ? 3 : 2; // practice action adds one line
+		if (state.phase() == Phase.PRACTICE && state.shotDistanceBlocks() >= 0) lines++;
 		if (state.courseTotalPar() > 0) lines++;
+		if (state.phase() == Phase.ACTIVE) lines++;
 		if (state.phase() == Phase.ACTIVE) lines++;
 		if (state.phase() == Phase.ACTIVE && state.tapInAvailable()) lines++;
 		if (state.phase() == Phase.ACTIVE || state.phase() == Phase.MISSING_BALL) lines++;

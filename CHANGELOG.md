@@ -9,6 +9,42 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.4.0] - 2026-09-18
+
+### Added
+
+- Golf distance displays now default to yards using a 1.75 yards-per-block display
+  conversion.
+- Configurable `Y` keybind toggles Swing and Hole HUD distances between yards and blocks.
+- Putter HUD distance is labeled as roll distance.
+- The Hole HUD now shows cumulative horizontal distance traveled by the current shot while
+  the ball is moving and after it comes to rest.
+
+### Changed
+
+- Gameplay, physics, course geometry, and authoritative network distances remain in blocks.
+
+## [0.3.3] - 2026-09-18
+
+### Fixed
+
+- Reduced Stinger rolling retention so driver Stingers stop sooner after landing
+  without changing their launch trajectory.
+
+## [0.3.2] - 2026-09-18
+
+### Added
+
+- Server-authoritative Chip, Stinger, and Flop shot types with contextual `C` selection.
+- Near-cup Tap-In action through `B`, `/golf tapin`, and the server prompt; Tap-In counts
+  exactly one stroke.
+
+### Changed
+
+- Stinger shots retain their lower trajectory while using standard rolling friction for
+  less post-landing rollout.
+- Shot and hole-state payloads use versioned identifiers for the new contracts.
+
 ## [0.3.1] - 2026-09-17
 
 ### Added
@@ -169,7 +205,10 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/prillcode/minecraft-golf/compare/v0.3.3...v0.4.0
+[0.3.3]: https://github.com/prillcode/minecraft-golf/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/prillcode/minecraft-golf/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/prillcode/minecraft-golf/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/prillcode/minecraft-golf/compare/v0.2.9...v0.3.0
 [0.2.4]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.4
