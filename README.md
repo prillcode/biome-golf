@@ -52,7 +52,8 @@ Small groups (1–4 players, families and friends) build golf courses into Minec
 
 The current public name "Minecraft Golf" is temporary; the mod id (`minecraft_golf`) and package (`com.prillcode.minecraftgolf`) are chosen to be easy to rename later.
 
-Release history is maintained in [`CHANGELOG.md`](CHANGELOG.md).
+Release history is maintained in [`CHANGELOG.md`](CHANGELOG.md); releases are published
+from `v*` tags (see [`docs/RELEASING.md`](docs/RELEASING.md)).
 
 ## Requirements
 
