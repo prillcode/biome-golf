@@ -9,6 +9,18 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.5.0] - 2026-09-19
+
+### Added
+
+- Operator-authored practice range: `/golf practice tee set` and `/golf practice tee`
+  save and return to a persisted practice tee, and
+  `/golf practice target set|clear|list <1-8>` place, remove, and list up to eight
+  cup-and-flag targets.
+- Practice-range configuration persists per world at
+  `data/minecraft_golf_practice_range.json`; target numbers are bounded to 1–8 and
+  cross-dimension teleport/marker operations are rejected.
+
 ## [0.4.0] - 2026-09-18
 
 ### Added
@@ -205,7 +217,8 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/prillcode/minecraft-golf/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/prillcode/minecraft-golf/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/prillcode/minecraft-golf/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/prillcode/minecraft-golf/compare/v0.3.1...v0.3.2

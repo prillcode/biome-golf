@@ -2,8 +2,8 @@
 
 A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary Minecraft worlds — arcade-realistic, skill-based, and played through real terrain.
 
-> **M8.8 — Distance Display Units is complete.** M0–M8.8 are complete, and M9 remains
-> deferred. See `docs/M8.8-CLOSEOUT.md`.
+> **M8.9 — Practice Range is complete.** M0–M8.9 are complete, and M9 remains
+> deferred. See `docs/M8.9-CLOSEOUT.md`.
 
 Ready Golf play flow: use `/golf round list` to see every open lobby and finalized
 course. Create a shared round with `/golf round create <courseId>`, join a specific
@@ -92,6 +92,10 @@ Connecting from the LAN: point a Java Edition client with Fabric Loader + the mo
 
 Players can drop a practice ball with `/golf practice ball` and remove their own
 unassigned practice balls with `/golf practice clear`.
+Operators can define a persisted practice range: `/golf practice tee set` saves the
+standing position as the practice tee and `/golf practice tee` returns to it, while
+`/golf practice target set <1-8>`, `/golf practice target clear <1-8>`, and
+`/golf practice target list` place, remove, and list cup-and-flag targets.
 The administrative `/golf clear` command remains restricted and clears all loaded
 golf balls.
 

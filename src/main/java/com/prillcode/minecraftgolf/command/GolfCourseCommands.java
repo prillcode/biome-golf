@@ -547,7 +547,7 @@ public final class GolfCourseCommands {
 		return true;
 	}
 
-	private static void placeFlag(ServerLevel level, BlockPos cupBlockPos) {
+	static void placeFlag(ServerLevel level, BlockPos cupBlockPos) {
 		BlockPos middlePos = cupBlockPos.above();
 		BlockPos topPos = middlePos.above();
 		if (level.getBlockState(middlePos).canBeReplaced()
@@ -560,7 +560,7 @@ public final class GolfCourseCommands {
 		}
 	}
 
-	private static void clearMarker(ServerLevel level, BlockPos cupBlockPos) {
+	static void clearMarker(ServerLevel level, BlockPos cupBlockPos) {
 		for (BlockPos markerPos : new BlockPos[] {
 			cupBlockPos, cupBlockPos.above(), cupBlockPos.above(2)
 		}) {

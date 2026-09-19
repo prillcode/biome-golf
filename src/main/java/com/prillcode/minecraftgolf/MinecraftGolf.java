@@ -23,6 +23,7 @@ import com.prillcode.minecraftgolf.net.GolfMenuNetworking;
 import com.prillcode.minecraftgolf.net.ShotNetworking;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.AuthoredCourseService;
+import com.prillcode.minecraftgolf.server.PracticeRangeService;
 import com.prillcode.minecraftgolf.server.CourseBlockBreakGuard;
 
 public class MinecraftGolf implements ModInitializer {
@@ -63,6 +64,7 @@ public class MinecraftGolf implements ModInitializer {
 		// M8 S2: authored course store persistence (world JSON, fail-closed) and
 		// operator authoring/selection commands. No course is selected at boot.
 		AuthoredCourseService.register();
+		PracticeRangeService.register();
 		ActiveHoleService.register();
 		GolfCourseCommands.register();
 

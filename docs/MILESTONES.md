@@ -145,6 +145,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.6 | Concurrent Rounds, Join Clarity, and Scoring UX | Complete (see docs/M8.6-CLOSEOUT.md) |
 | M8.7 | Shot Variety and Trajectory Control | Complete (see docs/M8.7-CLOSEOUT.md) |
 | M8.8 | Distance Display Units | Complete (see docs/M8.8-CLOSEOUT.md) |
+| M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 
 ---
@@ -1341,6 +1342,25 @@ Use the final success criteria and full verification ladder in `docs/M8.8-PLAN.m
 
 ---
 
+# M8.9 — Practice Range
+
+## Status
+
+Complete. See `docs/M8.9-CLOSEOUT.md` for the implementation, verification, and the
+remaining manual command boundary. The practice range was built alongside M8.8 but is
+scoped and closed separately as a server-authoritative operator feature.
+
+## Goal
+
+Provide a persistent, server-authoritative practice range with a saved tee and up to
+eight cup-and-flag targets, without changing scoring, rounds, or hole state.
+
+## Exit Criteria
+
+Use the final success criteria and full verification ladder in `docs/M8.9-PLAN.md`.
+
+---
+
 # M9 — Additional Game Modes
 
 ## Status
@@ -1397,9 +1417,9 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M8.8 are complete (see the milestone closeout records through
-`docs/M8.8-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
+M0–M8.9 are complete (see the milestone closeout records through
+`docs/M8.9-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
 work forms part of the completed M8.6 concurrent-round hardening milestone. M8.7 added
-server-authoritative shot variety and tap-in; M8.8 added the yard distance display. M9 —
-Additional Game Modes remains deferred until an alternate mode is explicitly
-prioritized.
+server-authoritative shot variety and tap-in; M8.8 added the yard distance display; M8.9
+added the operator-authored practice range. M9 — Additional Game Modes remains deferred
+until an alternate mode is explicitly prioritized.

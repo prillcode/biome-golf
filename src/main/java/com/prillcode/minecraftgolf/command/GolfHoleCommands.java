@@ -15,12 +15,20 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
 
 import java.util.UUID;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.ActiveHoleService.StartResult;
+import com.prillcode.minecraftgolf.server.PracticeRangeService;
+import com.prillcode.minecraftgolf.server.PracticeRangeService.Location;
+import com.prillcode.minecraftgolf.block.GolfBlocks;
+import net.minecraft.world.level.block.Blocks;
+import com.prillcode.minecraftgolf.entity.GolfBallEntity;
+import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.round.RoundLobbyProjection;
 
 /** Player-facing lifecycle commands for the server-authoritative M5 course. */
@@ -69,7 +77,20 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("equip").executes(GolfHoleCommands::equipClubs)))
 			.then(Commands.literal("practice")
 				.then(Commands.literal("ball").executes(GolfHoleCommands::dropPracticeBall))
-				.then(Commands.literal("clear").executes(GolfHoleCommands::clearPracticeBalls)))
+				.then(Commands.literal("clear").executes(GolfHoleCommands::clearPracticeBalls))
+				.then(Commands.literal("tee")
+					.executes(GolfHoleCommands::goToPracticeTee)
+					.then(Commands.literal("set").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(GolfHoleCommands::setPracticeTee)))
+				.then(Commands.literal("target")
+					.then(Commands.literal("set").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.argument("target", IntegerArgumentType.integer(1, PracticeRangeService.MAX_TARGETS))
+							.executes(GolfHoleCommands::setPracticeTarget)))
+					.then(Commands.literal("clear").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.argument("target", IntegerArgumentType.integer(1, PracticeRangeService.MAX_TARGETS))
+							.executes(GolfHoleCommands::clearPracticeTarget)))
+					.then(Commands.literal("list").executes(GolfHoleCommands::listPracticeTargets)))
+				)
 			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp))
 			.then(Commands.literal("tapin").executes(GolfHoleCommands::tapIn))
 			.then(Commands.literal("nexthole").executes(GolfHoleCommands::nextHole)));
@@ -94,6 +115,7 @@ public final class GolfHoleCommands {
 		context.getSource().sendSuccess(() -> Component.literal("Getting started: /golf round list | /golf round join"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Rounds: /golf round create <courseId> | /golf round start | /golf round status | /golf round leave"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Playing: /golf hole status | /golf hole restart | /golf pickup | /golf nexthole"), false);
+		context.getSource().sendSuccess(() -> Component.literal("Practice: /golf practice ball | /golf practice tee | /golf practice target list"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Solo: /golf course play [courseId] [hole] | /golf hole start [hole]"), false);
 		return 1;
 	}
@@ -214,6 +236,96 @@ public final class GolfHoleCommands {
 			throws CommandSyntaxException {
 		return sendResult(context, ActiveHoleService.instance().clearPracticeBalls(
 			context.getSource().getPlayerOrException()));
+	}
+
+	private static int setPracticeTee(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		Vec3 position = standingPoint(player);
+		PracticeRangeService.instance().setTee(player.level().dimension().identifier().toString(), position);
+		context.getSource().sendSuccess(() -> Component.literal("[golf] practice tee set to " + position), true);
+		return 1;
+	}
+
+	private static int goToPracticeTee(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		Location tee = PracticeRangeService.instance().tee();
+		if (tee == null) return fail(context, "no practice tee is set; use /golf practice tee set");
+		if (!player.level().dimension().identifier().toString().equals(tee.dimension())) {
+			return fail(context, "practice tee is in dimension " + tee.dimension());
+		}
+		player.teleportTo(tee.position().x(), tee.position().y(), tee.position().z());
+		context.getSource().sendSuccess(() -> Component.literal("[golf] moved to practice tee"), false);
+		return 1;
+	}
+
+	private static int setPracticeTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		int number = IntegerArgumentType.getInteger(context, "target");
+		Vec3 position = standingPoint(player);
+		PracticeRangeService service = PracticeRangeService.instance();
+		Location previous = service.target(number);
+		BlockPos cup = BlockPos.containing(position.x(), position.y() - GolfBallEntity.BALL_RADIUS, position.z());
+		ServerLevel level = player.level();
+		boolean placed = (level.getBlockState(cup).canBeReplaced()
+			|| level.getBlockState(cup).getBlock() == GolfBlocks.GOLF_CUP)
+			&& level.setBlockAndUpdate(cup, GolfBlocks.GOLF_CUP.defaultBlockState());
+		if (placed) {
+			GolfCourseCommands.placeFlag(level, cup);
+			if (previous != null && previous.dimension().equals(level.dimension().identifier().toString())) {
+				BlockPos previousCup = BlockPos.containing(previous.position().x(),
+					previous.position().y() - GolfBallEntity.BALL_RADIUS, previous.position().z());
+				if (!previousCup.equals(cup)) GolfCourseCommands.clearMarker(level, previousCup);
+			}
+			service.setTarget(number, level.dimension().identifier().toString(), position);
+		}
+		context.getSource().sendSuccess(() -> Component.literal("[golf] practice target " + number + " set at "
+			+ position + (placed ? "; cup and flag placed" : "; cup block could not be placed here")), true);
+		return placed ? 1 : 0;
+	}
+
+	private static int clearPracticeTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		int number = IntegerArgumentType.getInteger(context, "target");
+		Location target = PracticeRangeService.instance().target(number);
+		if (target == null) return fail(context, "practice target " + number + " is not set");
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (!player.level().dimension().identifier().toString().equals(target.dimension())) {
+			return fail(context, "practice target is in dimension " + target.dimension());
+		}
+		BlockPos cup = BlockPos.containing(target.position().x(), target.position().y() - GolfBallEntity.BALL_RADIUS,
+			target.position().z());
+		for (BlockPos marker : new BlockPos[] {cup, cup.above(), cup.above(2)}) {
+			if (player.level().getBlockState(marker).getBlock() == GolfBlocks.GOLF_CUP
+				|| player.level().getBlockState(marker).getBlock() == GolfBlocks.GOLF_FLAG
+				|| player.level().getBlockState(marker).getBlock() == GolfBlocks.GOLF_FLAG_TOP) {
+				player.level().setBlockAndUpdate(marker, Blocks.AIR.defaultBlockState());
+			}
+		}
+		PracticeRangeService.instance().clearTarget(number);
+		context.getSource().sendSuccess(() -> Component.literal("[golf] practice target " + number + " cleared"), true);
+		return 1;
+	}
+
+	private static int listPracticeTargets(CommandContext<CommandSourceStack> context) {
+		PracticeRangeService service = PracticeRangeService.instance();
+		context.getSource().sendSuccess(() -> Component.literal("[golf] practice tee: "
+			+ (service.tee() == null ? "not set" : service.tee().position())), false);
+		for (int number = 1; number <= PracticeRangeService.MAX_TARGETS; number++) {
+			final int targetNumber = number;
+			Location target = service.target(number);
+			context.getSource().sendSuccess(() -> Component.literal("[golf] target " + targetNumber + ": "
+				+ (target == null ? "not set" : target.position())), false);
+		}
+		return 1;
+	}
+
+	private static Vec3 standingPoint(ServerPlayer player) {
+		BlockPos feet = player.blockPosition();
+		return new Vec3(feet.getX() + 0.5, feet.getY() + GolfBallEntity.BALL_RADIUS, feet.getZ() + 0.5);
+	}
+
+	private static int fail(CommandContext<CommandSourceStack> context, String message) {
+		context.getSource().sendFailure(Component.literal("[golf] " + message));
+		return 0;
 	}
 
 	private static int pickUp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
