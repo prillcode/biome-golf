@@ -1214,8 +1214,9 @@ public final class ActiveHoleService {
 			return new StartResult(false, "[golf] wait for the ball to stop before tapping in");
 		}
 		Vec3 position = ball.ballState().position();
-		if (!TapInRules.withinOneBlock(position, session.state().hole().cup())) {
-			return new StartResult(false, "[golf] tap-in is available only within one block of the cup");
+		if (!TapInRules.withinTapInRadius(position, session.state().hole().cup())) {
+			return new StartResult(false, "[golf] tap-in is available only within "
+				+ (int) TapInRules.TAP_IN_RADIUS_BLOCKS + " blocks of the cup");
 		}
 
 		PlayerHoleSession updatedSession = session.recordAcceptedShot(position);
@@ -1738,7 +1739,7 @@ public final class ActiveHoleService {
 			.filter(GolfBallEntity.class::isInstance)
 			.map(GolfBallEntity.class::cast)
 			.filter(GolfBallEntity::isResting)
-			.map(ball -> TapInRules.withinOneBlock(ballPosition, state.hole().cup()))
+			.map(ball -> TapInRules.withinTapInRadius(ballPosition, state.hole().cup()))
 			.orElse(false);
 		HoleStatePayload payload = withCourseTotals(player.getUUID(),
 			HoleStatePayload.active(state, ballPosition, shotDistanceBlocks)

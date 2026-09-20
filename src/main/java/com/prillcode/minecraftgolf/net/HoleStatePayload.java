@@ -95,7 +95,7 @@ public record HoleStatePayload(
 				0,
 				state.hole().cup().x(), state.hole().cup().z(),
 				distanceToCupBlocks(ballPosition, state.hole().cup()), shotDistanceBlocks, 0, 0, 0, false,
-				TapInRules.withinOneBlock(ballPosition, state.hole().cup()), null, null);
+				TapInRules.withinTapInRadius(ballPosition, state.hole().cup()), null, null);
 	}
 
 	/** MISSING_BALL snapshot: session exists but assigned ball entity is gone. */
