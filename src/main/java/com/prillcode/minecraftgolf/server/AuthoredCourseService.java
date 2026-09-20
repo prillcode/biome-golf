@@ -91,8 +91,9 @@ public final class AuthoredCourseService {
 	}
 
 	public void refreshProtection() {
-		CourseBlockBreakGuard.replaceAuthoredCourses(store == null ? java.util.List.of()
-			: store.finalizedCourses());
+		CourseBlockBreakGuard.replaceAuthoredCourses(
+			store == null ? java.util.List.of() : store.finalizedCourses(),
+			store == null ? java.util.List.of() : store.landscapes());
 	}
 
 	/** Loads the store from {@code path}: missing file or malformed content → empty store. */
