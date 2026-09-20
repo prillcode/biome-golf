@@ -146,6 +146,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.7 | Shot Variety and Trajectory Control | Complete (see docs/M8.7-CLOSEOUT.md) |
 | M8.8 | Distance Display Units | Complete (see docs/M8.8-CLOSEOUT.md) |
 | M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
+| M8.10 | Course Landscape Protection | Planned (see docs/M8.10-PLAN.md) |
 | M9 | Additional Game Modes | Deferred |
 
 ---
@@ -1361,6 +1362,25 @@ Use the final success criteria and full verification ladder in `docs/M8.9-PLAN.m
 
 ---
 
+# M8.10 — Course Landscape Protection
+
+## Status
+
+Planned. Do not begin implementation until this plan is explicitly started. M8.7–M8.9 are
+complete; M9 remains deferred.
+
+## Goal
+
+Add an operator-authored whole-course landscape perimeter that blocks block break, block
+place, and explosion destruction inside it, with a per-course lock that removes the
+operator exemption, effective for both drafts and finalized courses.
+
+## Exit Criteria
+
+Use the final success criteria and full verification ladder in `docs/M8.10-PLAN.md`.
+
+---
+
 # M9 — Additional Game Modes
 
 ## Status
@@ -1421,5 +1441,6 @@ M0–M8.9 are complete (see the milestone closeout records through
 `docs/M8.9-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
 work forms part of the completed M8.6 concurrent-round hardening milestone. M8.7 added
 server-authoritative shot variety and tap-in; M8.8 added the yard distance display; M8.9
-added the operator-authored practice range. M9 — Additional Game Modes remains deferred
-until an alternate mode is explicitly prioritized.
+added the operator-authored practice range. M8.10 — Course Landscape Protection is
+planned. M9 — Additional Game Modes remains deferred until an alternate mode is
+explicitly prioritized.
