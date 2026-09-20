@@ -26,6 +26,10 @@ import com.prillcode.minecraftgolf.hole.HoleDefinition;
  * invalid input and {@link IllegalStateException} for invalid workflow state,
  * with precise messages, mirroring {@link HoleDefinition} and
  * {@link CourseDefinition}.</p>
+ *
+ * <p>M8.10 S1 adds course-level {@link CourseLandscape} metadata (perimeter and
+ * lock) that is mutable for both drafts and finalized courses, is copied by
+ * {@link #cloneCourse}, and is dropped by {@link #removeCourse}.</p>
  */
 public final class AuthoredCourseStore {
 
@@ -34,6 +38,7 @@ public final class AuthoredCourseStore {
 
 	private final Map<String, CourseDraft> drafts = new LinkedHashMap<>();
 	private final Map<String, CourseDefinition> finalized = new LinkedHashMap<>();
+	private final Map<String, CourseLandscape> landscapes = new LinkedHashMap<>();
 	private String defaultCourseId;
 
 	/** Creates a new empty draft. Returns the normalized course id. */
@@ -105,6 +110,12 @@ public final class AuthoredCourseStore {
 				setHoleTransition(destinationId, hole.number(), hole.transition());
 			}
 		}
+		// M8.10 S1: landscape metadata is course-level and follows the clone.
+		CourseLandscape landscape = landscapes.get(sourceId);
+		if (landscape != null) {
+			landscapes.put(destinationId, new CourseLandscape(destinationId, landscape.dimension(),
+				landscape.bounds(), landscape.locked()));
+		}
 		return destinationId;
 	}
 
@@ -146,6 +157,38 @@ public final class AuthoredCourseStore {
 		if (drafts.remove(id) == null && finalized.remove(id) == null) {
 			throw new IllegalArgumentException("no course with id '" + id + "'");
 		}
+		landscapes.remove(id);
+	}
+
+	/**
+	 * M8.10 S1: sets (or replaces) the whole-course landscape metadata for an
+	 * existing draft or finalized course. The perimeter must live in the
+	 * course's own dimension so protection stays keyed by the course's world.
+	 */
+	public void setLandscape(CourseLandscape landscape) {
+		Objects.requireNonNull(landscape, "landscape");
+		String id = lookupId(landscape.courseId());
+		String dimension = courseDimension(id);
+		if (!dimension.equals(landscape.dimension())) {
+			throw new IllegalArgumentException("landscape dimension '" + landscape.dimension()
+				+ "' must match course '" + id + "' dimension '" + dimension + "'");
+		}
+		landscapes.put(id, landscape);
+	}
+
+	/** M8.10 S1: removes a course's landscape metadata; returns whether one existed. */
+	public boolean clearLandscape(String courseId) {
+		return landscapes.remove(lookupId(courseId)) != null;
+	}
+
+	/** M8.10 S1: the course's landscape metadata, if a perimeter has been authored. */
+	public Optional<CourseLandscape> landscape(String courseId) {
+		return Optional.ofNullable(landscapes.get(lookupId(courseId)));
+	}
+
+	/** M8.10 S1: every authored landscape, in course creation order. */
+	public List<CourseLandscape> landscapes() {
+		return List.copyOf(landscapes.values());
 	}
 
 	/**
@@ -267,6 +310,18 @@ public final class AuthoredCourseStore {
 			throw new IllegalArgumentException("no course with id '" + id + "'");
 		}
 		return id;
+	}
+
+	private String courseDimension(String id) {
+		CourseDraft draft = drafts.get(id);
+		if (draft != null) {
+			return draft.dimension;
+		}
+		CourseDefinition course = finalized.get(id);
+		if (course == null) {
+			throw new IllegalArgumentException("no course with id '" + id + "'");
+		}
+		return course.dimension();
 	}
 
 	private CourseDraft draft(String courseId) {

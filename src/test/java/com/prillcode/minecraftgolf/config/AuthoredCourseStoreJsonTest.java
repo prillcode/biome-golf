@@ -13,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.prillcode.minecraftgolf.course.AuthoredCourseStore;
 import com.prillcode.minecraftgolf.course.CourseDefinition;
+import com.prillcode.minecraftgolf.course.CourseLandscape;
 import com.prillcode.minecraftgolf.course.HoleTransition;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.hole.HoleBoundary;
@@ -171,6 +172,64 @@ class AuthoredCourseStoreJsonTest {
 			      "transition": {"playerPosition": [10.0, 64.0, 0.0], "yaw": 0.0, "pitch": 0.0}}]}]}
 			""");
 		assertThrows(IllegalArgumentException.class, () -> AuthoredCourseStoreJson.load(duplicate));
+	}
+
+	@Test
+	void roundTripsLandscapeMetadataForDraftsAndFinalizedCourses() throws IOException {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("drafty", "Drafty", DIMENSION);
+		completeHole(store, "drafty", 1, 4);
+		CourseLandscape draftLandscape = new CourseLandscape("drafty", DIMENSION,
+			new HoleBoundary(new Vec3(-10.0, -64.0, -20.0), new Vec3(30.0, 320.0, 40.0)), false);
+		store.setLandscape(draftLandscape);
+
+		store.createCourse("links", "Links", DIMENSION);
+		completeHole(store, "links", 1, 4);
+		store.finalize("links");
+		CourseLandscape finalizedLandscape = new CourseLandscape("links", DIMENSION,
+			new HoleBoundary(new Vec3(-100.0, -64.0, -100.0), new Vec3(400.0, 320.0, 100.0)), true);
+		store.setLandscape(finalizedLandscape);
+
+		Path path = directory.resolve("landscape.json");
+		AuthoredCourseStoreJson.save(store, path);
+
+		AuthoredCourseStore loaded = AuthoredCourseStoreJson.load(path);
+		assertEquals(draftLandscape, loaded.landscape("drafty").orElseThrow());
+		assertEquals(finalizedLandscape, loaded.landscape("links").orElseThrow());
+		assertEquals(2, loaded.landscapes().size());
+	}
+
+	@Test
+	void missingLandscapeFieldLoadsAsNoPerimeterUnlocked() throws IOException {
+		Path path = directory.resolve("legacy.json");
+		Files.writeString(path, """
+			{"drafts": [{"id": "drafty", "displayName": "Drafty", "dimension": "minecraft:overworld",
+			  "holes": []}], "finalized": []}
+			""");
+
+		AuthoredCourseStore loaded = AuthoredCourseStoreJson.load(path);
+
+		assertTrue(loaded.landscape("drafty").isEmpty());
+		assertTrue(loaded.landscapes().isEmpty());
+	}
+
+	@Test
+	void rejectsMalformedLandscapeMetadata() throws IOException {
+		Path missingLocked = directory.resolve("landscape-no-lock.json");
+		Files.writeString(missingLocked, """
+			{"drafts": [{"id": "links", "displayName": "Links", "dimension": "minecraft:overworld",
+			  "holes": [], "landscape": {"min": [-1.0, 0.0, -1.0], "max": [1.0, 320.0, 1.0]}}],
+			  "finalized": []}
+			""");
+		assertThrows(IllegalArgumentException.class, () -> AuthoredCourseStoreJson.load(missingLocked));
+
+		Path invertedBounds = directory.resolve("landscape-inverted.json");
+		Files.writeString(invertedBounds, """
+			{"drafts": [{"id": "links", "displayName": "Links", "dimension": "minecraft:overworld",
+			  "holes": [], "landscape": {"min": [10.0, 0.0, 10.0], "max": [-10.0, 320.0, -10.0],
+			    "locked": false}}], "finalized": []}
+			""");
+		assertThrows(IllegalArgumentException.class, () -> AuthoredCourseStoreJson.load(invertedBounds));
 	}
 
 	private static void completeHole(AuthoredCourseStore store, String courseId, int number, int par) {

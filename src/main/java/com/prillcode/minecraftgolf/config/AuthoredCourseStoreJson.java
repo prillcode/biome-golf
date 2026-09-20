@@ -19,6 +19,7 @@ import com.prillcode.minecraftgolf.course.AuthoredCourseStore;
 import com.prillcode.minecraftgolf.course.AuthoredCourseStore.DraftSnapshot;
 import com.prillcode.minecraftgolf.course.AuthoredCourseStore.HoleSnapshot;
 import com.prillcode.minecraftgolf.course.CourseDefinition;
+import com.prillcode.minecraftgolf.course.CourseLandscape;
 import com.prillcode.minecraftgolf.course.HoleTransition;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.hole.HoleBoundary;
@@ -42,11 +43,11 @@ public final class AuthoredCourseStoreJson {
 		JsonObject root = new JsonObject();
 		JsonArray draftArray = new JsonArray();
 		for (DraftSnapshot draft : store.draftSnapshots()) {
-			draftArray.add(draftToJson(draft));
+			draftArray.add(draftToJson(draft, store.landscape(draft.id()).orElse(null)));
 		}
 		JsonArray finalizedArray = new JsonArray();
 		for (CourseDefinition course : store.finalizedCourses()) {
-			finalizedArray.add(courseToJson(course));
+			finalizedArray.add(courseToJson(course, store.landscape(course.id()).orElse(null)));
 		}
 		root.add("drafts", draftArray);
 		root.add("finalized", finalizedArray);
@@ -90,11 +91,13 @@ public final class AuthoredCourseStoreJson {
 	}
 
 	private static void draftFromJson(AuthoredCourseStore store, JsonObject json) {
+		String dimension = requiredString(json, "dimension");
 		String id = store.createCourse(requiredString(json, "id"), requiredString(json, "displayName"),
-			requiredString(json, "dimension"));
+			dimension);
 		for (JsonElement element : optionalArray(json, "holes")) {
 			holeDraftFromJson(store, id, requiredObject(element, "hole entry"));
 		}
+		landscapeFromJson(store, json, id, dimension);
 	}
 
 	private static void holeDraftFromJson(AuthoredCourseStore store, String courseId, JsonObject json) {
@@ -126,8 +129,9 @@ public final class AuthoredCourseStoreJson {
 	private static void finalizedFromJson(AuthoredCourseStore store, JsonObject json) {
 		// Rebuild every hole through the store so tee/cup/boundary invariants
 		// and numbering are re-validated on load.
+		String dimension = requiredString(json, "dimension");
 		String id = store.createCourse(requiredString(json, "id"), requiredString(json, "displayName"),
-			requiredString(json, "dimension"));
+			dimension);
 		for (JsonElement element : requiredArray(json, "holes")) {
 			JsonObject hole = requiredObject(element, "hole entry");
 			int number = requiredInt(hole, "number");
@@ -145,9 +149,24 @@ public final class AuthoredCourseStoreJson {
 					requiredDouble(transition, "yaw"), requiredDouble(transition, "pitch")));
 		}
 		store.finalize(id);
+		landscapeFromJson(store, json, id, dimension);
 	}
 
-	private static JsonObject draftToJson(DraftSnapshot draft) {
+	/**
+	 * M8.10 S1: reads optional per-course landscape metadata. An absent field
+	 * means "no perimeter, unlocked", keeping older files loadable.
+	 */
+	private static void landscapeFromJson(AuthoredCourseStore store, JsonObject json, String courseId,
+			String dimension) {
+		JsonObject landscape = optionalObject(json, "landscape");
+		if (landscape == null) {
+			return;
+		}
+		HoleBoundary bounds = new HoleBoundary(requiredVec3(landscape, "min"), requiredVec3(landscape, "max"));
+		store.setLandscape(new CourseLandscape(courseId, dimension, bounds, requiredBoolean(landscape, "locked")));
+	}
+
+	private static JsonObject draftToJson(DraftSnapshot draft, CourseLandscape landscape) {
 		JsonObject json = new JsonObject();
 		json.addProperty("id", draft.id());
 		json.addProperty("displayName", draft.displayName());
@@ -166,10 +185,11 @@ public final class AuthoredCourseStoreJson {
 			holes.add(holeJson);
 		}
 		json.add("holes", holes);
+		json.add("landscape", landscapeToJson(landscape));
 		return json;
 	}
 
-	private static JsonObject courseToJson(CourseDefinition course) {
+	private static JsonObject courseToJson(CourseDefinition course, CourseLandscape landscape) {
 		JsonObject json = new JsonObject();
 		json.addProperty("id", course.id());
 		json.addProperty("displayName", course.displayName());
@@ -186,6 +206,19 @@ public final class AuthoredCourseStoreJson {
 			holes.add(holeJson);
 		}
 		json.add("holes", holes);
+		json.add("landscape", landscapeToJson(landscape));
+		return json;
+	}
+
+	/** M8.10 S1: serializes landscape metadata, or JSON null when none is authored. */
+	private static JsonElement landscapeToJson(CourseLandscape landscape) {
+		if (landscape == null) {
+			return JsonNull.INSTANCE;
+		}
+		JsonObject json = new JsonObject();
+		json.add("min", vec3ToJson(landscape.bounds().min()));
+		json.add("max", vec3ToJson(landscape.bounds().max()));
+		json.addProperty("locked", landscape.locked());
 		return json;
 	}
 
@@ -269,6 +302,14 @@ public final class AuthoredCourseStoreJson {
 		} catch (ArithmeticException | NumberFormatException exception) {
 			throw new IllegalArgumentException(name + " must be an integer", exception);
 		}
+	}
+
+	private static boolean requiredBoolean(JsonObject json, String name) {
+		JsonElement value = required(json, name);
+		if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
+			throw new IllegalArgumentException(name + " must be a boolean");
+		}
+		return value.getAsBoolean();
 	}
 
 	private static double requiredDouble(JsonObject json, String name) {

@@ -258,6 +258,72 @@ class AuthoredCourseStoreTest {
 		assertTrue(store.defaultCourseId().isEmpty());
 	}
 
+	@Test
+	void landscapeMetadataIsMutableForDraftsAndSurvivesFinalize() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("links", "Links", DIMENSION);
+		completeHole(store, "links", 1, 4);
+		assertTrue(store.landscape("links").isEmpty());
+
+		store.setLandscape(landscape("links", true));
+		CourseLandscape draftLandscape = store.landscape("links").orElseThrow();
+		assertTrue(draftLandscape.locked());
+		assertEquals(boundary(), draftLandscape.bounds());
+		assertEquals(1, store.landscapes().size());
+
+		store.finalize("links");
+		CourseLandscape finalizedLandscape = store.landscape("links").orElseThrow();
+		assertTrue(finalizedLandscape.locked());		assertEquals(boundary(), finalizedLandscape.bounds());
+
+		// Unlock without re-finalizing, then clear.
+		store.setLandscape(finalizedLandscape.withLocked(false));
+		assertFalse(store.landscape("links").orElseThrow().locked());
+		assertTrue(store.clearLandscape("links"));
+		assertFalse(store.clearLandscape("links"));
+		assertTrue(store.landscapes().isEmpty());
+	}
+
+	@Test
+	void landscapeRequiresAnExistingCourseInTheSameDimension() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("links", "Links", DIMENSION);
+
+		assertThrows(IllegalArgumentException.class, () -> store.setLandscape(landscape("missing", false)));
+		assertThrows(IllegalArgumentException.class,
+			() -> store.setLandscape(new CourseLandscape("links", "minecraft:the_nether",
+				boundary(), false)));
+		assertThrows(IllegalArgumentException.class, () -> store.landscape("missing"));
+		assertThrows(IllegalArgumentException.class, () -> store.clearLandscape("missing"));
+	}
+
+	@Test
+	void cloneCopiesLandscapeAndDeleteRemovesIt() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("links", "Links", DIMENSION);
+		completeHole(store, "links", 1, 4);
+		store.setLandscape(landscape("links", true));
+
+		String cloneId = store.cloneCourse("links", "variant", null);
+		CourseLandscape cloneLandscape = store.landscape(cloneId).orElseThrow();
+		assertEquals(cloneId, cloneLandscape.courseId());
+		assertEquals(boundary(), cloneLandscape.bounds());
+		assertTrue(cloneLandscape.locked());
+
+		// Clearing the clone leaves the source untouched, and deleting drops it.
+		store.clearLandscape(cloneId);
+		assertTrue(store.landscape("links").isPresent());
+		store.setLandscape(new CourseLandscape(cloneId, DIMENSION, boundary(), false));
+		store.removeCourse(cloneId);
+		assertEquals(1, store.landscapes().size());
+		assertEquals("links", store.landscapes().getFirst().courseId());
+		assertThrows(IllegalArgumentException.class, () -> store.landscape(cloneId));
+		assertTrue(store.landscape("links").isPresent());
+	}
+
+	private static CourseLandscape landscape(String courseId, boolean locked) {
+		return new CourseLandscape(courseId, DIMENSION, boundary(), locked);
+	}
+
 	private static void completeHole(AuthoredCourseStore store, String courseId, int number, int par) {
 		store.setHoleTee(courseId, number, tee(number - 1));
 		store.setHoleCup(courseId, number, cup(number - 1));
