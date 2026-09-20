@@ -33,27 +33,25 @@ manual gameplay   (where applicable, per milestone)
 ### Local Client Deployment
 
 When testing with the authenticated launcher client rather than `./gradlew runClient`,
-building is not enough. The user plays through the custom `bhmc-launcher`; the golf
-instance is named `BirdieBiome - Golf` (Fabric, Minecraft 26.2). This is **not** the
-vanilla `~/.minecraft/mods/` directory.
+building is not enough. Use `scripts/deploy-client.sh`, which builds and copies the JAR
+into a client's `mods/` folder as `minecraft-golf.jar`. It defaults to the vanilla
+`~/.minecraft` location and accepts a game directory (or a `mods/` directory) override:
 
-Resolve the instance's game directory from the launcher metadata (it is a UUID-keyed
-folder under `~/.local/share/bhmc-launcher/instances/`):
+```bash
+./scripts/deploy-client.sh              # -> ~/.minecraft/mods/minecraft-golf.jar
+./scripts/deploy-client.sh <GAME_DIR>   # custom launcher instance
+```
+
+The user plays through the custom `bhmc-launcher`; its golf instance is named
+`BirdieBiome - Golf` (Fabric, Minecraft 26.2). Resolve its game directory from the
+launcher metadata and deploy there:
 
 ```bash
 GAME_DIR=$(python3 -c "import json,os;i=json.load(open(os.path.expanduser('~/.local/share/bhmc-launcher/instances.json')))['instances'];print(next(v['gameDirectory'] for v in i.values() if v['name']=='BirdieBiome - Golf'))")
+./scripts/deploy-client.sh "$GAME_DIR"
 ```
 
-Then copy the built jar into that instance's `mods/` folder using the launcher's fixed
-local filename (`minecraft-golf.jar`, unversioned), and verify:
-
-```bash
-./gradlew build
-cp build/libs/minecraft-golf-<version>.jar "$GAME_DIR/mods/minecraft-golf.jar"
-sha256sum build/libs/minecraft-golf-<version>.jar "$GAME_DIR/mods/minecraft-golf.jar"
-```
-
-Fully exit and relaunch the game after copying; Fabric loads mod JARs only at startup.
+Fully exit and relaunch the game after deploying; Fabric loads mod JARs only at startup.
 The launcher's `mods.json` registry (electron-store) records a sha1 for display only; if
 you update it, close the launcher first or the running process will overwrite your edit.
 The Loom development client uses the compiled classes directly and does not test the

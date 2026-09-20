@@ -72,6 +72,10 @@ from `v*` tags (see [`docs/RELEASING.md`](docs/RELEASING.md)).
 
 First Gradle run downloads dependencies. `runServer` needs `run/eula.txt` with `eula=true` (created once, gitignored).
 
+To deploy the built mod to a launcher client, run `./scripts/deploy-client.sh [game-dir]`.
+It defaults to `~/.minecraft`; pass a game directory (or `mods/` directory) to target a
+custom launcher instance.
+
 ## Docker dev server
 
 A Fabric dedicated server for realistic testing and LAN play. See `dev-server/README.md`.
