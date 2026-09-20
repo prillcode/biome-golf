@@ -41,6 +41,7 @@ public final class AuthoredCourseService {
 	private Path savePath;
 	private final Map<UUID, String> currentDrafts = new HashMap<>();
 	private final Map<UUID, PendingCorner> pendingCorners = new HashMap<>();
+	private final Map<UUID, PendingLandscapeCorner> pendingLandscapeCorners = new HashMap<>();
 
 	private AuthoredCourseService() {
 	}
@@ -68,6 +69,7 @@ public final class AuthoredCourseService {
 		savePath = null;
 		currentDrafts.clear();
 		pendingCorners.clear();
+		pendingLandscapeCorners.clear();
 		CourseBlockBreakGuard.clear();
 	}
 
@@ -131,17 +133,20 @@ public final class AuthoredCourseService {
 	public void setCurrentDraft(UUID playerId, String courseId) {
 		currentDrafts.put(playerId, courseId);
 		pendingCorners.remove(playerId);
+		pendingLandscapeCorners.remove(playerId);
 	}
 
 	public void clearCurrentDraft(UUID playerId) {
 		currentDrafts.remove(playerId);
 		pendingCorners.remove(playerId);
+		pendingLandscapeCorners.remove(playerId);
 	}
 
 	/** Drops every player's current-draft/pending-corner state referencing {@code courseId}. */
 	public void clearCurrentDraftFor(String courseId) {
 		currentDrafts.entrySet().removeIf(entry -> entry.getValue().equals(courseId));
 		pendingCorners.entrySet().removeIf(entry -> entry.getValue().courseId().equals(courseId));
+		pendingLandscapeCorners.entrySet().removeIf(entry -> entry.getValue().courseId().equals(courseId));
 	}
 
 	/** The pending first bounds corner, or {@code null} when no capture is open. */
@@ -157,7 +162,24 @@ public final class AuthoredCourseService {
 		pendingCorners.remove(playerId);
 	}
 
+	/** M8.10 S4: the pending first landscape-perimeter corner, or {@code null}. */
+	public PendingLandscapeCorner pendingLandscapeCorner(UUID playerId) {
+		return pendingLandscapeCorners.get(playerId);
+	}
+
+	public void setPendingLandscapeCorner(UUID playerId, PendingLandscapeCorner corner) {
+		pendingLandscapeCorners.put(playerId, corner);
+	}
+
+	public void clearPendingLandscapeCorner(UUID playerId) {
+		pendingLandscapeCorners.remove(playerId);
+	}
+
 	/** First captured corner of a two-corner bounds capture for one hole draft. */
 	public record PendingCorner(String courseId, int holeNumber, Vec3 corner) {
+	}
+
+	/** M8.10 S4: first captured corner of a two-corner whole-course perimeter capture. */
+	public record PendingLandscapeCorner(String courseId, Vec3 corner) {
 	}
 }

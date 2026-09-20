@@ -1,8 +1,10 @@
 package com.prillcode.minecraftgolf.command;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
@@ -24,6 +26,7 @@ import com.prillcode.minecraftgolf.course.AuthoredCourseStore.DraftSnapshot;
 import com.prillcode.minecraftgolf.course.AuthoredCourseStore.HoleSnapshot;
 import com.prillcode.minecraftgolf.course.AuthoredHoleBounds;
 import com.prillcode.minecraftgolf.course.CourseDefinition;
+import com.prillcode.minecraftgolf.course.CourseLandscape;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.hole.HoleBoundary;
@@ -31,6 +34,7 @@ import com.prillcode.minecraftgolf.hole.HoleDefinition;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.AuthoredCourseService;
 import com.prillcode.minecraftgolf.server.AuthoredCourseService.PendingCorner;
+import com.prillcode.minecraftgolf.server.AuthoredCourseService.PendingLandscapeCorner;
 
 /**
  * M8 S2 operator course-authoring commands (op-gated, player-position based).
@@ -49,6 +53,11 @@ import com.prillcode.minecraftgolf.server.AuthoredCourseService.PendingCorner;
  * /golf hole cup &lt;n&gt;                         set hole n cup and place the cup block
  * /golf hole par &lt;n&gt; &lt;par&gt;                   set hole n par
  * /golf hole bounds &lt;n&gt;                      two-corner bounds capture (Y = world height)
+ * /golf course landscape bounds                two-corner whole-course perimeter capture
+ * /golf course landscape clear [&lt;id&gt;]           remove the perimeter and unlock
+ * /golf course landscape lock [&lt;id&gt;]            deny block mutation/TNT to everyone inside
+ * /golf course landscape unlock [&lt;id&gt;]          restore the operator exemption inside
+ * /golf course landscape status [&lt;id&gt;]          show perimeter bounds, dimension, and lock state
  * </pre>
  *
  * <p>All state is server-authoritative: mutations go through
@@ -123,7 +132,22 @@ public final class GolfCourseCommands {
 				.then(Commands.literal("select")
 					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("id", StringArgumentType.word())
-						.executes(GolfCourseCommands::selectCourse))))
+						.executes(GolfCourseCommands::selectCourse)))
+				.then(Commands.literal("landscape")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.then(Commands.literal("bounds").executes(GolfCourseCommands::landscapeBounds))
+					.then(Commands.literal("clear")
+						.executes(GolfCourseCommands::landscapeClear)
+						.then(landscapeIdArgument(GolfCourseCommands::landscapeClear)))
+					.then(Commands.literal("lock")
+						.executes(GolfCourseCommands::landscapeLock)
+						.then(landscapeIdArgument(GolfCourseCommands::landscapeLock)))
+					.then(Commands.literal("unlock")
+						.executes(GolfCourseCommands::landscapeUnlock)
+						.then(landscapeIdArgument(GolfCourseCommands::landscapeUnlock)))
+					.then(Commands.literal("status")
+						.executes(GolfCourseCommands::landscapeStatus)
+						.then(landscapeIdArgument(GolfCourseCommands::landscapeStatus)))))
 			.then(Commands.literal("hole")
 				.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 				.then(Commands.literal("tee")
@@ -140,7 +164,7 @@ public final class GolfCourseCommands {
 					.then(Commands.argument("hole", IntegerArgumentType.integer(1))
 						.executes(GolfCourseCommands::captureBounds)))));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf course play/default and authoring commands (create, clone, list, status, finalize, delete, edit, select)"
+			"Registered /golf course play/default and authoring commands (create, clone, list, status, finalize, delete, edit, select, landscape)"
 				+ " and /golf hole metadata commands (tee, cup, par, bounds)");
 	}
 
@@ -536,6 +560,197 @@ public final class GolfCourseCommands {
 			+ boundary.min().y() + ".." + boundary.max().y() + "] so cliffs and elevated shots stay in-bounds"
 			+ "; run again to restart capture"), false);
 		return 1;
+	}
+
+	// ------------------------------------------------------------------
+	// /golf course landscape bounds|clear|lock|unlock|status
+	// ------------------------------------------------------------------
+
+	/**
+	 * M8.10 S4: two-corner capture of the whole-course landscape perimeter. The
+	 * first invocation records corner A; the second builds the XZ box (Y expanded
+	 * to world build height) and stores it, preserving any existing lock.
+	 */
+	private static int landscapeBounds(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		String courseId = resolveLandscapeTarget(ctx);
+		if (courseId == null) return 0;
+		AuthoredCourseService service = AuthoredCourseService.instance();
+		String courseDimension = courseDimension(service.store(), courseId);
+		String playerDimension = player.level().dimension().identifier().toString();
+		if (!playerDimension.equals(courseDimension)) {
+			return fail(ctx, "course '" + courseId + "' is in " + courseDimension
+				+ "; stand in that dimension to capture its landscape perimeter");
+		}
+		BlockPos here = player.blockPosition();
+		Vec3 corner = new Vec3(here.getX(), here.getY(), here.getZ());
+		PendingLandscapeCorner pending = service.pendingLandscapeCorner(player.getUUID());
+		if (pending == null || !pending.courseId().equals(courseId)) {
+			service.setPendingLandscapeCorner(player.getUUID(), new PendingLandscapeCorner(courseId, corner));
+			ctx.getSource().sendSuccess(() -> Component.literal("[golf] landscape corner A recorded at "
+				+ here.toShortString() + " for course '" + courseId
+				+ "'; stand at the opposite corner and run /golf course landscape bounds again"), false);
+			return 1;
+		}
+		ServerLevel level = player.level();
+		HoleBoundary bounds = AuthoredHoleBounds.fromCorners(
+			pending.corner(), corner, level.getMinY(), level.getMaxY());
+		boolean locked = service.store().landscape(courseId).map(CourseLandscape::locked).orElse(false);
+		try {
+			service.store().setLandscape(new CourseLandscape(courseId, courseDimension, bounds, locked));
+		} catch (IllegalArgumentException exception) {
+			return fail(ctx, exception.getMessage());
+		}
+		service.clearPendingLandscapeCorner(player.getUUID());
+		service.save();
+		service.refreshProtection();
+		ctx.getSource().sendSuccess(() -> Component.literal("[golf] landscape perimeter for '" + courseId
+			+ "' set to X[" + bounds.min().x() + ".." + bounds.max().x()
+			+ "] Z[" + bounds.min().z() + ".." + bounds.max().z()
+			+ "]; Y expanded to world build height [" + bounds.min().y() + ".." + bounds.max().y()
+			+ "]; " + (locked ? "locked" : "unlocked")
+			+ "; run again to restart capture"), true);
+		return 1;
+	}
+
+	/** M8.10 S4: removes the perimeter and unlocks the course. */
+	private static int landscapeClear(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
+		String courseId = resolveLandscapeTarget(ctx);
+		if (courseId == null) return 0;
+		AuthoredCourseService service = AuthoredCourseService.instance();
+		boolean existed = service.store().clearLandscape(courseId);
+		ServerPlayer player = ctx.getSource().getPlayer();
+		if (player != null) service.clearPendingLandscapeCorner(player.getUUID());
+		service.save();
+		service.refreshProtection();
+		ctx.getSource().sendSuccess(() -> Component.literal(existed
+			? "[golf] cleared the landscape perimeter and lock for course '" + courseId + "'"
+			: "[golf] course '" + courseId + "' had no landscape perimeter; nothing to clear"), true);
+		return 1;
+	}
+
+	private static int landscapeLock(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		return setLandscapeLock(ctx, true);
+	}
+
+	private static int landscapeUnlock(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		return setLandscapeLock(ctx, false);
+	}
+
+	private static int setLandscapeLock(CommandContext<CommandSourceStack> ctx, boolean locked)
+			throws CommandSyntaxException {
+		if (activePlayBlocksMutation(ctx)) return 0;
+		String courseId = resolveLandscapeTarget(ctx);
+		if (courseId == null) return 0;
+		AuthoredCourseService service = AuthoredCourseService.instance();
+		CourseLandscape landscape = service.store().landscape(courseId).orElse(null);
+		if (landscape == null) {
+			return fail(ctx, "course '" + courseId
+				+ "' has no landscape perimeter yet; set one with /golf course landscape bounds first");
+		}
+		if (landscape.locked() == locked) {
+			ctx.getSource().sendSuccess(() -> Component.literal("[golf] landscape perimeter for '" + courseId
+				+ "' is already " + (locked ? "locked" : "unlocked")), false);
+			return 1;
+		}
+		service.store().setLandscape(landscape.withLocked(locked));
+		service.save();
+		service.refreshProtection();
+		ctx.getSource().sendSuccess(() -> Component.literal(locked
+			? "[golf] landscape perimeter for '" + courseId
+				+ "' is now locked: no player may break, place, or detonate TNT inside it"
+			: "[golf] landscape perimeter for '" + courseId
+				+ "' is now unlocked: operators may repair inside it, non-operators still cannot"), true);
+		return 1;
+	}
+
+	private static int landscapeStatus(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		String courseId = resolveLandscapeTarget(ctx);
+		if (courseId == null) return 0;
+		AuthoredCourseStore store = AuthoredCourseService.instance().store();
+		String kind = store.isDraft(courseId) ? "draft" : "finalized";
+		String dimension = courseDimension(store, courseId);
+		CourseLandscape landscape = store.landscape(courseId).orElse(null);
+		if (landscape == null) {
+			ctx.getSource().sendSuccess(() -> Component.literal("[golf] landscape for " + kind + " course '"
+				+ courseId + "' (" + dimension + "): no perimeter (unlocked)"), false);
+			return 1;
+		}
+		ctx.getSource().sendSuccess(() -> Component.literal("[golf] landscape for " + kind + " course '"
+			+ courseId + "' (" + landscape.dimension() + "): "
+			+ (landscape.locked() ? "LOCKED" : "unlocked") + ", X["
+			+ landscape.bounds().min().x() + ".." + landscape.bounds().max().x() + "] Z["
+			+ landscape.bounds().min().z() + ".." + landscape.bounds().max().z() + "] Y["
+			+ landscape.bounds().min().y() + ".." + landscape.bounds().max().y() + "]"), false);
+		return 1;
+	}
+
+	/**
+	 * Resolves the course a landscape command targets. An explicit {@code id}
+	 * argument wins (so console/RCON can always run {@code unlock}); otherwise the
+	 * player's current draft, else the active selected course, else the
+	 * "select a course first" failure. Stale draft selections are cleared.
+	 */
+	private static String resolveLandscapeTarget(CommandContext<CommandSourceStack> ctx) {
+		AuthoredCourseService service = AuthoredCourseService.instance();
+		String explicitId = optionalIdArgument(ctx);
+		if (explicitId != null) {
+			String id;
+			try {
+				id = AuthoredCourseStore.normalizeId(explicitId);
+			} catch (IllegalArgumentException exception) {
+				fail(ctx, exception.getMessage());
+				return null;
+			}
+			if (!service.store().isDraft(id) && !service.store().isFinalized(id)) {
+				fail(ctx, "no course with id '" + id + "'");
+				return null;
+			}
+			return id;
+		}
+		ServerPlayer player = ctx.getSource().getPlayer();
+		if (player != null) {
+			String draftId = service.currentDraft(player.getUUID());
+			if (draftId != null) {
+				if (service.store().isDraft(draftId)) {
+					return draftId;
+				}
+				service.clearCurrentDraft(player.getUUID());
+			}
+		}
+		CourseDefinition active = ActiveHoleService.instance().configuredCourseOrNull();
+		if (active != null && service.store().isFinalized(active.id())) {
+			return active.id();
+		}
+		ctx.getSource().sendFailure(Component.literal("[golf] no course selected; use /golf course select <id>"
+			+ " or /golf course edit <id>"));
+		return null;
+	}
+
+	/**
+	 * Returns the optional {@code id} argument, or {@code null} when it is absent.
+	 * Brigadier throws {@link IllegalArgumentException} for an unread argument.
+	 */
+	private static String optionalIdArgument(CommandContext<CommandSourceStack> ctx) {
+		try {
+			return StringArgumentType.getString(ctx, "id");
+		} catch (IllegalArgumentException exception) {
+			return null;
+		}
+	}
+
+	private static String courseDimension(AuthoredCourseStore store, String courseId) {
+		return store.isDraft(courseId)
+			? store.draftSnapshot(courseId).dimension()
+			: store.finalizedCourse(courseId).dimension();
+	}
+
+	/** Builds the optional {@code <id>} child used by the landscape subcommands. */
+	private static RequiredArgumentBuilder<CommandSourceStack, String> landscapeIdArgument(
+			Command<CommandSourceStack> executor) {
+		return Commands.argument("id", StringArgumentType.word()).executes(executor);
 	}
 
 	// ------------------------------------------------------------------
