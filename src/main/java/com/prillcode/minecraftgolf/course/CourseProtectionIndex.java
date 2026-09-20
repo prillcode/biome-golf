@@ -19,6 +19,8 @@ import com.prillcode.minecraftgolf.hole.HoleDefinition;
  * only. Query the combined policy through {@link #verdict}.</p>
  */
 public final class CourseProtectionIndex {
+	private static final CourseProtectionConfig CONFIG = CourseProtectionConfig.DEFAULT;
+
 	private List<CourseDefinition> authoredCourses = List.of();
 	private List<CourseLandscape> authoredLandscapes = List.of();
 	private CourseDefinition configuredCourse;
@@ -80,6 +82,15 @@ public final class CourseProtectionIndex {
 		return CourseProtection.resolve(zones(dimension), landscapes(dimension), x, y, z);
 	}
 
+	/**
+	 * M8.10 S3: the TNT verdict at a block position, with landscape perimeters
+	 * expanded by the configured blast safety margin.
+	 */
+	public ProtectionVerdict tntVerdict(String dimension, int x, int y, int z) {
+		return CourseProtection.resolveForTnt(zones(dimension), landscapes(dimension),
+			CONFIG.tntBlastSafetyMargin(), x, y, z);
+	}
+
 	/** Whether the position is protected by any zone or landscape (any non-ALLOW verdict). */
 	public boolean isProtected(String dimension, int x, int y, int z) {
 		return verdict(dimension, x, y, z) != ProtectionVerdict.ALLOW;
@@ -90,7 +101,7 @@ public final class CourseProtectionIndex {
 		for (CourseDefinition course : authoredCourses) add(mutableZones, course);
 		if (configuredCourse != null) add(mutableZones, configuredCourse);
 		if (configuredHole != null) add(mutableZones, configuredHole.dimension(),
-			CourseProtection.zonesFor(configuredHole, CourseProtectionConfig.DEFAULT));
+			CourseProtection.zonesFor(configuredHole, CONFIG));
 		Map<String, List<ProtectedZone>> immutableZones = new LinkedHashMap<>();
 		mutableZones.forEach((dimension, zones) -> immutableZones.put(dimension, List.copyOf(zones)));
 		zonesByDimension = Map.copyOf(immutableZones);
@@ -107,7 +118,7 @@ public final class CourseProtectionIndex {
 	}
 
 	private static void add(Map<String, List<ProtectedZone>> target, CourseDefinition course) {
-		add(target, course.dimension(), CourseProtection.zonesFor(course, CourseProtectionConfig.DEFAULT));
+		add(target, course.dimension(), CourseProtection.zonesFor(course, CONFIG));
 	}
 
 	private static void add(Map<String, List<ProtectedZone>> target, String dimension,

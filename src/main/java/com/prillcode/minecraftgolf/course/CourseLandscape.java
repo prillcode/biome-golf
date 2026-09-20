@@ -68,4 +68,29 @@ public record CourseLandscape(String courseId, String dimension, HoleBoundary bo
 	public CourseLandscape withLocked(boolean newLocked) {
 		return new CourseLandscape(courseId, dimension, bounds, newLocked);
 	}
+
+	/**
+	 * M8.10 S3: returns a copy whose box is expanded by {@code margin} blocks on
+	 * every axis. Used for TNT, where a charge placed just outside the perimeter
+	 * can still destroy protected blocks inside it.
+	 */
+	public CourseLandscape expandedBy(double margin) {
+		if (!(margin >= 0.0) || !Double.isFinite(margin)) {
+			throw new IllegalArgumentException("margin must be finite and >= 0: " + margin);
+		}
+		if (margin == 0.0) {
+			return this;
+		}
+		return new CourseLandscape(courseId, dimension,
+			new HoleBoundary(
+				new Vec3(clamp(bounds.min().x() - margin), clamp(bounds.min().y() - margin),
+					clamp(bounds.min().z() - margin)),
+				new Vec3(clamp(bounds.max().x() + margin), clamp(bounds.max().y() + margin),
+					clamp(bounds.max().z() + margin))),
+			locked);
+	}
+
+	private static double clamp(double value) {
+		return Math.max(-Double.MAX_VALUE, Math.min(Double.MAX_VALUE, value));
+	}
 }

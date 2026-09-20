@@ -89,6 +89,17 @@ class CourseProtectionIndexTest {
 		assertTrue(index.landscapes("minecraft:overworld").isEmpty());
 	}
 
+	@Test
+	void tntVerdictExpandsPerimetersByTheBlastMargin() {
+		CourseProtectionIndex index = new CourseProtectionIndex();
+		// BOX from landscape(...) spans x in [centerX-50, centerX+50].
+		index.replaceAuthoredCourses(List.of(), List.of(landscape("soft", "minecraft:overworld", 0, true)));
+
+		assertEquals(ProtectionVerdict.ALLOW, index.verdict("minecraft:overworld", 53, 64, 0));
+		assertEquals(ProtectionVerdict.DENY_ALL, index.tntVerdict("minecraft:overworld", 53, 64, 0));
+		assertEquals(ProtectionVerdict.ALLOW, index.tntVerdict("minecraft:overworld", 55, 64, 0));
+	}
+
 	private static CourseLandscape landscape(String courseId, String dimension, double centerX,
 			boolean locked) {
 		return new CourseLandscape(courseId, dimension, new HoleBoundary(

@@ -70,9 +70,13 @@ class CourseProtectionTest {
 
 	@Test
 	void rejectsInvalidConfigValues() {
-		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(0.0, 8.0));
-		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(12.0, 0.0));
-		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(Double.NaN, 8.0));
+		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(0.0, 8.0, 4.0));
+		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(12.0, 0.0, 4.0));
+		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(Double.NaN, 8.0, 4.0));
+		// M8.10 S3 blast margin must be finite and non-negative (0 is allowed).
+		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(12.0, 8.0, -1.0));
+		assertThrows(IllegalArgumentException.class, () -> new CourseProtectionConfig(12.0, 8.0, Double.NaN));
+		assertEquals(0.0, new CourseProtectionConfig(12.0, 8.0, 0.0).tntBlastSafetyMargin());
 	}
 
 	@Test
@@ -141,6 +145,39 @@ class CourseProtectionTest {
 		// The cup block is non-operator protected even on an otherwise unlocked course.
 		assertFalse(CourseProtection.mayBreak(List.of(), unlocked, 40, 64, 0, true, false));
 		assertTrue(CourseProtection.mayBreak(List.of(), unlocked, 40, 64, 0, true, true));
+	}
+
+	@Test
+	void tntVerdictExpandsLandscapePerimetersByTheBlastMargin() {
+		List<CourseLandscape> unlocked = List.of(landscape(false));
+		List<CourseLandscape> locked = List.of(landscape(true));
+
+		// (53, 64, 0) is 3 blocks outside the x=50 face: outside for exact checks,
+		// inside once the 4-block TNT blast margin is applied.
+		assertSame(ProtectionVerdict.ALLOW, CourseProtection.resolve(List.of(), unlocked, 53, 64, 0));
+		assertSame(ProtectionVerdict.DENY_NON_OP,
+			CourseProtection.resolveForTnt(List.of(), unlocked, 4.0, 53, 64, 0));
+		assertSame(ProtectionVerdict.DENY_ALL,
+			CourseProtection.resolveForTnt(List.of(), locked, 4.0, 53, 64, 0));
+
+		// Beyond the margin and far away stay allowed.
+		assertSame(ProtectionVerdict.ALLOW,
+			CourseProtection.resolveForTnt(List.of(), unlocked, 4.0, 55, 64, 0));
+		assertSame(ProtectionVerdict.ALLOW,
+			CourseProtection.resolveForTnt(List.of(), locked, 4.0, 500, 64, 500));
+
+		// A zero margin leaves TNT verdicts identical to exact verdicts.
+		assertSame(ProtectionVerdict.ALLOW,
+			CourseProtection.resolveForTnt(List.of(), unlocked, 0.0, 53, 64, 0));
+
+		// Tee/cup cylinders are combined exactly, and a locked perimeter still wins.
+		assertSame(ProtectionVerdict.DENY_NON_OP,
+			CourseProtection.resolveForTnt(teeZones(), List.of(), 4.0, 0, 64, 0));
+		assertSame(ProtectionVerdict.DENY_ALL,
+			CourseProtection.resolveForTnt(teeZones(), locked, 4.0, 0, 64, 0));
+
+		assertThrows(IllegalArgumentException.class,
+			() -> CourseProtection.resolveForTnt(List.of(), unlocked, -1.0, 0, 64, 0));
 	}
 
 	private static List<ProtectedZone> teeZones() {

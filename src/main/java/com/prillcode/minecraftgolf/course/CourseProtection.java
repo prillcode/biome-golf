@@ -98,6 +98,26 @@ public final class CourseProtection {
 	}
 
 	/**
+	 * M8.10 S3: the verdict used for TNT placement, ignition, and newly spawned
+	 * primed TNT. Landscape perimeters are expanded by {@code blastMargin} on
+	 * every axis so a charge placed just outside the boundary that could still
+	 * reach protected blocks is covered; tee/cup cylinders stay exact.
+	 */
+	public static ProtectionVerdict resolveForTnt(List<ProtectedZone> zones,
+			List<CourseLandscape> landscapes, double blastMargin, int x, int y, int z) {
+		Objects.requireNonNull(zones, "zones");
+		Objects.requireNonNull(landscapes, "landscapes");
+		if (!(blastMargin >= 0.0) || !Double.isFinite(blastMargin)) {
+			throw new IllegalArgumentException("blastMargin must be finite and >= 0: " + blastMargin);
+		}
+		List<CourseLandscape> expanded = new ArrayList<>(landscapes.size());
+		for (CourseLandscape landscape : landscapes) {
+			expanded.add(landscape.expandedBy(blastMargin));
+		}
+		return resolve(zones, expanded, x, y, z);
+	}
+
+	/**
 	 * Pure break-policy decision used by the Fabric guard. Dev-level players are
 	 * exempt; ordinary players are blocked for the cup itself or any zone member.
 	 */

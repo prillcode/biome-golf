@@ -84,6 +84,24 @@ class CourseLandscapeTest {
 	}
 
 	@Test
+	void expandedByGrowsThePerimeterForTntBlastChecks() {
+		CourseLandscape landscape = new CourseLandscape("pine-hills", "minecraft:overworld", BOX, true);
+
+		CourseLandscape expanded = landscape.expandedBy(4.0);
+		assertEquals(new Vec3(-14.0, -68.0, 16.0), expanded.bounds().min());
+		assertEquals(new Vec3(14.0, 324.0, 44.0), expanded.bounds().max());
+		assertTrue(expanded.locked());
+		assertEquals(landscape.courseId(), expanded.courseId());
+		assertTrue(expanded.contains(13, 64, 30));
+		assertFalse(landscape.contains(13, 64, 30));
+
+		// A zero margin is the identity, and invalid margins are rejected.
+		assertEquals(landscape, landscape.expandedBy(0.0));
+		assertThrows(IllegalArgumentException.class, () -> landscape.expandedBy(-1.0));
+		assertThrows(IllegalArgumentException.class, () -> landscape.expandedBy(Double.NaN));
+	}
+
+	@Test
 	void rejectsInvalidMetadata() {
 		assertThrows(IllegalArgumentException.class,
 			() -> new CourseLandscape("", "minecraft:overworld", BOX, false));

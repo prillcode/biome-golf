@@ -11,14 +11,19 @@ package com.prillcode.minecraftgolf.course;
  *
  * @param vicinityRadius          horizontal vicinity radius around each hole's tee and cup (blocks)
  * @param vicinityVerticalHalfHeight half the vertical extent of each protection cylinder (blocks)
+ * @param tntBlastSafetyMargin    M8.10 S3: blocks added around a landscape perimeter when
+ *                                guarding TNT, so a charge placed just outside the boundary
+ *                                that could still destroy protected blocks is covered
  */
 public record CourseProtectionConfig(
 	double vicinityRadius,
-	double vicinityVerticalHalfHeight
+	double vicinityVerticalHalfHeight,
+	double tntBlastSafetyMargin
 ) {
 	public CourseProtectionConfig {
 		requirePositiveFinite(vicinityRadius, "vicinityRadius");
 		requirePositiveFinite(vicinityVerticalHalfHeight, "vicinityVerticalHalfHeight");
+		requireNonNegativeFinite(tntBlastSafetyMargin, "tntBlastSafetyMargin");
 	}
 
 	/**
@@ -29,11 +34,17 @@ public record CourseProtectionConfig(
 	 * through tee vicinity per the recorded M7 S1 decision.
 	 */
 	public static final CourseProtectionConfig DEFAULT =
-		new CourseProtectionConfig(12.0, 8.0);
+		new CourseProtectionConfig(12.0, 8.0, 4.0);
 
 	private static void requirePositiveFinite(double value, String name) {
 		if (!(value > 0.0) || !Double.isFinite(value)) {
 			throw new IllegalArgumentException(name + " must be finite and > 0: " + value);
+		}
+	}
+
+	private static void requireNonNegativeFinite(double value, String name) {
+		if (!(value >= 0.0) || !Double.isFinite(value)) {
+			throw new IllegalArgumentException(name + " must be finite and >= 0: " + value);
 		}
 	}
 }
