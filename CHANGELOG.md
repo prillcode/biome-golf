@@ -9,6 +9,30 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.6.0] - 2026-09-19
+
+### Added
+
+- Operator-authored whole-course landscape protection. `/golf course landscape bounds`
+  captures a two-corner XZ perimeter (Y expanded to build height) on the player's current
+  draft or the active selected course; `/golf course landscape lock|unlock` toggles the
+  operator exemption, `/golf course landscape status` reports the perimeter, and
+  `/golf course landscape clear` removes it. Landscapes work on both drafts and finalized
+  courses without weakening hole-metadata immutability.
+- Inside a perimeter, non-operators cannot break or place blocks, and TNT cannot be
+  placed, ignited, or detonate. `landscape lock` extends that to every player, operators
+  included; `unlock` restores operator repair.
+- TNT is guarded without any Mixin through public Fabric events: `BlockEvents.USE_ITEM_ON`
+  denies TNT placement and direct ignition inside a blast-margin-expanded perimeter, and
+  `ServerEntityEvents.ALLOW_LOAD` cancels newly spawned primed TNT (covering redstone,
+  dispenser, fire, and flaming-arrow ignition). TNT still works normally outside
+  perimeters.
+
+### Changed
+
+- Authoring commands `clear`, `lock`, `unlock`, and `status` accept an optional explicit
+  course id so console/RCON can always release a locked course.
+
 ## [0.5.1] - 2026-09-19
 
 ### Changed
@@ -224,7 +248,8 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/prillcode/minecraft-golf/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/prillcode/minecraft-golf/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/prillcode/minecraft-golf/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/prillcode/minecraft-golf/compare/v0.3.3...v0.4.0
