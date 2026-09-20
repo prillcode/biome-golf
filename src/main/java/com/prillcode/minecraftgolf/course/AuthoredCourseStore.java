@@ -251,7 +251,7 @@ public final class AuthoredCourseStore {
 		return normalized;
 	}
 
-	private static String normalizeDimension(String dimension) {
+	static String normalizeDimension(String dimension) {
 		requireNonBlank(dimension, "dimension");
 		String normalized = dimension.trim().toLowerCase(Locale.ROOT);
 		if (!DIMENSION_PATTERN.matcher(normalized).matches()) {
