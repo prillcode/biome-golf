@@ -1372,8 +1372,8 @@ complete; M9 remains deferred.
 ## Goal
 
 Add an operator-authored whole-course landscape perimeter that blocks block break, block
-place, and explosion destruction inside it, with a per-course lock that removes the
-operator exemption, effective for both drafts and finalized courses.
+place, and TNT detonation inside it, with a per-course lock that removes the operator
+exemption, effective for both drafts and finalized courses.
 
 ## Exit Criteria
 
