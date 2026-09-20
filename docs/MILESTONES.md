@@ -146,7 +146,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.7 | Shot Variety and Trajectory Control | Complete (see docs/M8.7-CLOSEOUT.md) |
 | M8.8 | Distance Display Units | Complete (see docs/M8.8-CLOSEOUT.md) |
 | M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
-| M8.10 | Course Landscape Protection | Planned (see docs/M8.10-PLAN.md) |
+| M8.10 | Course Landscape Protection | Implemented; in-game operator matrix pending (see docs/M8.10-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 
 ---
@@ -1366,8 +1366,9 @@ Use the final success criteria and full verification ladder in `docs/M8.9-PLAN.m
 
 ## Status
 
-Planned. Do not begin implementation until this plan is explicitly started. M8.7–M8.9 are
-complete; M9 remains deferred.
+Implemented; automated, Loom, and Docker/RCON verification pass. The in-game
+operator/non-operator break/place/TNT matrix still needs an operator confirmation pass
+before the milestone is fully complete. See `docs/M8.10-CLOSEOUT.md`. M9 remains deferred.
 
 ## Goal
 
@@ -1437,10 +1438,11 @@ Document the failure or proposed deviation before continuing.
 
 # Current Starting Point
 
-M0–M8.9 are complete (see the milestone closeout records through
-`docs/M8.9-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
+M0–M8.10 are implemented (see the milestone closeout records through
+`docs/M8.10-CLOSEOUT.md`). M8.5 is superseded as a standalone plan, and its implemented
 work forms part of the completed M8.6 concurrent-round hardening milestone. M8.7 added
 server-authoritative shot variety and tap-in; M8.8 added the yard distance display; M8.9
-added the operator-authored practice range. M8.10 — Course Landscape Protection is
-planned. M9 — Additional Game Modes remains deferred until an alternate mode is
-explicitly prioritized.
+added the operator-authored practice range; M8.10 added operator-authored whole-course
+landscape protection (break/place/TNT) with a per-course lock, verified automatically and
+over Docker/RCON but awaiting an in-game operator/non-operator confirmation pass. M9 —
+Additional Game Modes remains deferred until an alternate mode is explicitly prioritized.
