@@ -33,17 +33,31 @@ manual gameplay   (where applicable, per milestone)
 ### Local Client Deployment
 
 When testing with the authenticated launcher client rather than `./gradlew runClient`,
-building is not enough. After every client-facing change:
+building is not enough. The user plays through the custom `bhmc-launcher`; the golf
+instance is named `BirdieBiome - Golf` (Fabric, Minecraft 26.2). This is **not** the
+vanilla `~/.minecraft/mods/` directory.
+
+Resolve the instance's game directory from the launcher metadata (it is a UUID-keyed
+folder under `~/.local/share/bhmc-launcher/instances/`):
+
+```bash
+GAME_DIR=$(python3 -c "import json,os;i=json.load(open(os.path.expanduser('~/.local/share/bhmc-launcher/instances.json')))['instances'];print(next(v['gameDirectory'] for v in i.values() if v['name']=='BirdieBiome - Golf'))")
+```
+
+Then copy the built jar into that instance's `mods/` folder using the launcher's fixed
+local filename (`minecraft-golf.jar`, unversioned), and verify:
 
 ```bash
 ./gradlew build
-cp build/libs/minecraft-golf-<version>.jar ~/.minecraft/mods/minecraft-golf-<version>.jar
-sha256sum build/libs/minecraft-golf-<version>.jar ~/.minecraft/mods/minecraft-golf-<version>.jar
+cp build/libs/minecraft-golf-<version>.jar "$GAME_DIR/mods/minecraft-golf.jar"
+sha256sum build/libs/minecraft-golf-<version>.jar "$GAME_DIR/mods/minecraft-golf.jar"
 ```
 
-Fully exit and relaunch Minecraft after copying; the launcher loads mod JARs only at
-startup. The Loom development client uses the compiled classes directly and does not
-test the JAR installed in `~/.minecraft/mods/`.
+Fully exit and relaunch the game after copying; Fabric loads mod JARs only at startup.
+The launcher's `mods.json` registry (electron-store) records a sha1 for display only; if
+you update it, close the launcher first or the running process will overwrite your edit.
+The Loom development client uses the compiled classes directly and does not test the
+installed JAR.
 
 For Docker testing, also run `./scripts/dev-server-sync.sh` followed by
 `./scripts/dev-server-restart.sh`, then verify the container hash and health. Do not
