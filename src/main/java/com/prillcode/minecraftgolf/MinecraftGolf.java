@@ -1,7 +1,10 @@
 package com.prillcode.minecraftgolf;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.registry.RegistryAttribute;
+import net.fabricmc.fabric.api.event.registry.RegistryAttributeHolder;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.server.level.ServerPlayer;
@@ -54,6 +57,14 @@ public class MinecraftGolf implements ModInitializer {
 		// M4 cup/flag block; authoritative detection remains server-side.
 		GolfBlocks.registerAll();
 
+		// M10: our blocks/items/entity live in vanilla registries. Fabric registry sync
+		// otherwise disconnects any client without them ("This server requires Fabric
+		// Loader and Fabric API installed on your client!"). Marking those registries
+		// OPTIONAL lets unmodified Java and Bedrock/Geyser clients connect; they simply
+		// do not resolve our custom content. Confirmed reachable in Fabric API 0.160.0+26.2
+		// (fabric-registry-sync-v0 7.1.1: areAllRegistriesOptional -> no disconnect).
+		markClientRegistryContentOptional();
+
 		// Developer launch and test controls (M001-S03). Server-side only; the
 		// command tree is op-gated and consumes only server-authoritative state.
 		GolfDevCommands.register();
@@ -96,5 +107,18 @@ public class MinecraftGolf implements ModInitializer {
 		// S5: apply the Ready Golf suspension policy on disconnect.
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
 			ActiveHoleService.instance().onPlayerDisconnected(handler.getPlayer(), server));
+	}
+
+	/**
+	 * M10: declares the vanilla registries this mod adds entries to as optional for
+	 * client sync. This is what lets a client without the mod (vanilla Java, or Bedrock
+	 * through Geyser) join at all; without it Fabric API's registry sync rejects them
+	 * during configuration.
+	 */
+	private static void markClientRegistryContentOptional() {
+		RegistryAttributeHolder.get(BuiltInRegistries.ENTITY_TYPE).addAttribute(RegistryAttribute.OPTIONAL);
+		RegistryAttributeHolder.get(BuiltInRegistries.ITEM).addAttribute(RegistryAttribute.OPTIONAL);
+		RegistryAttributeHolder.get(BuiltInRegistries.BLOCK).addAttribute(RegistryAttribute.OPTIONAL);
+		LOGGER.info("Marked block/item/entity registries optional for client-light sync");
 	}
 }
