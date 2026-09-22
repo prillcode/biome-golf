@@ -31,7 +31,7 @@ Floodgate next to the golf server on UDP 19132, auth pinned to Floodgate. Verifi
 2.11.3-b1245 + Floodgate 2.2.6 boot alongside `minecraft_golf 0.6.0` on MC 26.2 and Geyser
 listens on 19132.
 
-**Result (CONFIRMED BLOCKER).** A Bedrock client via Geyser was disconnected during
+**Result (CONFIRMED, then FIXED).** A Bedrock client via Geyser was disconnected during
 configuration: *"This server requires Fabric Loader and Fabric API installed on your
 client! The following registry entry namespaces may be related: minecraft_golf"*.
 Verified source: Fabric API's `fabric-registry-sync-v0` 7.1.1 `RegistrySyncManager`
@@ -51,24 +51,26 @@ not merely re-skin it. S1 (shot input) does not depend on this and is already un
   optional enhancement. This is a **gameplay change** and needs design + playtest.
 - Command fallback stays for accessibility and as the test seam.
 
-### M10.2 - Remove all custom vanilla-registry content (expanded by M10.0)
+### M10.2 - Vanilla-visible content for clients without the mod
 
-**Mandatory connection gate.** Fabric registry sync means any custom `minecraft:block`,
-`minecraft:item`, or `minecraft:entity_type` entry blocks every unmodded client. This slice
-must therefore alias **all** of it to vanilla:
+**Update:** the connection gate itself was solved in M10.0 by marking the touched registries
+`OPTIONAL` (see above), so this slice is now about *visibility*, not connection. Clients
+without the mod connect but resolve custom content as air.
 
-- **Ball entity** (1): the logical ball (physics/owner/resting, already Minecraft-free)
-  stays server state; the in-world entity becomes a swappable visual adapter renderable by
-  vanilla/Bedrock (e.g. a vanilla display/item entity). `GolfBallEntity` is referenced
-  widely (`ActiveHoleService`, `ShotService`, commands, client swing/camera/renderer), so
-  do this behind tests.
-- **Club items** (7): vanilla item + custom model data / resource pack instead of custom
-  `Item` entries; the held stack still maps to a logical club server-side.
-- **Cup/flag blocks** (3): vanilla blocks plus server-side authored markers instead of
-  custom `Block` entries (cup detection is already position-based).
-
-Acceptance for this slice: an unmodded client reaches the world without a registry-sync
-disconnect — testable with the Geyser harness immediately, no full round required.
+- **Clubs (7) — DONE (dual, option B).** `/golf clubs equip` gives a modded client the custom
+  items and every other client distinct vanilla items with a club display name and an
+  identifying `custom_data` tag; `GolfItems.clubOf` recognises both. Confirmed necessary:
+  Geyser logged `Could not translate packet ClientboundContainerSetContentPacket` while a
+  Bedrock player held the custom items.
+- **Ball (1) — PROBE IN.** The authoritative ball mirrors itself with a vanilla item entity
+  (a dropped snowball) so non-mod clients see it. Evaluate the look before deciding whether
+  modded clients keep the custom renderer or fall back too. Geyser ships
+  `ItemEntity`/`ThrowableItemEntity` but **no item/block display entity**, so a static
+  display-type ball is not available.
+- **Cup/flag (3) — TODO.** Vanilla blocks plus the existing server-side authored markers.
+- **Ball-follow camera — VIABLE, UNTESTED.** Geyser translates Java's `SetCamera` packet
+  (`JavaSetCameraTranslator` -> `EntitySpectateHelper`), so a server-controlled camera is a
+  real Bedrock option. Needs testing for smoothness, restore, and multiplayer isolation.
 
 ### M10.3 - Vanilla presentation fallbacks
 

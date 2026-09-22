@@ -17,7 +17,7 @@ import com.prillcode.minecraftgolf.club.ShotResolver;
 import com.prillcode.minecraftgolf.club.ShotType;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
-import com.prillcode.minecraftgolf.item.GolfClubItem;
+import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.ActiveHoleService.ShotPermission;
 import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
@@ -186,10 +186,7 @@ public final class ShotService {
 	}
 
 	private static ClubDefinition heldClub(Player player) {
-		ItemStack held = player.getMainHandItem();
-		if (held.getItem() instanceof GolfClubItem clubItem) {
-			return clubItem.club();
-		}
-		return null;
+		// Recognises both the custom item and the M10 vanilla fallback representation.
+		return GolfItems.clubOf(player.getMainHandItem());
 	}
 }

@@ -9,6 +9,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.ValueInput;
@@ -68,6 +71,10 @@ public class GolfBallEntity extends Entity {
 	private static final String NBT_ROLLING_MULTIPLIER = "golf_rolling_multiplier";
 	private static final String NBT_SHOT_DISTANCE = "golf_shot_distance";
 
+	/** M10 probe: tag marking a mirrored vanilla visual entity. */
+	private static final String BALL_VISUAL_TAG = "minecraft_golf_ball_visual";
+	private static final String NBT_VISUAL_UUID = "golf_visual_uuid";
+
 	/**
 	 * Owner player UUID or {@code null} while the ball is unclaimed.
 	 * A player can only strike a ball they own (M2, ARCH §12); a resting ball is
@@ -85,6 +92,10 @@ public class GolfBallEntity extends Entity {
 
 	/** Whether the state has been anchored to the entity's current position. */
 	private boolean initialized;
+
+	/** M10 probe: vanilla mirror entity (a dropped snowball) for clients without the mod. */
+	private ItemEntity visual;
+	private java.util.UUID visualUuid;
 
 	public GolfBallEntity(EntityType<? extends GolfBallEntity> type, Level level) {
 		super(type, level);
@@ -129,6 +140,9 @@ public class GolfBallEntity extends Entity {
 		if (state == null) {
 			return;
 		}
+
+		// M10 probe: keep the vanilla mirror in place even while the ball rests.
+		tickVisual();
 
 		if (state.resting()) {
 			// Resting is terminal until launch() is called; no per-tick work.
@@ -314,6 +328,8 @@ public class GolfBallEntity extends Entity {
 			input.getDoubleOr(NBT_ROLLING_MULTIPLIER, 1.0));
 		String owner = input.getStringOr(NBT_OWNER, "");
 		ownerUuid = (owner == null || owner.isEmpty()) ? null : java.util.UUID.fromString(owner);
+		String visualId = input.getStringOr(NBT_VISUAL_UUID, "");
+		visualUuid = (visualId == null || visualId.isEmpty()) ? null : java.util.UUID.fromString(visualId);
 	}
 
 	@Override
@@ -334,5 +350,50 @@ public class GolfBallEntity extends Entity {
 		output.putDouble(NBT_ROLLING_MULTIPLIER, shotProfile.rollingFrictionMultiplier());
 		output.putDouble(NBT_SHOT_DISTANCE, shotDistance.blocks());
 		output.putString(NBT_OWNER, ownerUuid == null ? "" : ownerUuid.toString());
+		output.putString(NBT_VISUAL_UUID, visualUuid == null ? "" : visualUuid.toString());
+	}
+
+	// ------------------------------------------------------------------
+	// M10 ball-visual probe: mirror the authoritative ball with a vanilla item
+	// entity so clients that cannot resolve the custom golf-ball entity (vanilla
+	// Java, and Bedrock through Geyser) still see it. Server-only presentation;
+	// the logical ball remains the single source of truth.
+	// ------------------------------------------------------------------
+
+	private void tickVisual() {
+		ServerLevel serverLevel = (ServerLevel) level();
+		Vec3 p = state.position();
+		if (visual == null || visual.isRemoved()) {
+			visual = null;
+			if (visualUuid != null) {
+				Entity existing = serverLevel.getEntity(visualUuid);
+				if (existing instanceof ItemEntity item && !item.isRemoved()) {
+					visual = item;
+				}
+			}
+			if (visual == null) {
+				ItemEntity item = new ItemEntity(serverLevel, p.x(), p.y(), p.z(),
+						new ItemStack(Items.SNOWBALL));
+				item.setNoGravity(true);
+				item.setPickUpDelay(32767);
+				item.setUnlimitedLifetime();
+				item.setInvulnerable(true);
+				item.addTag(BALL_VISUAL_TAG);
+				serverLevel.addFreshEntity(item);
+				visual = item;
+				visualUuid = item.getUUID();
+			}
+		}
+		visual.setPos(p.x(), p.y(), p.z());
+		visual.setDeltaMovement(0.0, 0.0, 0.0);
+	}
+
+	@Override
+	public void remove(RemovalReason reason) {
+		if (!level().isClientSide() && visual != null) {
+			visual.discard();
+			visual = null;
+		}
+		super.remove(reason);
 	}
 }

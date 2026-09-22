@@ -34,6 +34,7 @@ import com.prillcode.minecraftgolf.course.CourseDefinition;
 import com.prillcode.minecraftgolf.course.CourseScorecard;
 import com.prillcode.minecraftgolf.course.HoleScore;
 import com.prillcode.minecraftgolf.course.PlayerCourseState;
+import com.prillcode.minecraftgolf.club.ClubDefinition;
 import com.prillcode.minecraftgolf.club.GolfClubs;
 import com.prillcode.minecraftgolf.entity.GolfBallEntities;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
@@ -46,7 +47,6 @@ import com.prillcode.minecraftgolf.hole.PenaltyType;
 import com.prillcode.minecraftgolf.hole.PlayerHoleSession;
 import com.prillcode.minecraftgolf.hole.PlayerHoleState;
 import com.prillcode.minecraftgolf.hole.TapInRules;
-import com.prillcode.minecraftgolf.item.GolfClubItem;
 import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.net.HoleStateNetworking;
 import com.prillcode.minecraftgolf.net.HoleStatePayload;
@@ -638,22 +638,23 @@ public final class ActiveHoleService {
 
 	/** Resets the current golf set into hotbar slots 0 through 6. */
 	public StartResult equipClubs(ServerPlayer player) {
+		boolean modded = canResolveCustomItems(player);
 		List<ItemStack> displaced = new ArrayList<>();
 		for (int slot = 0; slot < 7; slot++) {
 			ItemStack stack = player.getInventory().getItem(slot);
-			if (!stack.isEmpty() && !(stack.getItem() instanceof GolfClubItem)) {
+			if (!stack.isEmpty() && GolfItems.clubOf(stack) == null) {
 				displaced.add(stack.copy());
 			}
 			player.getInventory().setItem(slot, ItemStack.EMPTY);
 		}
 		for (int slot = 7; slot < player.getInventory().getContainerSize(); slot++) {
-			if (player.getInventory().getItem(slot).getItem() instanceof GolfClubItem) {
+			if (GolfItems.clubOf(player.getInventory().getItem(slot)) != null) {
 				player.getInventory().setItem(slot, ItemStack.EMPTY);
 			}
 		}
 		for (int slot = 0; slot < GolfClubs.ALL.size(); slot++) {
 			player.getInventory().setItem(slot,
-				new ItemStack(GolfItems.itemFor(GolfClubs.ALL.get(slot).id())));
+				GolfItems.stackFor(GolfClubs.ALL.get(slot), modded));
 		}
 		for (ItemStack stack : displaced) {
 			if (!player.getInventory().add(stack)) {
@@ -1596,13 +1597,34 @@ public final class ActiveHoleService {
 		return Optional.empty();
 	}
 
+	/**
+	 * Whether this player's client can resolve the custom club items. A modded client
+	 * advertises our payloads; a vanilla/Bedrock client does not, and receives the
+	 * M10 vanilla fallback representation instead.
+	 */
+	private static boolean canResolveCustomItems(ServerPlayer player) {
+		return ServerPlayNetworking.canSend(player, HoleStatePayload.TYPE);
+	}
+
+	/** Whether the player already carries the logical club {@code clubId} in any representation. */
+	private static boolean hasClub(ServerPlayer player, String clubId) {
+		for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+			ClubDefinition held = GolfItems.clubOf(player.getInventory().getItem(slot));
+			if (held != null && held.id().equals(clubId)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static int grantMissingClubs(ServerPlayer player) {
+		boolean modded = canResolveCustomItems(player);
 		int granted = 0;
-		for (GolfClubItem club : GolfItems.CLUB_ITEMS.values()) {
-			ItemStack stack = new ItemStack(club);
-			if (player.getInventory().contains(stack)) {
+		for (ClubDefinition club : GolfClubs.ALL) {
+			if (hasClub(player, club.id())) {
 				continue;
 			}
+			ItemStack stack = GolfItems.stackFor(club, modded);
 			if (!player.getInventory().add(stack)) {
 				player.drop(stack, false);
 			}

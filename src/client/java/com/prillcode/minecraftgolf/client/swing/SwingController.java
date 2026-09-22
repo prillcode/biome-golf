@@ -17,7 +17,7 @@ import com.prillcode.minecraftgolf.client.DistanceDisplayState;
 import com.prillcode.minecraftgolf.club.ClubDefinition;
 import com.prillcode.minecraftgolf.club.ShotType;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
-import com.prillcode.minecraftgolf.item.GolfClubItem;
+import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.net.ShotRequestPayload;
 
 /** Client-local three-click swing state. The server receives only final intent. */
@@ -61,7 +61,7 @@ public final class SwingController {
 			noticeTicks--;
 		}
 
-		GolfClubItem heldClub = heldClub(client.player);
+		ClubDefinition heldClub = heldClub(client.player);
 		if (heldClub == null) {
 			reset();
 			return;
@@ -92,7 +92,7 @@ public final class SwingController {
 				|| !client.mouseHandler.isMouseGrabbed()) {
 			return;
 		}
-		GolfClubItem heldClub = heldClub(client.player);
+		ClubDefinition heldClub = heldClub(client.player);
 		if (heldClub == null) {
 			return;
 		}
@@ -119,14 +119,14 @@ public final class SwingController {
 		}
 	}
 
-	private void arm(Minecraft client, GolfClubItem heldClub) {
+	private void arm(Minecraft client, ClubDefinition heldClub) {
 		GolfBallEntity ball = findStrikeableBall(client.player);
 		if (ball == null) {
 			showNotice("No resting golf ball in range");
 			return;
 		}
 		targetBall = ball;
-		club = heldClub.club();
+		club = heldClub;
 		phase = Phase.POWER;
 		phaseTicks = 0;
 		lockedPower = 0.0f;
@@ -154,13 +154,13 @@ public final class SwingController {
 		phaseTicks = 0;
 	}
 
-	private boolean targetStillLegal(LocalPlayer player, GolfClubItem heldClub) {
+	private boolean targetStillLegal(LocalPlayer player, ClubDefinition heldClub) {
 		return targetBall != null
 				&& !targetBall.isRemoved()
 				&& targetBall.isResting()
 				&& targetBall.canBeStruckBy(player.getUUID())
 				&& player.distanceToSqr(targetBall) <= MAX_STRIKE_DISTANCE_SQ
-				&& club == heldClub.club();
+				&& club == heldClub;
 	}
 
 	private static GolfBallEntity findStrikeableBall(LocalPlayer player) {
@@ -191,9 +191,9 @@ public final class SwingController {
 		return owned != null ? owned : unowned;
 	}
 
-	private static GolfClubItem heldClub(LocalPlayer player) {
-		ItemStack held = player.getMainHandItem();
-		return held.getItem() instanceof GolfClubItem clubItem ? clubItem : null;
+	private static ClubDefinition heldClub(LocalPlayer player) {
+		// Recognises the custom item and the M10 vanilla fallback representation.
+		return GolfItems.clubOf(player.getMainHandItem());
 	}
 
 	private static float meterValue(int ticks, int halfSweepTicks) {
@@ -230,19 +230,19 @@ public final class SwingController {
 	/** Cycles legal choices; the server still validates the requested type. */
 	public void cycleShotType(Minecraft client) {
 		if (client.player == null) return;
-		GolfClubItem held = heldClub(client.player);
+		ClubDefinition held = heldClub(client.player);
 		if (held == null) return;
 		List<ShotType> choices = new java.util.ArrayList<>();
 		choices.add(ShotType.STANDARD);
-		choices.addAll(ShotType.choicesFor(held.club()));
+		choices.addAll(ShotType.choicesFor(held));
 		shotType = choices.get((choices.indexOf(shotType) + 1) % choices.size());
 		showNotice("Shot: " + shotType.displayName());
 	}
 
 	public String shotTypeText(LocalPlayer player) {
-		GolfClubItem held = heldClub(player);
+		ClubDefinition held = heldClub(player);
 		if (held == null) return "";
-		return "Shot: " + (shotType.allowedFor(held.club())
+		return "Shot: " + (shotType.allowedFor(held)
 			? shotType.displayName() : ShotType.STANDARD.displayName());
 	}
 
@@ -263,19 +263,19 @@ public final class SwingController {
 	}
 
 	public String clubName(LocalPlayer player) {
-		GolfClubItem held = heldClub(player);
+		ClubDefinition held = heldClub(player);
 		return held == null
 				? ""
 				: String.format(Locale.ROOT, "%s  %.0f°",
-						held.club().displayName(), held.club().displayLoftDegrees());
+						held.displayName(), held.displayLoftDegrees());
 	}
 
 	public String distanceText(LocalPlayer player) {
-		GolfClubItem held = heldClub(player);
+		ClubDefinition held = heldClub(player);
 		return held == null
 				? ""
-				: "~" + DistanceDisplayState.format(held.club().nominalCarry())
-						+ (held.club().putting() ? " roll" : "");
+				: "~" + DistanceDisplayState.format(held.nominalCarry())
+						+ (held.putting() ? " roll" : "");
 	}
 
 	public String stateText() {

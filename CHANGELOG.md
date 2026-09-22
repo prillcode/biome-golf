@@ -16,6 +16,16 @@ and uses [Semantic Versioning](https://semver.org/).
   remains the optional Java experience.
 - M10.0 Geyser/Floodgate Bedrock spike harness: a dev-server Compose overlay that adds the
   UDP 19132 listener and pins Floodgate auth (`scripts/dev-server-geyser-up.sh`).
+- M10.0 connection fix: the block/item/entity registries the mod adds to are marked
+  `RegistryAttribute.OPTIONAL`, so Fabric registry sync no longer rejects clients without
+  the mod. Vanilla Java and Bedrock/Geyser clients can now connect.
+- M10.2 club representation (dual): modded clients keep the custom club items; clients that
+  cannot resolve them (Bedrock/Geyser, vanilla Java) receive distinct vanilla items with a
+  club display name and an identifying `custom_data` tag. Both resolve to the same logical
+  club, so shot validation is unchanged.
+- M10.2 ball visual probe: the authoritative ball mirrors itself with a vanilla item entity
+  (a dropped snowball) so clients without the mod can see it. Experimental; the custom
+  renderer remains for modded clients.
 
 ## [0.6.0] - 2026-09-19
 

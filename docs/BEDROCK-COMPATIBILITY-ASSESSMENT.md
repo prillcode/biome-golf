@@ -191,9 +191,14 @@ server-side equivalent. The proposal itself offers three options; the assessment
   unverified. **Do not attempt for MVP.**
 - **Option C (optional Java enhancement):** keep `PostShotCamera` behind the mod.
 
-**Recommendation: Option C**, matching the proposal. The server may add a benign hint
-(action bar `Ball is moving…`) as the vanilla fallback, but the follow camera is
-Java-only by nature.
+**Update (M10.0 prototype):** Option B is more viable than this assessment first assumed.
+Geyser ships `JavaSetCameraTranslator` and `EntitySpectateHelper`, i.e. **Geyser translates
+Java's `SetCamera` packet**, so a server-controlled ball-follow camera can reach Bedrock
+clients. It still needs verification (smoothness, reliable restore, multiplayer isolation),
+but the camera is no longer a Java-only feature by necessity.
+
+**Recommendation:** keep the modded `PostShotCamera` for Java, and evaluate a
+server-controlled `SetCamera` fallback as the cross-platform path (Option B/C hybrid).
 
 ## 6. HUD
 
