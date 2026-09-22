@@ -249,12 +249,14 @@ optional enhancement.
 presentation fallbacks. **Enablers:** the pure core, server-authoritative physics, and the
 command-first lifecycle delivered in M8.6.
 
-### Proposed bounded slices (only after the prototype gate passes)
+### Bounded slices (tracked in `docs/M10-PLAN.md`; S1 started)
 
 - **M10.0 — Geyser prototype spike.** Stand up Geyser (+ Floodgate) against the dev server
   and connect a real Bedrock client. Record exactly where it fails. Evidence, not features.
+  *Harness done; Bedrock client run outstanding.*
 - **M10.1 — Vanilla interaction shot input + command fallback.** Reach `ShotService`
   without the client mod; keep the three-click meter as an optional enhancement.
+  *S1a done: `ShotService.attemptNearest` + `/golf swing`. S1b (held-use) pending.*
 - **M10.2 — Ball representation without a required custom entity.**
 - **M10.3 — Vanilla presentation fallbacks** (HUD, scorecard, lobby).
 - **M10.4 — Optional-enhancement boundary cleanup + cross-client verification matrix.**

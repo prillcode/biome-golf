@@ -7,7 +7,15 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Changes made after the latest release will be recorded here.
+### Added
+
+- M10.1 vanilla-compatible shot entry point: `/golf swing [power] [accuracy] [shotType]`
+  strikes the player's nearest resting ball along their look direction, so a client without
+  the mod (including Bedrock via Geyser) can take a shot. Validation is unchanged — it all
+  funnels through the server-authoritative shot service, and the modded three-click meter
+  remains the optional Java experience.
+- M10.0 Geyser/Floodgate Bedrock spike harness: a dev-server Compose overlay that adds the
+  UDP 19132 listener and pins Floodgate auth (`scripts/dev-server-geyser-up.sh`).
 
 ## [0.6.0] - 2026-09-19
 

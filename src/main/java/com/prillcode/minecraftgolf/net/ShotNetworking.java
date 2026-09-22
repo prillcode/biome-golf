@@ -57,28 +57,11 @@ public final class ShotNetworking {
 				payload.shotType());
 
 		if (outcome != ShotOutcome.SUCCESS) {
-			player.sendSystemMessage(Component.literal(describeFailure(outcome)), true);
+			player.sendSystemMessage(Component.literal(outcome.description()), true);
 		}
 		if (outcome == ShotOutcome.MISSING_ACTIVE_BALL) {
 			ActiveHoleService.instance().notifyMissingBall(player);
 		}
 		// On success the client sees the live server-authoritative entity motion.
-	}
-
-	private static String describeFailure(ShotOutcome o) {
-		return switch (o) {
-			case BALL_NOT_FOUND -> "[golf] that golf ball is not here";
-			case NOT_YOUR_BALL -> "[golf] that golf ball belongs to another player";
-			case BALL_MOVING -> "[golf] wait for the ball to stop";
-			case BALL_TOO_FAR -> "[golf] walk closer to the ball before taking the next shot";
-			case NO_CLUB -> "[golf] hold a golf club to take a shot";
-			case AIM_NOT_LEGAL -> "[golf] aim level with the ground";
-			case NOT_ACTIVE_BALL -> "[golf] use the ball assigned to the active hole attempt";
-			case MISSING_ACTIVE_BALL -> "[golf] your assigned ball is missing; use /golf hole restart";
-			case HOLE_COMPLETE -> "[golf] this hole is complete; use /golf hole restart, or /golf round restart after the round ends";
-			case DRIVER_NOT_ALLOWED_ON_SAND -> "[golf] Driver cannot be used from sand; select another club";
-			case INVALID_SHOT_TYPE -> "[golf] that shot type is not available for the held club";
-			case SUCCESS, UNKNOWN -> "";
-		};
 	}
 }

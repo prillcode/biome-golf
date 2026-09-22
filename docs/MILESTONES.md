@@ -148,7 +148,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
-| M10 | Client-Light / Bedrock Compatibility | Proposed; assessed, not started (see docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md) |
+| M10 | Client-Light / Bedrock Compatibility | In progress; S1 started (see docs/M10-PLAN.md, docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md) |
 
 ---
 
@@ -1418,11 +1418,12 @@ To be defined after V1 priorities are established.
 
 ## Status
 
-Assessed, not started. The assessment (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`) answers
-the ten questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` and concludes **practical
-with tradeoffs**: the golf core is already server-authoritative and Minecraft-free, and the
-only fundamentally required-client seam is the shot input. Do not begin implementation
-until this milestone is explicitly prioritized and the Geyser prototype gate passes.
+In progress. The assessment (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`) answers the ten
+questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` and concludes **practical with
+tradeoffs**: the golf core is already server-authoritative and Minecraft-free, and the only
+fundamentally required-client seam is the shot input. The bounded slices live in
+`docs/M10-PLAN.md`. S1a (the server-only `/golf swing` shot path) is implemented; the ball
+representation slice is gated on the M10.0 Geyser prototype evidence.
 
 ## Why It Is Deferred
 

@@ -113,6 +113,55 @@ public final class ShotService {
 		return ShotOutcome.SUCCESS;
 	}
 
+	/**
+	 * Vanilla-compatible shot entry point (M10.1): aims along the player's current
+	 * look direction and strikes their nearest resting ball. Used by
+	 * {@code /golf swing} (and, later, a held-use interaction) so a client without
+	 * the mod can still play. Validation is unchanged: everything funnels through
+	 * {@link #attempt}.
+	 */
+	public static ShotOutcome attemptNearest(ServerPlayer player, float power, float accuracy,
+			ShotType shotType) {
+		GolfBallEntity ball = nearestStrikeableBall(player);
+		if (ball == null) {
+			return ShotOutcome.BALL_NOT_FOUND;
+		}
+		return attempt(player, ball.getId(), player.getYRot(), player.getXRot(), power, accuracy, shotType);
+	}
+
+	/**
+	 * Nearest resting ball the player may strike, preferring the player's own ball
+	 * over an unowned one. Distance is intentionally not filtered here so
+	 * {@link #attempt} can report {@link ShotOutcome#BALL_TOO_FAR} rather than a
+	 * misleading {@code BALL_NOT_FOUND}.
+	 */
+	public static GolfBallEntity nearestStrikeableBall(ServerPlayer player) {
+		ServerLevel level = (ServerLevel) player.level();
+		UUID me = player.getUUID();
+		GolfBallEntity owned = null;
+		double ownedDistance = Double.MAX_VALUE;
+		GolfBallEntity unowned = null;
+		double unownedDistance = Double.MAX_VALUE;
+		List<? extends GolfBallEntity> balls =
+				level.getEntities(EntityTypeTest.forClass(GolfBallEntity.class), ignored -> true);
+		for (GolfBallEntity ball : balls) {
+			if (!ball.isResting()) {
+				continue;
+			}
+			double distance = player.distanceToSqr(ball);
+			if (me.equals(ball.owner())) {
+				if (distance < ownedDistance) {
+					owned = ball;
+					ownedDistance = distance;
+				}
+			} else if (ball.owner() == null && distance < unownedDistance) {
+				unowned = ball;
+				unownedDistance = distance;
+			}
+		}
+		return owned != null ? owned : unowned;
+	}
+
 	static boolean isDriver(ClubDefinition club) {
 		return "driver".equals(club.id());
 	}

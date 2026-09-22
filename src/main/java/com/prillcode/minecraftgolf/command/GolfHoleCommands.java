@@ -1,6 +1,7 @@
 package com.prillcode.minecraftgolf.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -27,8 +28,11 @@ import com.prillcode.minecraftgolf.server.PracticeRangeService;
 import com.prillcode.minecraftgolf.server.PracticeRangeService.Location;
 import com.prillcode.minecraftgolf.block.GolfBlocks;
 import net.minecraft.world.level.block.Blocks;
+import com.prillcode.minecraftgolf.club.ShotType;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
 import com.prillcode.minecraftgolf.golf.Vec3;
+import com.prillcode.minecraftgolf.net.ShotOutcome;
+import com.prillcode.minecraftgolf.net.ShotService;
 import com.prillcode.minecraftgolf.round.RoundLobbyProjection;
 
 /** Player-facing lifecycle commands for the server-authoritative M5 course. */
@@ -93,9 +97,17 @@ public final class GolfHoleCommands {
 				)
 			.then(Commands.literal("pickup").executes(GolfHoleCommands::pickUp))
 			.then(Commands.literal("tapin").executes(GolfHoleCommands::tapIn))
+			.then(Commands.literal("swing")
+				.executes(GolfHoleCommands::swing)
+				.then(Commands.argument("power", FloatArgumentType.floatArg(0.0f, 1.0f))
+					.executes(GolfHoleCommands::swing)
+					.then(Commands.argument("accuracy", FloatArgumentType.floatArg(0.0f, 1.0f))
+						.executes(GolfHoleCommands::swing)
+						.then(Commands.argument("type", StringArgumentType.word())
+							.executes(GolfHoleCommands::swing)))))
 			.then(Commands.literal("nexthole").executes(GolfHoleCommands::nextHole)));
 		MinecraftGolf.LOGGER.info(
-			"Registered Ready Golf round, hole lifecycle, practice ball, practice clear, Pick Up, and next-hole commands");
+			"Registered Ready Golf round, hole lifecycle, practice ball, practice clear, Pick Up, swing, and next-hole commands");
 	}
 
 	private static int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -115,6 +127,7 @@ public final class GolfHoleCommands {
 		context.getSource().sendSuccess(() -> Component.literal("Getting started: /golf round list | /golf round join"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Rounds: /golf round create <courseId> | /golf round start | /golf round status | /golf round leave"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Playing: /golf hole status | /golf hole restart | /golf pickup | /golf nexthole"), false);
+		context.getSource().sendSuccess(() -> Component.literal("Swing (no client mod needed): /golf swing [power] [accuracy] [shotType]"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Practice: /golf practice ball | /golf practice tee | /golf practice target list"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Solo: /golf course play [courseId] [hole] | /golf hole start [hole]"), false);
 		return 1;
@@ -341,6 +354,56 @@ public final class GolfHoleCommands {
 	private static int nextHole(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		return sendResult(context, ActiveHoleService.instance().nextHole(player));
+	}
+
+	/**
+	 * M10.1 server-only shot path: a vanilla client (or Bedrock via Geyser) can
+	 * strike its nearest resting ball through chat, aiming along its look direction.
+	 * The optional arguments default to full power, a perfect accuracy lane, and the
+	 * standard trajectory, so {@code /golf swing} alone is a legal shot.
+	 */
+	private static int swing(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		float power = optionalFloat(context, "power", 1.0f);
+		float accuracy = optionalFloat(context, "accuracy", 0.5f);
+		ShotType shotType;
+		try {
+			shotType = optionalShotType(context);
+		} catch (IllegalArgumentException exception) {
+			context.getSource().sendFailure(Component.literal(exception.getMessage()));
+			return 0;
+		}
+		ShotOutcome outcome = ShotService.attemptNearest(player, power, accuracy, shotType);
+		if (outcome != ShotOutcome.SUCCESS) {
+			context.getSource().sendFailure(Component.literal(outcome.description()));
+			return 0;
+		}
+		return 1;
+	}
+
+	private static float optionalFloat(CommandContext<CommandSourceStack> context, String name,
+			float fallback) {
+		try {
+			return FloatArgumentType.getFloat(context, name);
+		} catch (IllegalArgumentException exception) {
+			return fallback;
+		}
+	}
+
+	private static ShotType optionalShotType(CommandContext<CommandSourceStack> context) {
+		String raw;
+		try {
+			raw = StringArgumentType.getString(context, "type");
+		} catch (IllegalArgumentException exception) {
+			return ShotType.STANDARD;
+		}
+		for (ShotType candidate : ShotType.values()) {
+			if (candidate.name().equalsIgnoreCase(raw) || candidate.displayName().equalsIgnoreCase(raw)) {
+				return candidate;
+			}
+		}
+		throw new IllegalArgumentException("[golf] unknown shot type '" + raw
+			+ "'; use standard, chip, stinger, or flop");
 	}
 
 	private static int sendResult(CommandContext<CommandSourceStack> context, StartResult result) {
