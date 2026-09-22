@@ -1,5 +1,9 @@
 # Server-Authoritative, Client-Light Architecture Proposal
 
+> **Assessed.** See `docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md` for the answers to this
+> proposal's ten evaluation questions. Verdict: **practical with tradeoffs**. Tracked as
+> proposed milestone M10 in `docs/MILESTONES.md`; not started.
+
 ## Context
 
 BirdieBiome is being developed as a Java Edition Minecraft golf mod, currently targeting a Fabric-based Java server.

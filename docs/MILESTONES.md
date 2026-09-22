@@ -148,6 +148,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
+| M10 | Client-Light / Bedrock Compatibility | Proposed; assessed, not started (see docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md) |
 
 ---
 
@@ -1413,6 +1414,47 @@ To be defined after V1 priorities are established.
 
 ---
 
+# M10 — Client-Light / Bedrock Compatibility (proposed)
+
+## Status
+
+Assessed, not started. The assessment (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`) answers
+the ten questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` and concludes **practical
+with tradeoffs**: the golf core is already server-authoritative and Minecraft-free, and the
+only fundamentally required-client seam is the shot input. Do not begin implementation
+until this milestone is explicitly prioritized and the Geyser prototype gate passes.
+
+## Why It Is Deferred
+
+No gameplay blocker. The modded Java client is the supported experience today; this
+milestone preserves the *option* of vanilla-Java and Bedrock/Geyser cross-play. It must not
+displace M9 or play-feel work, and it must not sacrifice the three-click swing.
+
+## Candidate Scope
+
+1. Geyser/Floodgate prototype spike (evidence gate, no features).
+2. Vanilla-compatible shot input plus a command fallback, funnelling into the unchanged
+   `ShotService`; keep the three-click meter as an optional Java enhancement.
+3. Ball representation that does not require a custom client entity.
+4. Server-side vanilla presentation fallbacks (action bar / boss bar / chat / scoreboard)
+   alongside the existing payloads.
+5. An architecture test enforcing "no `net.minecraft` imports in the core domain packages"
+   instead of splitting Gradle modules.
+
+## Non-Goals
+
+- Console (Xbox/PlayStation/Switch) Bedrock deployment.
+- Mixin-based protocol tricks, a Hydraulic dependency, or a mandatory Bedrock pack.
+- Course marketplace, matchmaking, or any external backend.
+
+## Exit Criteria
+
+At least two clients (modded Java + Bedrock via Geyser) complete a full round (join → hit →
+score → next hole) against the same server-authoritative round. Vanilla-Java and Geyser
+acceptance may not be claimed before the prototype gate produces evidence.
+
+---
+
 # Milestone Completion Protocol
 
 When an agent or developer completes a milestone:
@@ -1444,4 +1486,7 @@ server-authoritative shot variety and tap-in; M8.8 added the yard distance displ
 added the operator-authored practice range; M8.10 added operator-authored whole-course
 landscape protection (break/place/TNT) with a per-course lock, verified automatically, over
 Docker/RCON, and in-game as both operator and non-operator. M9 — Additional Game Modes
-remains deferred until an alternate mode is explicitly prioritized.
+remains deferred until an alternate mode is explicitly prioritized. M10 — Client-Light /
+Bedrock Compatibility is proposed and assessed (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`,
+verdict: practical with tradeoffs) but not started, pending prioritization and a Geyser
+prototype gate.
