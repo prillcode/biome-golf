@@ -72,6 +72,37 @@ separate deployment step from Docker's `dev-server-sync.sh`.
 
 To find the host's LAN IP: `ip addr` on Linux, `ipconfig` on Windows.
 
+## Bedrock / Geyser prototype (M10.0 spike)
+
+The Bedrock cross-play spike layers an optional Compose overlay on top of the base
+dev server, so the tracked default stays portable and unchanged:
+
+```bash
+./scripts/dev-server-geyser-up.sh        # base compose + Geyser/Floodgate + UDP 19132
+
+# the same overlay for logs / stop:
+docker compose -f docker-compose.yml -f docker-compose.geyser.yml logs -f
+docker compose -f docker-compose.yml -f docker-compose.geyser.yml down
+```
+
+What the overlay does (`docker-compose.geyser.yml`):
+
+- adds the Bedrock UDP listener `19132:19132/udp`;
+- installs `geyser` and `floodgate` from Modrinth alongside the existing pinned
+  Fabric API. Geyser only publishes **beta** builds, so the overlay widens the
+  Modrinth downloader to `beta` (`MODRINTH_PROJECTS_DEFAULT_VERSION_TYPE`); the
+  Fabric API pin is unaffected;
+- after first boot, `dev-server-geyser-up.sh` sets Geyser `auth-type: floodgate`
+  (idempotent) so Bedrock players do not need a linked Java account. Geyser's
+  generated config lives at `/data/config/Geyser-Fabric/config.yml` in the volume.
+
+Bedrock clients connect to the host on UDP **19132** — LAN IP (e.g.
+`192.168.40.194:19132`), Tailscale IP (`100.70.252.108:19132`), or
+`localhost:19132` on the Docker host. This is a **spike harness for architectural
+evidence**, not a supported deployment; vanilla-Java and Bedrock acceptance are not
+claimed until a real client completes a round (see
+`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`).
+
 ## Data, restart, and reset
 
 - Server world and configuration live in the Compose volume `dev-server_minecraft-golf-data` (persistent across restarts and image updates; survives bind-mount permission quirks).

@@ -1,0 +1,25 @@
+# M10.0 Bedrock/Geyser prototype spike — Compose overlay.
+#
+# Layer this on top of the base dev-server compose so the tracked default stays
+# portable and unchanged:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.geyser.yml up -d
+#   docker compose -f docker-compose.yml -f docker-compose.geyser.yml logs -f
+#   docker compose -f docker-compose.yml -f docker-compose.geyser.yml down
+#
+# (or `./scripts/dev-server-geyser-up.sh` for the up step).
+#
+# It adds the Bedrock UDP listener and installs Geyser + Floodgate from Modrinth.
+# Both are Fabric server-side mods that support MC 26.2; the itzg image resolves
+# the Fabric builds for the server's VERSION/loader automatically.
+#
+# Geyser only publishes beta builds, so the Modrinth downloader must accept them
+# (`--allowed-version-type` accepts release|beta|alpha; `beta` admits release too).
+# fabric-api stays pinned, so widening the default only affects Geyser/Floodgate.
+services:
+  minecraft:
+    ports:
+      - "19132:19132/udp"
+    environment:
+      MODRINTH_PROJECTS: "fabric-api:0.160.0+26.2,geyser,floodgate"
+      MODRINTH_PROJECTS_DEFAULT_VERSION_TYPE: "beta"
