@@ -9,14 +9,25 @@ questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` against the current imp
 
 > ## M10.0 prototype result — CONFIRMED BLOCKER
 >
-> A Bedrock client (via Geyser) attempting to join was disconnected during configuration
-> with:
+> A real Bedrock client through Geyser was disconnected during configuration with:
 >
 > ```text
 > This server requires Fabric Loader and Fabric API installed on your client!
 > The following registry entry namespaces may be related:
 >
 > minecraft_golf
+> ```
+>
+> Server-side confirmation (the connection reached Geyser/Floodgate, then the Java server
+> rejected it):
+>
+> ```text
+> [01:26:33] [GeyserServerChild-4-1/INFO]: Player connected with username PFamGamez
+> [01:26:34] Floodgate player who is logged in as .PFamGamez 00000000-... joined
+> [01:26:34] Floodgate player logged in as .PFamGamez disconnected
+>            The following registry entry namespaces may be related:
+>            PFamGamez has disconnected from the Java server because of
+>            <This server requires Fabric Loader and Fabric API installed on your client!>
 > ```
 >
 > **Cause (verified in the running server's jars):** Fabric API's
