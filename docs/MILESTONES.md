@@ -1422,8 +1422,10 @@ In progress. The assessment (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`) answers
 questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` and concludes **practical with
 tradeoffs**: the golf core is already server-authoritative and Minecraft-free, and the only
 fundamentally required-client seam is the shot input. The bounded slices live in
-`docs/M10-PLAN.md`. S1a (the server-only `/golf swing` shot path) is implemented; the ball
-representation slice is gated on the M10.0 Geyser prototype evidence.
+`docs/M10-PLAN.md`. S1a (the server-only `/golf swing` shot path) is implemented. The M10.0
+Geyser prototype has since **confirmed** that Fabric registry sync rejects unmodded clients
+outright: custom blocks, items, and the ball entity type must all be aliased to vanilla
+entries before any client-light play is possible (M10.2, now mandatory).
 
 ## Why It Is Deferred
 

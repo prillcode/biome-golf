@@ -31,10 +31,14 @@ Floodgate next to the golf server on UDP 19132, auth pinned to Floodgate. Verifi
 2.11.3-b1245 + Floodgate 2.2.6 boot alongside `minecraft_golf 0.6.0` on MC 26.2 and Geyser
 listens on 19132.
 
-**Open:** a real Bedrock client must run join -> join match -> select club -> aim -> hit ->
-observe ball -> complete hole -> view score -> next hole, and we record exactly where it
-fails. The **registry-sync question** (can an unmodified client tolerate the extra
-entity/block/item registry entries?) is resolved here and it gates S2.
+**Result (CONFIRMED BLOCKER).** A Bedrock client via Geyser was disconnected during
+configuration: *"This server requires Fabric Loader and Fabric API installed on your
+client! The following registry entry namespaces may be related: minecraft_golf"*.
+Verified source: Fabric API's `fabric-registry-sync-v0` 7.1.1 `RegistrySyncManager`
+disconnects clients missing entries in a non-optional (vanilla) registry; there is no
+server-side disable switch. **So no unmodded client can connect while the mod adds blocks,
+items, or entity types.** Each slice below must therefore *remove* vanilla-registry content,
+not merely re-skin it. S1 (shot input) does not depend on this and is already underway.
 
 ### M10.1 - Vanilla-compatible shot input
 
@@ -47,13 +51,24 @@ entity/block/item registry entries?) is resolved here and it gates S2.
   optional enhancement. This is a **gameplay change** and needs design + playtest.
 - Command fallback stays for accessibility and as the test seam.
 
-### M10.2 - Ball representation without a required custom entity
+### M10.2 - Remove all custom vanilla-registry content (expanded by M10.0)
 
-**Gated on M10.0's registry answer.** Target: the logical ball (physics/owner/resting,
-already Minecraft-free) is server state; the in-world entity becomes a swappable visual
-adapter renderable by vanilla/Bedrock (e.g. a display entity or a vanilla item entity).
-`GolfBallEntity` is referenced widely (`ActiveHoleService`, `ShotService`, commands, client
-swing/camera/renderer), so this is the largest slice and must be done behind tests.
+**Mandatory connection gate.** Fabric registry sync means any custom `minecraft:block`,
+`minecraft:item`, or `minecraft:entity_type` entry blocks every unmodded client. This slice
+must therefore alias **all** of it to vanilla:
+
+- **Ball entity** (1): the logical ball (physics/owner/resting, already Minecraft-free)
+  stays server state; the in-world entity becomes a swappable visual adapter renderable by
+  vanilla/Bedrock (e.g. a vanilla display/item entity). `GolfBallEntity` is referenced
+  widely (`ActiveHoleService`, `ShotService`, commands, client swing/camera/renderer), so
+  do this behind tests.
+- **Club items** (7): vanilla item + custom model data / resource pack instead of custom
+  `Item` entries; the held stack still maps to a logical club server-side.
+- **Cup/flag blocks** (3): vanilla blocks plus server-side authored markers instead of
+  custom `Block` entries (cup detection is already position-based).
+
+Acceptance for this slice: an unmodded client reaches the world without a registry-sync
+disconnect — testable with the Geyser harness immediately, no full round required.
 
 ### M10.3 - Vanilla presentation fallbacks
 

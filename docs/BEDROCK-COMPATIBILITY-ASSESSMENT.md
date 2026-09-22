@@ -1,10 +1,39 @@
 # Bedrock / Client-Light Compatibility Assessment
 
-**Status:** Assessment complete. No code changed. This document answers the ten
-questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` against the current
-implementation (M0–M8.10, v0.6.0).
+**Status:** Assessment complete, updated with the M10.0 prototype result (unmodded clients
+are rejected by Fabric registry sync — confirmed, see below). This document answers the ten
+questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` against the current implementation
+(M0–M8.10, v0.6.0).
 
 **Verdict: Practical with tradeoffs.**
+
+> ## M10.0 prototype result — CONFIRMED BLOCKER
+>
+> A Bedrock client (via Geyser) attempting to join was disconnected during configuration
+> with:
+>
+> ```text
+> This server requires Fabric Loader and Fabric API installed on your client!
+> The following registry entry namespaces may be related:
+>
+> minecraft_golf
+> ```
+>
+> **Cause (verified in the running server's jars):** Fabric API's
+> `fabric-registry-sync-v0` 7.1.1 module (`RegistrySyncManager.configureClient`) compares the
+> server's registry contents with the client's and calls
+> `ServerConfigurationPacketListenerImpl.disconnect(...)` when the client lacks entries in a
+> registry that is not marked optional. The only bypass is
+> `RegistryAttributeHolder`/`RegistryAttribute.OPTIONAL` on a **modded** registry; the
+> vanilla registries we touch (`minecraft:block`, `minecraft:item`, `minecraft:entity_type`)
+> cannot be made optional, and there is no server-side disable switch (the module exposes
+> only `fabric.registry.debug` and `fabric.registry.sync.max_packet_size`).
+>
+> **Consequence:** while the mod adds **any** entry to a vanilla registry, **no unmodded
+> client — vanilla Java or Bedrock/Geyser — can connect at all.** This is a hard gate, not a
+> rendering problem. It makes M10.2 (removing custom registry content) mandatory and
+> broader than the ball: the 3 custom blocks and 7 custom items must also be aliased to
+> vanilla entries before any client-light testing is possible.
 
 The golf engine is already server-authoritative and, more importantly, already
 Minecraft-independent at its core. Cross-play is blocked not by the simulation but by
@@ -199,11 +228,13 @@ Blockers to a Bedrock client joining and completing a full round, most severe fi
    tell which item is a driver. Fixes §1 rows 2–3.
 4. **Custom payloads (missing HUD/scorecard).** Bedrock receives no hole state or
    scorecard; the scorecard is currently dropped without a chat fallback. Fixes §6.
-5. **Connection / registry sync (unverified).** The project currently *requires* a Fabric
-   client (`ARCHITECTURE.md` §28.3). Whether an unmodified Java or Geyser client can
-   connect to a server carrying extra entity/block/item registry entries is **not
-   established by this assessment** and must be tested. If it fails, registry aliasing
-   (§3, §9) becomes mandatory rather than optional.
+5. **Connection / registry sync (CONFIRMED hard blocker, #1 in practice).** The M10.0
+   prototype reproduced the disconnect: Fabric API's `fabric-registry-sync-v0` rejects any
+   client missing entries in a non-optional vanilla registry, and our `minecraft_golf`
+   block/item/entity entries are exactly that. There is no disable switch. **Until every
+   custom vanilla-registry entry is aliased to a vanilla one, no unmodded client can even
+   reach the world.** This precedes and outweighs blockers 2–4, which only matter once a
+   client can connect.
 6. **Console platforms.** Bedrock consoles restrict arbitrary server entry; explicitly out
    of scope (proposal agrees).
 
@@ -220,8 +251,11 @@ Each is additive and keeps the current modded client working.
    clean) from `GolfBallEntity` so the visual/entity type is a swappable adapter.
 3. **Vanilla presentation emitter.** Action bar / boss bar / chat / scoreboard fallbacks
    alongside the existing payloads; keep the payloads for the optional enhancement.
-4. **Interaction-adapter for items/blocks.** Treat clubs and cup/flag markers as logical
-   concepts mapped onto vanilla items/blocks, with custom models as an optional pack.
+4. **Alias all custom vanilla-registry content (now mandatory, not optional).** M10.0 shows
+   that custom blocks/items/entity entries block *all* unmodded connections. Treat clubs
+   and cup/flag markers as logical concepts mapped onto vanilla items/blocks (custom model
+   data / resource pack for appearance), and drop the custom entity type. This is the
+   largest single change and gates everything else.
 5. **Document + test the dependency rule instead of splitting Gradle modules.** The
    proposal sketches `birdiebiome-core/server/client/compat` modules, but the current
    package layout already isolates the domain (`ball/club/golf/round/hole/course/config/
@@ -245,7 +279,8 @@ and the match lifecycle already runs through commands. What remains is presentat
 input redesign — bounded, testable work that leaves the good Java experience intact as an
 optional enhancement.
 
-**Drivers of the verdict:** the shot input, the ball entity, and the absence of vanilla
+**Drivers of the verdict:** the confirmed registry-sync connection gate (all custom
+blocks/items/entity must be aliased), the shot input, the ball entity, and the absence of vanilla
 presentation fallbacks. **Enablers:** the pure core, server-authoritative physics, and the
 command-first lifecycle delivered in M8.6.
 
