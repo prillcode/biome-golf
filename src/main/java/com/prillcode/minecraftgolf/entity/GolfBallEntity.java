@@ -25,6 +25,7 @@ import com.prillcode.minecraftgolf.ball.ShotPhysicsProfile;
 import com.prillcode.minecraftgolf.ball.ShotDistanceTracker;
 import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
+import com.prillcode.minecraftgolf.server.BallCameraService;
 import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
 import com.prillcode.minecraftgolf.world.GolfBlockSurfaceResolver;
 import com.prillcode.minecraftgolf.world.MinecraftBallCollisionWorld;
@@ -160,6 +161,8 @@ public class GolfBallEntity extends Entity {
 		if (state.resting()) {
 			entityData.set(DATA_RESTING, true);
 			LOGGER.info("Golf ball {} came to rest at {}", getId(), fmt(state.position()));
+			// M10.2: hand control back before travel/hole-out changes the view.
+			BallCameraService.instance().onBallRest(this);
 			// Penalty recovery and hole-out may replace state during onBallMoved;
 			// travel only when physics itself brought the active ball to rest.
 			if (state == next) {
@@ -204,6 +207,7 @@ public class GolfBallEntity extends Entity {
 		initialized = true;
 		entityData.set(DATA_RESTING, true);
 		applyPosition(position);
+		BallCameraService.instance().onBallRest(this);
 		LOGGER.info("Golf ball {} placed at rest at {}", getId(), fmt(position));
 	}
 
@@ -257,6 +261,21 @@ public class GolfBallEntity extends Entity {
 	/** Whether the given player may strike this ball (owns it, or it is unclaimed). */
 	public boolean canBeStruckBy(java.util.UUID playerUuid) {
 		return playerUuid != null && (ownerUuid == null || ownerUuid.equals(playerUuid));
+	}
+
+	/**
+	 * M10.2: vanilla-visible entity a client-light server camera can follow. The
+	 * custom ball entity is unknown to Bedrock/Geyser's entity cache, so follow the
+	 * vanilla item mirror instead (spawning it now if it has not ticked yet).
+	 */
+	public Entity cameraTarget() {
+		if (level().isClientSide()) {
+			return this;
+		}
+		if (state != null && (visual == null || visual.isRemoved())) {
+			tickVisual();
+		}
+		return visual != null ? visual : this;
 	}
 
 	/** Convenience: ball center as Minecraft coordinates. */
@@ -390,9 +409,12 @@ public class GolfBallEntity extends Entity {
 
 	@Override
 	public void remove(RemovalReason reason) {
-		if (!level().isClientSide() && visual != null) {
-			visual.discard();
-			visual = null;
+		if (!level().isClientSide()) {
+			BallCameraService.instance().onBallRest(this);
+			if (visual != null) {
+				visual.discard();
+				visual = null;
+			}
 		}
 		super.remove(reason);
 	}

@@ -26,6 +26,8 @@ import com.prillcode.minecraftgolf.net.GolfMenuNetworking;
 import com.prillcode.minecraftgolf.net.ShotNetworking;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.AuthoredCourseService;
+import com.prillcode.minecraftgolf.server.BallCameraService;
+import com.prillcode.minecraftgolf.server.HeldShotService;
 import com.prillcode.minecraftgolf.server.PracticeRangeService;
 import com.prillcode.minecraftgolf.server.CourseBlockBreakGuard;
 
@@ -57,12 +59,14 @@ public class MinecraftGolf implements ModInitializer {
 		// M4 cup/flag block; authoritative detection remains server-side.
 		GolfBlocks.registerAll();
 
-		// M10: our blocks/items/entity live in vanilla registries. Fabric registry sync
-		// otherwise disconnects any client without them ("This server requires Fabric
+		// M10 (shelved): our blocks/items/entity live in vanilla registries. Fabric registry
+		// sync otherwise disconnects any client without them ("This server requires Fabric
 		// Loader and Fabric API installed on your client!"). Marking those registries
-		// OPTIONAL lets unmodified Java and Bedrock/Geyser clients connect; they simply
-		// do not resolve our custom content. Confirmed reachable in Fabric API 0.160.0+26.2
-		// (fabric-registry-sync-v0 7.1.1: areAllRegistriesOptional -> no disconnect).
+		// OPTIONAL lets unmodified Java and Bedrock/Geyser clients connect; they simply do
+		// not resolve our custom content. Confirmed reachable in Fabric API 0.160.0+26.2
+		// (fabric-registry-sync-v0 7.1.1: areAllRegistriesOptional -> no disconnect). This
+		// and the other client-light fallbacks stay gated to non-mod clients; the Java
+		// experience remains the supported target and no further Bedrock work is planned.
 		markClientRegistryContentOptional();
 
 		// Developer launch and test controls (M001-S03). Server-side only; the
@@ -81,6 +85,9 @@ public class MinecraftGolf implements ModInitializer {
 
 		// M3: typed shot-request networking (payload codec + server receiver).
 		ShotNetworking.register();
+
+		// M10.1: client-light held-use shot input (right-click hold near own ball).
+		HeldShotService.register();
 
 		// S03: clientbound hole-state snapshot networking; client receiver registered in MinecraftGolfClient.
 		HoleStateNetworking.register();
@@ -105,8 +112,10 @@ public class MinecraftGolf implements ModInitializer {
 		});
 
 		// S5: apply the Ready Golf suspension policy on disconnect.
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
-			ActiveHoleService.instance().onPlayerDisconnected(handler.getPlayer(), server));
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			BallCameraService.instance().forget(handler.getPlayer().getUUID());
+			ActiveHoleService.instance().onPlayerDisconnected(handler.getPlayer(), server);
+		});
 	}
 
 	/**
