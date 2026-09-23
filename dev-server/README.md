@@ -72,7 +72,11 @@ separate deployment step from Docker's `dev-server-sync.sh`.
 
 To find the host's LAN IP: `ip addr` on Linux, `ipconfig` on Windows.
 
-## Bedrock / Geyser prototype (M10.0 spike)
+## Bedrock / Geyser prototype (M10.0 spike — SHELVED, optional/unsupported)
+
+**Status:** the client-light/Bedrock effort is shelved; the modded Java client is the only
+supported experience. This overlay is kept as an optional experiment only. See
+`docs/M10-PLAN.md`.
 
 The Bedrock cross-play spike layers an optional Compose overlay on top of the base
 dev server, so the tracked default stays portable and unchanged:
@@ -99,9 +103,8 @@ What the overlay does (`docker-compose.geyser.yml`):
 Bedrock clients connect to the host on UDP **19132** — LAN IP (e.g.
 `192.168.40.194:19132`), Tailscale IP (`100.70.252.108:19132`), or
 `localhost:19132` on the Docker host. This is a **spike harness for architectural
-evidence**, not a supported deployment; vanilla-Java and Bedrock acceptance are not
-claimed until a real client completes a round (see
-`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`).
+evidence only, not a supported deployment**, and no Bedrock/vanilla-Java acceptance is
+claimed (see `docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`, `docs/M10-PLAN.md`).
 
 ## Data, restart, and reset
 

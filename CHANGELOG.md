@@ -9,6 +9,22 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- M10 client-light/Bedrock effort is **shelved**: the modded Java client remains the only
+  supported target. The connection fix, dual clubs, ball mirror, held-use input, and server
+  ball camera stay in the tree but are gated to clients that cannot receive
+  `HoleStatePayload`, are not a supported path, and get no further parity work (a bounded,
+  Java-safe Tier 1 fallback slice is planned; see `docs/M10.3-PLAN.md`). The one Java-facing
+  change (replacing the custom cup/flag blocks with a cauldron/banner) was reverted, so the
+  modded client keeps its custom cup/flag models.
+- M10.1 (experimental, unsupported) held-use shot input for client-light players: holding
+  right-click near your own resting ball charges a shot (power from hold duration, capped at
+  1 second) and release strikes along the look direction. Input funnels through the
+  unchanged server-authoritative `ShotService`; the modded three-click meter and
+  `/golf swing` both remain.
+- M10.2 (experimental, unsupported) server-side ball-follow camera for client-light players:
+  after a shot the server attaches the shooter's camera to the ball's vanilla-visible mirror
+  through Java's `SetCamera` packet and restores it when the ball rests or is removed.
+  Modded clients keep their own `PostShotCamera`.
 - M10.1 vanilla-compatible shot entry point: `/golf swing [power] [accuracy] [shotType]`
   strikes the player's nearest resting ball along their look direction, so a client without
   the mod (including Bedrock via Geyser) can take a shot. Validation is unchanged — it all

@@ -7,6 +7,13 @@ questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` against the current imp
 
 **Verdict: Practical with tradeoffs.**
 
+> **Update (2026-09): SHELVED.** A Bedrock client did connect and play, but the experience is
+> inherently below the modded Java client (server-driven spectate camera, no visible
+> swing/power interaction). Per the priority order, the effort is shelved and the Java
+> experience remains the only supported target. See `docs/M10-PLAN.md`. The gated
+> client-light code stays in the tree but is unsupported; the vanilla cup/flag swap was
+> reverted.
+
 > ## M10.0 prototype result — CONFIRMED BLOCKER
 >
 > A real Bedrock client through Geyser was disconnected during configuration with:

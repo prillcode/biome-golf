@@ -148,7 +148,8 @@ The host operating system should not affect the Fabric server architecture.
 | M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
-| M10 | Client-Light / Bedrock Compatibility | In progress; S1 started (see docs/M10-PLAN.md, docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md) |
+| M10 | Client-Light / Bedrock Compatibility | **SHELVED** except M10.3 Tier 1; Java experience prioritized (see docs/M10-PLAN.md) |
+| M10.3 | Tier 1 Cross-Play (Java-Safe) | Planned; Java-safe presentation fallbacks + ball-mirror fix, no camera/visual parity (see docs/M10.3-PLAN.md) |
 
 ---
 
@@ -1414,24 +1415,31 @@ To be defined after V1 priorities are established.
 
 ---
 
-# M10 — Client-Light / Bedrock Compatibility (proposed)
+# M10 — Client-Light / Bedrock Compatibility (SHELVED)
 
 ## Status
 
-In progress. The assessment (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`) answers the ten
-questions in `docs/SERVER-AUTHORITATIVE-CLIENT-LIGHT.md` and concludes **practical with
-tradeoffs**: the golf core is already server-authoritative and Minecraft-free, and the only
-fundamentally required-client seam is the shot input. The bounded slices live in
-`docs/M10-PLAN.md`. S1a (the server-only `/golf swing` shot path) is implemented. The M10.0
-Geyser prototype has since **confirmed** that Fabric registry sync rejects unmodded clients
-outright: custom blocks, items, and the ball entity type must all be aliased to vanilla
-entries before any client-light play is possible (M10.2, now mandatory).
+**Shelved (2026-09), except M10.3 Tier 1.** Client-light/Bedrock visual and camera parity
+is not a goal. The assessment (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`) concluded
+**practical with tradeoffs**, and a real Bedrock client did connect, but the resulting
+experience is inherently below the modded Java client (server-driven spectate camera, no
+visible swing/power interaction). Per the priority order (`good golf > maintainable server >
+Java experience > client-light > Bedrock`), the expensive parity work is stopped.
 
-## Why It Is Deferred
+One bounded, Java-safe slice is planned instead: **M10.3 Tier 1** lets Bedrock and
+vanilla-Java players compete side-by-side with different visuals, using only fallbacks gated
+on `!canSend(HoleStatePayload)`, and fixes the ball mirror so modded Java stops seeing the
+vanilla proxy. It builds no Bedrock resource pack and no camera parity. See
+`docs/M10.3-PLAN.md`; Tier 2 (Bedrock resource pack) is deferred to a separate research
+session.
 
-No gameplay blocker. The modded Java client is the supported experience today; this
-milestone preserves the *option* of vanilla-Java and Bedrock/Geyser cross-play. It must not
-displace M9 or play-feel work, and it must not sacrifice the three-click swing.
+## Why It Is Shelved
+
+The modded Java client is the supported experience. The connection fix, dual clubs, ball
+mirror, held-use input, and server ball camera remain in the tree but are gated to clients
+that cannot receive `HoleStatePayload`. The vanilla cup/flag swap was **reverted** because it
+was the one change that degraded the **modded Java** visuals. The only planned follow-up is
+M10.3 Tier 1 (`docs/M10.3-PLAN.md`); camera and Bedrock visual parity are not planned.
 
 ## Candidate Scope
 
@@ -1452,9 +1460,10 @@ displace M9 or play-feel work, and it must not sacrifice the three-click swing.
 
 ## Exit Criteria
 
-At least two clients (modded Java + Bedrock via Geyser) complete a full round (join → hit →
-score → next hole) against the same server-authoritative round. Vanilla-Java and Geyser
-acceptance may not be claimed before the prototype gate produces evidence.
+For M10 as a whole: none (shelved). For the bounded **M10.3 Tier 1** slice: a modded Java
+player and a Bedrock player complete the same round side-by-side with consistent
+server-authoritative scores, the modded Java experience is demonstrably unchanged, and no
+Bedrock visual parity is claimed. See `docs/M10.3-PLAN.md`.
 
 ---
 
@@ -1490,6 +1499,7 @@ added the operator-authored practice range; M8.10 added operator-authored whole-
 landscape protection (break/place/TNT) with a per-course lock, verified automatically, over
 Docker/RCON, and in-game as both operator and non-operator. M9 — Additional Game Modes
 remains deferred until an alternate mode is explicitly prioritized. M10 — Client-Light /
-Bedrock Compatibility is proposed and assessed (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`,
-verdict: practical with tradeoffs) but not started, pending prioritization and a Geyser
-prototype gate.
+Bedrock Compatibility was assessed (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`, verdict:
+practical with tradeoffs) and a Bedrock prototype ran, but it is now **shelved**: the modded
+Java client is the supported target, and the remaining client-light/Bedrock code is gated,
+unsupported, and not pursued further.
