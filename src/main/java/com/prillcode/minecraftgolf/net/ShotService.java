@@ -20,7 +20,6 @@ import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.ActiveHoleService.ShotPermission;
-import com.prillcode.minecraftgolf.server.BallCameraService;
 import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
 
 /**
@@ -106,9 +105,6 @@ public final class ShotService {
 				? new Vec3(ball.position().x, ball.position().y, ball.position().z)
 				: ball.ballState().position();
 		ball.launch(velocity, shotType.profile(club));
-		// M10.2: client-light shooters get a server-controlled ball-follow camera;
-		// modded clients run PostShotCamera themselves and are ignored here.
-		BallCameraService.instance().followShot(player, ball);
 		if (holePermission == ShotPermission.SCORING) {
 			ActiveHoleService.instance().recordAcceptedShot(player, ball, shotOrigin);
 		}

@@ -10,8 +10,11 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.BossEvent.BossBarColor;
+import net.minecraft.world.BossEvent.BossBarOverlay;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -51,6 +54,11 @@ public final class HeldShotService {
 
 	private static final Map<UUID, Charge> CHARGES = new HashMap<>();
 	private static final Map<UUID, Integer> COOLDOWNS = new HashMap<>();
+
+	/** M10.3 S3: per-player boss bar showing held-use charge power to client-light players. */
+	private static final Map<UUID, ServerBossEvent> CHARGE_BARS = new HashMap<>();
+	private static final Component CHARGE_BAR_TITLE = Component.literal("Shot power");
+
 	private static boolean registered;
 
 	private record Charge(int ballId, int startTick) {
@@ -127,6 +135,7 @@ public final class HeldShotService {
 		}
 		serverPlayer.startUsingItem(hand);
 		CHARGES.put(serverPlayer.getUUID(), new Charge(ball.getId(), tick));
+		startChargeBar(serverPlayer);
 		return InteractionResult.SUCCESS;
 	}
 
@@ -140,6 +149,7 @@ public final class HeldShotService {
 			Map.Entry<UUID, Charge> entry = iterator.next();
 			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
 			if (player == null) {
+				clearChargeBar(entry.getKey());
 				iterator.remove();
 				continue;
 			}
@@ -152,20 +162,59 @@ public final class HeldShotService {
 				&& GolfItems.clubOf(player.getMainHandItem()) != null;
 			if (!stillValid) {
 				player.stopUsingItem();
+				clearChargeBar(player.getUUID());
 				iterator.remove();
 				continue;
 			}
 			boolean released = !player.isUsingItem();
 			boolean autoFire = HeldShotRules.shouldAutoFire(heldTicks);
 			if (!released && !autoFire) {
+				updateChargeBar(player.getUUID(), heldTicks);
 				continue;
 			}
 			iterator.remove();
+			clearChargeBar(player.getUUID());
 			if (autoFire) {
 				player.stopUsingItem();
 			}
 			fire(player, ball, heldTicks);
 		}
+	}
+
+	/** Creates and shows the held-use power boss bar for a client-light charge. */
+	private static void startChargeBar(ServerPlayer player) {
+		clearChargeBar(player.getUUID());
+		ServerBossEvent bar = new ServerBossEvent(java.util.UUID.randomUUID(), CHARGE_BAR_TITLE,
+			BossBarColor.GREEN, BossBarOverlay.PROGRESS);
+		bar.setProgress(HeldShotRules.power(0));
+		bar.addPlayer(player);
+		CHARGE_BARS.put(player.getUUID(), bar);
+	}
+
+	/** Drives the charge boss bar from the same tick count that decides power. */
+	private static void updateChargeBar(UUID playerId, int heldTicks) {
+		ServerBossEvent bar = CHARGE_BARS.get(playerId);
+		if (bar == null) {
+			return;
+		}
+		float power = HeldShotRules.power(heldTicks);
+		bar.setProgress(power);
+		bar.setName(CHARGE_BAR_TITLE.copy().append(" " + Math.round(power * 100) + "%"));
+	}
+
+	/** Hides and forgets a player's charge boss bar, if any. */
+	private static void clearChargeBar(UUID playerId) {
+		ServerBossEvent bar = CHARGE_BARS.remove(playerId);
+		if (bar != null) {
+			bar.removeAllPlayers();
+		}
+	}
+
+	/** Forgets all transient held-use state for a disconnecting player. */
+	public static void forget(UUID playerId) {
+		CHARGES.remove(playerId);
+		COOLDOWNS.remove(playerId);
+		clearChargeBar(playerId);
 	}
 
 	private static void fire(ServerPlayer player, GolfBallEntity ball, int heldTicks) {

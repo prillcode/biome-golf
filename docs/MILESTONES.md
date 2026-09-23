@@ -149,7 +149,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED** except M10.3 Tier 1; Java experience prioritized (see docs/M10-PLAN.md) |
-| M10.3 | Tier 1 Cross-Play (Java-Safe) | Planned; Java-safe presentation fallbacks + ball-mirror fix, no camera/visual parity (see docs/M10.3-PLAN.md) |
+| M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented (2026-09)**; ball-mirror gate + vanilla action-bar/boss-bar/chat fallbacks, no camera/visual parity (see docs/M10.3-PLAN.md). Real Bedrock playtest pending. |
 
 ---
 
@@ -1426,12 +1426,12 @@ experience is inherently below the modded Java client (server-driven spectate ca
 visible swing/power interaction). Per the priority order (`good golf > maintainable server >
 Java experience > client-light > Bedrock`), the expensive parity work is stopped.
 
-One bounded, Java-safe slice is planned instead: **M10.3 Tier 1** lets Bedrock and
-vanilla-Java players compete side-by-side with different visuals, using only fallbacks gated
-on `!canSend(HoleStatePayload)`, and fixes the ball mirror so modded Java stops seeing the
-vanilla proxy. It builds no Bedrock resource pack and no camera parity. See
-`docs/M10.3-PLAN.md`; Tier 2 (Bedrock resource pack) is deferred to a separate research
-session.
+One bounded, Java-safe slice is implemented as **M10.3 Tier 1**: Bedrock and vanilla-Java
+players can compete side-by-side with different visuals, using only fallbacks gated
+on `!canSend(HoleStatePayload)`, and the ball mirror is now gated so modded Java stops seeing
+the vanilla proxy in the normal all-Java world. It builds no Bedrock resource pack and no camera
+parity. See `docs/M10.3-PLAN.md`; Tier 2 (Bedrock resource pack) is deferred to a separate
+research session. A real two-client Bedrock playtest remains the final manual acceptance step.
 
 ## Why It Is Shelved
 

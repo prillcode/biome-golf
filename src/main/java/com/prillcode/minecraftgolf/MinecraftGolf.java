@@ -114,6 +114,7 @@ public class MinecraftGolf implements ModInitializer {
 		// S5: apply the Ready Golf suspension policy on disconnect.
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			BallCameraService.instance().forget(handler.getPlayer().getUUID());
+			HeldShotService.forget(handler.getPlayer().getUUID());
 			ActiveHoleService.instance().onPlayerDisconnected(handler.getPlayer(), server);
 		});
 	}

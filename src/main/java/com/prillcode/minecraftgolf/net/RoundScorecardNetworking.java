@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
+import com.prillcode.minecraftgolf.server.ClientLightPresentation;
 
 /** Networking for the final scorecard and its server-authoritative actions. */
 public final class RoundScorecardNetworking {
@@ -27,14 +28,22 @@ public final class RoundScorecardNetworking {
 	}
 
 	public static void send(ServerPlayer player, RoundScorecardPayload payload) {
-		if (!ServerPlayNetworking.canSend(player, RoundScorecardPayload.TYPE)) {
-			MinecraftGolf.LOGGER.warn("Could not send final scorecard to {}; client does not advertise {}",
-				player.getName().getString(), RoundScorecardPayload.TYPE.id());
+		if (ServerPlayNetworking.canSend(player, RoundScorecardPayload.TYPE)) {
+			ServerPlayNetworking.send(player, payload);
+			MinecraftGolf.LOGGER.info("Sent final scorecard to {} with {} player row(s)",
+				player.getName().getString(), payload.players().size());
 			return;
 		}
-		ServerPlayNetworking.send(player, payload);
-		MinecraftGolf.LOGGER.info("Sent final scorecard to {} with {} player row(s)",
-			player.getName().getString(), payload.players().size());
+		// M10.3 S3: client-light clients cannot open the scorecard screen; mirror the same
+		// authoritative payload into chat so they still receive their result.
+		if (ClientLightPresentation.isClientLight(player)) {
+			ClientLightPresentation.sendScorecard(player, payload);
+			MinecraftGolf.LOGGER.info("Sent final scorecard chat fallback to {} with {} player row(s)",
+				player.getName().getString(), payload.players().size());
+			return;
+		}
+		MinecraftGolf.LOGGER.warn("Could not send final scorecard to {}; client does not advertise {}",
+			player.getName().getString(), RoundScorecardPayload.TYPE.id());
 	}
 
 	private static void onAction(RoundActionPayload payload, ServerPlayNetworking.Context context) {

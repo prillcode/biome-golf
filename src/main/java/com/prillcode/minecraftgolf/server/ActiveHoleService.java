@@ -341,7 +341,7 @@ public final class ActiveHoleService {
 			PlayerCourseState solo = soloCourseStates.get(playerId);
 			boolean completed = solo != null && solo.isComplete();
 			boolean cleaned = cleanupPlayerState(player);
-			HoleStateNetworking.send(player, practiceSnapshot());
+			sendSnapshot(player, practiceSnapshot());
 			sendLobbyState(player);
 			if (cleaned) sendPracticeEntryPoint(player);
 			if (completed) teleportToWorldSpawn(player);
@@ -352,7 +352,7 @@ public final class ActiveHoleService {
 		if (participant.status() != ParticipantStatus.ACTIVE) {
 			cleanupPlayerState(player);
 			rounds.leave(playerRound.roundId(), playerId);
-			HoleStateNetworking.send(player, practiceSnapshot());
+			sendSnapshot(player, practiceSnapshot());
 			sendLobbyState(player);
 			return new StartResult(true, "[golf] no active golf round to leave; practice shots are available");
 		}
@@ -361,7 +361,7 @@ public final class ActiveHoleService {
 		session.ifPresent(current -> discardAssignedBall(player, current));
 		lifecycle.abandon(player.getUUID());
 		rounds.leave(playerRound.roundId(), playerId);
-		HoleStateNetworking.send(player, practiceSnapshot());
+		sendSnapshot(player, practiceSnapshot());
 		broadcastLobbyState(player.level().getServer());
 		if (!completed) notifyTerminalBarrier(player.level().getServer(), playerRound.roundId(), null);
 		sendPracticeEntryPoint(player);
@@ -1534,7 +1534,7 @@ public final class ActiveHoleService {
 	public void sendCurrentSnapshot(ServerPlayer player) {
 		PlayerHoleSession session = lifecycle.session(player.getUUID()).orElse(null);
 		if (session == null) {
-			HoleStateNetworking.send(player, hole == null
+			sendSnapshot(player, hole == null
 				? HoleStatePayload.noCourse() : HoleStatePayload.practice(configuredHole()));
 			return;
 		}
@@ -1750,6 +1750,16 @@ public final class ActiveHoleService {
 			display.hasCourseScore() ? display.courseTotalPar() : 0);
 	}
 
+	/**
+	 * M10.3 S3: sends the authoritative snapshot to a modded client, and mirrors it into
+	 * the vanilla action bar for a client-light one. The payload channel itself is
+	 * unchanged; the fallback is additive and gated inside the presentation service.
+	 */
+	private void sendSnapshot(ServerPlayer player, HoleStatePayload payload) {
+		HoleStateNetworking.send(player, payload);
+		ClientLightPresentation.onSnapshot(player, payload);
+	}
+
 	private void sendActiveSnapshot(ServerPlayer player, PlayerHoleState state, Vec3 ballPosition) {
 		sendActiveSnapshot(player, state, ballPosition, 0, true);
 	}
@@ -1766,7 +1776,7 @@ public final class ActiveHoleService {
 		HoleStatePayload payload = withCourseTotals(player.getUUID(),
 			HoleStatePayload.active(state, ballPosition, shotDistanceBlocks)
 				.withTapInAvailable(eligible), state);
-		HoleStateNetworking.send(player, payload);
+		sendSnapshot(player, payload);
 		if (notifyTapIn && payload.tapInAvailable()) {
 			Component action = Component.literal("[Tap in (+1 stroke)]")
 				.withStyle(style -> style.withColor(ChatFormatting.GREEN).withUnderlined(true)
@@ -1785,13 +1795,13 @@ public final class ActiveHoleService {
 	private void sendPracticeShotProgress(GolfBallEntity ball) {
 		ServerPlayer player = ball.level().getServer().getPlayerList().getPlayer(ball.owner());
 		if (player != null) {
-			HoleStateNetworking.send(player,
+			sendSnapshot(player,
 				HoleStatePayload.noCourse().withShotDistanceBlocks(ball.shotDistanceBlocks()));
 		}
 	}
 
 	private void sendMissingSnapshot(ServerPlayer player, PlayerHoleState state) {
-		HoleStateNetworking.send(player, withCourseTotals(player.getUUID(),
+		sendSnapshot(player, withCourseTotals(player.getUUID(),
 			HoleStatePayload.missingBall(state), state));
 	}
 
@@ -1804,7 +1814,7 @@ public final class ActiveHoleService {
 				|| soloAdvanceAvailable(player.getUUID(), state)) {
 			payload = payload.withRoundAdvanceAvailable(true);
 		}
-		HoleStateNetworking.send(player, payload);
+		sendSnapshot(player, payload);
 		if (payload.phase() != HoleStatePayload.Phase.ROUND_COMPLETE
 				&& courseState(player.getUUID()) != null && courseState(player.getUUID()).isComplete()) {
 			sendSoloScorecard(player, courseState(player.getUUID()));
@@ -1840,6 +1850,11 @@ public final class ActiveHoleService {
 	}
 
 	private void sendFinalScorecard(ServerPlayer player, CourseScorecard scorecard) {
+		// M10.3 S3: client-light clients get the RoundScorecardNetworking chat fallback
+		// (the full multi-player card) instead, so skip this per-player duplicate.
+		if (ClientLightPresentation.isClientLight(player)) {
+			return;
+		}
 		player.sendSystemMessage(Component.literal("[golf] FINAL SCORECARD").withStyle(ChatFormatting.GOLD));
 		for (HoleScore score : scorecard.holes()) {
 			player.sendSystemMessage(Component.literal("Hole " + score.holeNumber() + " — "

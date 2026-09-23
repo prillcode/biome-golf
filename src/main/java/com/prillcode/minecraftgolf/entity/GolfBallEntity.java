@@ -5,7 +5,9 @@ import org.slf4j.Logger;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -75,6 +77,14 @@ public class GolfBallEntity extends Entity {
 	/** M10 probe: tag marking a mirrored vanilla visual entity. */
 	private static final String BALL_VISUAL_TAG = "minecraft_golf_ball_visual";
 	private static final String NBT_VISUAL_UUID = "golf_visual_uuid";
+
+	/**
+	 * M10.3 S1: the mirror only needs to exist while a client-light player is close
+	 * enough to track the ball. This is deliberately generous (vanilla item-entity
+	 * tracking sits well inside it) so the proxy never disappears while a Bedrock client
+	 * can still see it.
+	 */
+	private static final double MIRROR_TRACKING_RANGE_BLOCKS = 64.0;
 
 	/**
 	 * Owner player UUID or {@code null} while the ball is unclaimed.
@@ -382,6 +392,17 @@ public class GolfBallEntity extends Entity {
 	private void tickVisual() {
 		ServerLevel serverLevel = (ServerLevel) level();
 		Vec3 p = state.position();
+		// M10.3 S1: only mirror while a client-light player is near the ball. With no
+		// such player online/near (the normal all-modded-Java world) no mirror exists,
+		// so modded Java sees only the custom golf ball.
+		if (!shouldMirror(serverLevel)) {
+			if (visual != null) {
+				visual.discard();
+				visual = null;
+				visualUuid = null;
+			}
+			return;
+		}
 		if (visual == null || visual.isRemoved()) {
 			visual = null;
 			if (visualUuid != null) {
@@ -405,6 +426,35 @@ public class GolfBallEntity extends Entity {
 		}
 		visual.setPos(p.x(), p.y(), p.z());
 		visual.setDeltaMovement(0.0, 0.0, 0.0);
+	}
+
+	/**
+	 * M10.3 S1: whether a client that cannot resolve the custom ball is online and within
+	 * mirror tracking range in this dimension. Per-player hiding is not a vanilla
+	 * primitive, so this keep-alive is the Tier 1 gate; a mixed session may briefly show
+	 * the proxy to modded Java, but the default all-Java experience no longer does.
+	 */
+	private boolean shouldMirror(ServerLevel level) {
+		MinecraftServer server = level.getServer();
+		if (server == null) {
+			return false;
+		}
+		Vec3 p = state.position();
+		double rangeSq = MIRROR_TRACKING_RANGE_BLOCKS * MIRROR_TRACKING_RANGE_BLOCKS;
+		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+			if (!BallCameraService.isClientLight(player)) {
+				continue;
+			}
+			if (!player.level().dimension().equals(level.dimension())) {
+				continue;
+			}
+			double dx = player.getX() - p.x();
+			double dz = player.getZ() - p.z();
+			if (dx * dx + dz * dz <= rangeSq) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
