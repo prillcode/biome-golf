@@ -5,6 +5,8 @@
 source for the B0–B5 visual phases).
 **Prerequisite:** M10.3 Tier 1 (implemented, commit `9e0f7b5`).
 **Target:** Geyser 2.11.3-b1245 / Floodgate 2.2.6 / Minecraft 26.2.
+**Related:** `docs/BEDROCK-NATIVE-ADDON-RESEARCH.md` — a native Bedrock Add-On (a separate
+experience, no shared rounds) was evaluated and deferred.
 
 ## Evidence from the 2026-09-22 playtest logs
 
@@ -135,5 +137,7 @@ mirror and document the limitation; the ball is the riskiest, most Geyser-versio
 ## Out of scope
 
 - Bedrock visual parity as a goal in itself; marketplace/console matchmaking.
+- A native Bedrock Add-On / separate Bedrock product
+  (`docs/BEDROCK-NATIVE-ADDON-RESEARCH.md`).
 - Replacing the Java three-click meter; changing payload shapes; removing Tier 1 fallbacks.
 - A Gradle module split for Bedrock assets.

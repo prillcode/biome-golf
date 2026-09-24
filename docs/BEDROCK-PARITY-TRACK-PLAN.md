@@ -8,7 +8,8 @@
 > "Java flagship + Bedrock guest", and a playtest showed the blockers are input feel and ball
 > flight, not visuals. Feel work (G1/G2) now precedes the visual phases below; B4 (ball entity)
 > is gated on a positive G2 smoothness signal. The phase documents here remain the source for
-> the B0–B3/B5 visual work.
+> the B0–B3/B5 visual work. A native Bedrock Add-On — a separate product with no shared Java
+> rounds — was also evaluated and deferred; see `docs/BEDROCK-NATIVE-ADDON-RESEARCH.md`.
 
 ## Objective
 
