@@ -67,9 +67,6 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("link").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.argument("link", StringArgumentType.greedyString())
 						.executes(GolfHoleCommands::visitorLink)))
-				.then(Commands.literal("reminders").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-					.then(Commands.argument("seconds", IntegerArgumentType.integer(0))
-						.executes(GolfHoleCommands::visitorReminders)))
 				.then(Commands.literal("spawn").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.then(Commands.literal("set").executes(GolfHoleCommands::visitorSpawnSet))
 					.then(Commands.literal("clear").executes(GolfHoleCommands::visitorSpawnClear))))
@@ -468,7 +465,7 @@ public final class GolfHoleCommands {
 			: "not set";
 		context.getSource().sendSuccess(() -> Component.literal("[golf] visitor config: address="
 			+ display(service.javaAddress()) + " | link=" + display(service.modLink())
-			+ " | reminders=" + service.reminderSeconds() + "s | spawn=" + spawn), false);
+			+ " | spawn=" + spawn), false);
 		return 1;
 	}
 
@@ -483,15 +480,6 @@ public final class GolfHoleCommands {
 		String link = StringArgumentType.getString(context, "link");
 		VisitorService.instance().setModLink(link);
 		context.getSource().sendSuccess(() -> Component.literal("[golf] mod link set to " + link), false);
-		return 1;
-	}
-
-	private static int visitorReminders(CommandContext<CommandSourceStack> context) {
-		int seconds = IntegerArgumentType.getInteger(context, "seconds");
-		VisitorService.instance().setReminderSeconds(seconds);
-		context.getSource().sendSuccess(() -> Component.literal(seconds == 0
-			? "[golf] visitor reminders disabled"
-			: "[golf] visitor reminders every " + seconds + "s"), false);
 		return 1;
 	}
 

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -16,7 +15,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -34,17 +32,18 @@ import com.prillcode.minecraftgolf.hole.VisitorText;
 
 /**
  * Bedrock/vanilla visitor experience: any client that cannot receive the modded payloads
- * ({@link BallCameraService#isClientLight}) joins as a <em>visitor</em> who can watch but not
- * play, with a "join on Java" invite. This turns the shelved Bedrock play mode into a
- * promotional surface rather than a degraded game.
+ * ({@link BallCameraService#isClientLight}) joins as a <em>visitor</em>. Golf is Java-only, so
+ * visitors cannot golf; they join the world in survival/peaceful by default and can opt into
+ * spectator mode. The "join on Java" promo is shown when they enter spectator mode, not
+ * periodically.
  *
- * <p>Visitors pick one of two view modes: {@link Mode#SPECTATOR} (fly, phase through blocks,
- * invisible) and {@link Mode#SURVIVAL} (normal world play — building and breaking are free
- * outside authored course regions, which the course guard protects). Neither can golf. The
- * modded Java client never reaches any of this.</p>
+ * <p>Neither mode can golf. {@link Mode#SURVIVAL} is normal world play — building and breaking
+ * are free outside authored course regions, which the course guard protects.
+ * {@link Mode#SPECTATOR} flies, phases through blocks, and is invisible. The modded Java client
+ * never reaches any of this.</p>
  *
- * <p>Config (Java address, mod link, reminder interval, optional viewpoint) persists to world
- * JSON, matching the practice-range pattern.</p>
+ * <p>Config (Java address, optional mod link, optional viewpoint) persists to world JSON,
+ * matching the practice-range pattern.</p>
  */
 public final class VisitorService {
 
@@ -55,16 +54,13 @@ public final class VisitorService {
 	}
 
 	private static final String FILE_NAME = "minecraft_golf_visitor.json";
-	private static final int DEFAULT_REMINDER_SECONDS = 60;
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final VisitorService INSTANCE = new VisitorService();
 
 	private final Map<UUID, Mode> modes = new HashMap<>();
-	private final Map<UUID, Integer> nextReminderTick = new HashMap<>();
 
 	private String javaAddress = "";
 	private String modLink = "";
-	private int reminderSeconds = DEFAULT_REMINDER_SECONDS;
 	private Viewpoint viewpoint;
 	private Path savePath;
 
@@ -78,11 +74,10 @@ public final class VisitorService {
 	public static void register() {
 		ServerLifecycleEvents.SERVER_STARTED.register(INSTANCE::onServerStarted);
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> INSTANCE.onServerStopping());
-		ServerTickEvents.END_SERVER_TICK.register(INSTANCE::onServerTick);
 		MinecraftGolf.LOGGER.info("Registered visitor service (world JSON at data/{})", FILE_NAME);
 	}
 
-	/** Any client-light (Bedrock via Geyser, or unmodified Java) is a non-playing visitor. */
+	/** Any client-light (Bedrock via Geyser, or unmodified Java) is a non-golfing visitor. */
 	public static boolean isVisitor(ServerPlayer player) {
 		return BallCameraService.isClientLight(player);
 	}
@@ -92,81 +87,53 @@ public final class VisitorService {
 		return "[golf] golf is Java-only — join on Java to play golf (build and explore freely here)";
 	}
 
-	/** Puts a joining client-light player into spectator mode and sends the visitor welcome. */
+	/** Puts a joining visitor into survival/peaceful and sends the one-time welcome. */
 	public void onPlayerJoined(ServerPlayer player) {
 		if (!isVisitor(player)) {
 			return;
 		}
-		modes.put(player.getUUID(), Mode.SPECTATOR);
-		applyMode(player, Mode.SPECTATOR);
+		modes.put(player.getUUID(), Mode.SURVIVAL);
+		applyMode(player, Mode.SURVIVAL);
 		teleportToViewpoint(player);
-		sendWelcome(player);
-		scheduleReminder(player);
+		for (String line : VisitorText.welcome()) {
+			player.sendSystemMessage(Component.literal(line));
+		}
 	}
 
 	public void onPlayerDisconnected(ServerPlayer player) {
 		modes.remove(player.getUUID());
-		nextReminderTick.remove(player.getUUID());
 	}
 
 	public Mode mode(UUID playerId) {
-		return modes.getOrDefault(playerId, Mode.SPECTATOR);
+		return modes.getOrDefault(playerId, Mode.SURVIVAL);
 	}
 
-	/** Switches a visitor between the two non-playing presentation modes. */
+	/**
+	 * Switches a visitor between spectator and survival. Entering spectator shows the
+	 * "join on Java" promo; entering survival reports the peaceful game mode and the
+	 * off-course build reminder.
+	 */
 	public void setMode(ServerPlayer player, Mode mode) {
 		if (!isVisitor(player)) {
-			player.sendSystemMessage(Component.literal("[golf] visitor view is for Bedrock/vanilla clients"));
+			player.sendSystemMessage(Component.literal("[golf] spectator view is for Bedrock/vanilla clients"));
 			return;
 		}
 		modes.put(player.getUUID(), mode);
 		applyMode(player, mode);
-		player.sendSystemMessage(Component.literal(mode == Mode.SPECTATOR
-			? "[golf] Spectator view: fly around and watch. /golf spectator leave to join the world."
-			: "[golf] Game mode now survival/peaceful. Leave golf course bounds to break/build."));
+		if (mode == Mode.SPECTATOR) {
+			player.sendSystemMessage(Component.literal(
+				"[golf] Spectator view: fly around and watch. /golf spectator leave to join the world."));
+			for (String line : VisitorText.spectatorPromo(javaAddress, modLink)) {
+				player.sendSystemMessage(Component.literal(line));
+			}
+		} else {
+			player.sendSystemMessage(Component.literal(
+				"[golf] Game mode now survival/peaceful. Leave golf course bounds to break/build."));
+		}
 	}
 
 	private static void applyMode(ServerPlayer player, Mode mode) {
 		player.setGameMode(mode == Mode.SPECTATOR ? GameType.SPECTATOR : GameType.SURVIVAL);
-	}
-
-	private void onServerTick(MinecraftServer server) {
-		if (nextReminderTick.isEmpty() || reminderSeconds <= 0) {
-			return;
-		}
-		int tick = server.getTickCount();
-		Iterator<Map.Entry<UUID, Integer>> iterator = nextReminderTick.entrySet().iterator();
-		while (iterator.hasNext()) {
-			Map.Entry<UUID, Integer> entry = iterator.next();
-			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-			if (player == null) {
-				iterator.remove();
-				continue;
-			}
-			if (tick < entry.getValue()) {
-				continue;
-			}
-			player.sendSystemMessage(Component.literal(VisitorText.reminder(javaAddress)), true);
-			entry.setValue(tick + reminderTicks());
-		}
-	}
-
-	private void scheduleReminder(ServerPlayer player) {
-		if (reminderSeconds <= 0) {
-			return;
-		}
-		nextReminderTick.put(player.getUUID(),
-			player.level().getServer().getTickCount() + reminderTicks());
-	}
-
-	private int reminderTicks() {
-		return Math.max(1, reminderSeconds) * 20;
-	}
-
-	private void sendWelcome(ServerPlayer player) {
-		for (String line : VisitorText.welcome(javaAddress, modLink)) {
-			player.sendSystemMessage(Component.literal(line));
-		}
 	}
 
 	private void teleportToViewpoint(ServerPlayer player) {
@@ -197,10 +164,6 @@ public final class VisitorService {
 		return modLink;
 	}
 
-	public int reminderSeconds() {
-		return reminderSeconds;
-	}
-
 	public boolean hasViewpoint() {
 		return viewpoint != null;
 	}
@@ -216,11 +179,6 @@ public final class VisitorService {
 
 	public void setModLink(String value) {
 		modLink = value == null ? "" : value.trim();
-		save();
-	}
-
-	public void setReminderSeconds(int value) {
-		reminderSeconds = Math.max(0, value);
 		save();
 	}
 
@@ -243,14 +201,12 @@ public final class VisitorService {
 
 	private void onServerStopping() {
 		modes.clear();
-		nextReminderTick.clear();
 		savePath = null;
 	}
 
 	private void load() {
 		javaAddress = "";
 		modLink = "";
-		reminderSeconds = DEFAULT_REMINDER_SECONDS;
 		viewpoint = null;
 		if (savePath == null || !Files.exists(savePath)) {
 			return;
@@ -259,7 +215,6 @@ public final class VisitorService {
 			JsonObject root = JsonParser.parseReader(Files.newBufferedReader(savePath)).getAsJsonObject();
 			if (root.has("javaAddress")) javaAddress = root.get("javaAddress").getAsString();
 			if (root.has("modLink")) modLink = root.get("modLink").getAsString();
-			if (root.has("reminderSeconds")) reminderSeconds = Math.max(0, root.get("reminderSeconds").getAsInt());
 			if (root.has("viewpoint") && root.get("viewpoint").isJsonObject()) {
 				JsonObject json = root.getAsJsonObject("viewpoint");
 				JsonArray position = json.getAsJsonArray("position");
@@ -283,7 +238,6 @@ public final class VisitorService {
 			JsonObject root = new JsonObject();
 			root.addProperty("javaAddress", javaAddress);
 			root.addProperty("modLink", modLink);
-			root.addProperty("reminderSeconds", reminderSeconds);
 			if (viewpoint != null) {
 				JsonObject json = new JsonObject();
 				json.addProperty("dimension", viewpoint.dimension());

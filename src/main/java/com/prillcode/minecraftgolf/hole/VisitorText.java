@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Pure text for the Bedrock/vanilla visitor experience (a promotional watch mode; visitors do
- * not play). Kept free of Minecraft types so it stays unit-testable; the server-side
+ * Pure text for the Bedrock/vanilla visitor experience. Visitors join in survival/peaceful by
+ * default and may golf only on Java; the "join on Java" promo is shown when they opt into
+ * spectator mode. Kept free of Minecraft types so it stays unit-testable; the server-side
  * {@code VisitorService} owns delivery and the gamemode changes.
  */
 public final class VisitorText {
@@ -13,12 +14,18 @@ public final class VisitorText {
 	private VisitorText() {
 	}
 
-	/** Welcome chat lines: the two view modes plus the "join on Java to golf" invite. */
-	public static List<String> welcome(String address, String link) {
+	/** One-time welcome shown on join (visitors join in survival/peaceful by default). */
+	public static List<String> welcome() {
 		List<String> lines = new ArrayList<>();
-		lines.add("[golf] Welcome to BirdieBiome! Golf is a Java mod experience, so you can watch and join the world here, but golf itself is on Java.");
-		lines.add("[golf] Watch: /golf spectator. Join the world: /golf spectator leave.");
+		lines.add("[golf] Welcome to BirdieBiome! Golf is a Java mod experience; you can build and explore here, but golf itself is on Java.");
 		lines.add("[golf] You spawn inside protected golf course bounds — travel off golf course property to break or build.");
+		lines.add("[golf] Watch a round: /golf spectator.");
+		return lines;
+	}
+
+	/** Promo shown when a visitor enters spectator mode: the "join on Java to golf" invite. */
+	public static List<String> spectatorPromo(String address, String link) {
+		List<String> lines = new ArrayList<>();
 		if (notBlank(address)) {
 			lines.add("[golf] Want to golf? Join on Java: " + address);
 		} else {
@@ -28,13 +35,6 @@ public final class VisitorText {
 			lines.add("[golf] Install the Java mod: " + link);
 		}
 		return lines;
-	}
-
-	/** One-line action-bar reminder shown periodically while a visitor watches. */
-	public static String reminder(String address) {
-		return notBlank(address)
-			? "[golf] Spectating BirdieBiome — play on Java: " + address
-			: "[golf] Spectating BirdieBiome — play on Java for the full game";
 	}
 
 	private static boolean notBlank(String value) {

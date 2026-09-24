@@ -10,37 +10,34 @@ import org.junit.jupiter.api.Test;
 class VisitorTextTest {
 
 	@Test
-	void welcomeIncludesBothViewModesAndTheJavaInvite() {
-		List<String> lines = VisitorText.welcome("golf.example.com", "https://example.com/mod");
+	void welcomePointsAtSpectatorAndTheOffCourseBuildRule() {
+		List<String> lines = VisitorText.welcome();
 
 		assertTrue(lines.stream().anyMatch(line -> line.contains("/golf spectator")));
-		assertTrue(lines.stream().anyMatch(line -> line.contains("/golf spectator leave")));
+		assertTrue(lines.stream().anyMatch(line -> line.contains("off golf course property")));
+		assertTrue(lines.stream().anyMatch(line -> line.contains("Java")));
+	}
+
+	@Test
+	void welcomeDoesNotCarryThePromoAddress() {
+		List<String> lines = VisitorText.welcome();
+
+		assertFalse(lines.stream().anyMatch(line -> line.contains("Join on Java:")));
+	}
+
+	@Test
+	void spectatorPromoIncludesTheAddressAndLink() {
+		List<String> lines = VisitorText.spectatorPromo("golf.example.com", "https://example.com/mod");
+
 		assertTrue(lines.stream().anyMatch(line -> line.contains("golf.example.com")));
 		assertTrue(lines.stream().anyMatch(line -> line.contains("https://example.com/mod")));
 	}
 
 	@Test
-	void welcomeTellsVisitorsToLeaveCourseBoundsBeforeBuilding() {
-		List<String> lines = VisitorText.welcome("golf.example.com", null);
-
-		assertTrue(lines.stream().anyMatch(line -> line.contains("off golf course property")));
-	}
-
-	@Test
-	void welcomeAsksTheHostWhenNoAddressIsConfigured() {
-		List<String> lines = VisitorText.welcome("", null);
+	void spectatorPromoAsksTheHostWhenNoAddressIsConfigured() {
+		List<String> lines = VisitorText.spectatorPromo("", null);
 
 		assertTrue(lines.stream().anyMatch(line -> line.toLowerCase().contains("ask the host")));
 		assertFalse(lines.stream().anyMatch(line -> line.contains("https://")));
-	}
-
-	@Test
-	void reminderAdvertisesTheAddressWhenSet() {
-		assertTrue(VisitorText.reminder("golf.example.com").contains("golf.example.com"));
-	}
-
-	@Test
-	void reminderFallsBackWhenNoAddressIsSet() {
-		assertTrue(VisitorText.reminder(null).contains("play on Java"));
 	}
 }

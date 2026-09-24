@@ -24,8 +24,8 @@ Visitors choose one view; golf itself stays Java-only:
 
 | Mode | Command | Behaviour |
 |---|---|---|
-| Spectator (default) | `/golf spectator` | Fly, phase through blocks, invisible, no interaction |
-| Survival | `/golf spectator leave` | Normal world play — build and break freely outside authored course regions (which the course guard protects) |
+| Survival (default) | `/golf spectator leave` | Normal world play — build and break freely outside authored course regions (which the course guard protects) |
+| Spectator | `/golf spectator` | Fly, phase through blocks, invisible, no interaction |
 
 Both are blocked from all golf commands (`/golf swing`, hole/round start/restart/join, practice
 ball, pickup, tap-in, next-hole) with a message pointing to Java. `ShotService` also rejects
@@ -47,11 +47,12 @@ landscape perimeters — see `CourseBlockBreakGuard`). Recommendations for the s
 
 ## Onboarding and promotion
 
-- On join, a visitor is put into spectator mode, optionally teleported to a configured
-  viewpoint, and sent a welcome: the two view commands plus the "join on Java to golf" invite
-  (address and optional mod link). The welcome also tells them they spawn inside protected
-  course bounds and must travel **off golf course property** to break or build.
-- A periodic action-bar reminder repeats the invite (default every 60s; `0` disables).
+- On join, a visitor is put into **survival/peaceful**, optionally teleported to a configured
+  viewpoint, and sent a one-time welcome: golf is Java-only, they spawn inside protected course
+  bounds and must travel **off golf course property** to break or build, and `/golf spectator`
+  watches a round.
+- The "join on Java to golf" promo (address and optional mod link) is shown **only when they
+  enter spectator mode** — there are no periodic reminders.
 - In-world **signage is world content** — vanilla signs such as "Wanna play? Join on Java!"
   at spawn/course entrances. Bedrock visitors see vanilla signs fine (unlike the custom
   cup/flag blocks). No code is required for signage.
@@ -65,7 +66,6 @@ practice range). Operator commands (game-master level):
 /golf visitor status
 /golf visitor address <address>     # e.g. golf.example.com:25565
 /golf visitor link <url>            # optional mod download
-/golf visitor reminders <seconds>   # 0 disables
 /golf visitor spawn set | clear     # where visitors arrive
 ```
 
@@ -73,11 +73,10 @@ Visitors themselves only need `/golf spectator` and `/golf spectator leave`.
 
 ## Verification performed
 
-- `./gradlew test` / `./gradlew build`: 337 tests passing (adds `VisitorTextTest`).
+- `./gradlew test` / `./gradlew build`: 338 tests passing (adds `VisitorTextTest`).
 - Docker dev server synced and restarted; healthy; host/container JAR hashes matched.
 - RCON exercised the config commands and confirmed the world JSON persists reload.
 - Real Bedrock client (mobile): visitor welcome received and spectator behaviour confirmed.
-- **Not verified:** reminder visibility on a long session.
 
 ## Risks / notes
 
