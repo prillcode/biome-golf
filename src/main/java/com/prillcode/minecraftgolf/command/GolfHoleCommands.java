@@ -56,8 +56,9 @@ public final class GolfHoleCommands {
 			CommandBuildContext registryAccess, CommandSelection environment) {
 			dispatcher.register(Commands.literal("golf")
 			.then(Commands.literal("help").executes(GolfHoleCommands::help))
-			.then(Commands.literal("spectator").executes(GolfHoleCommands::spectatorView))
-			.then(Commands.literal("survival").executes(GolfHoleCommands::survivalView))
+			.then(Commands.literal("spectator")
+				.executes(GolfHoleCommands::spectatorView)
+				.then(Commands.literal("leave").executes(GolfHoleCommands::leaveSpectator)))
 			.then(Commands.literal("visitor")
 				.then(Commands.literal("status").executes(GolfHoleCommands::visitorStatus))
 				.then(Commands.literal("address").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -148,7 +149,7 @@ public final class GolfHoleCommands {
 		context.getSource().sendSuccess(() -> Component.literal("Swing (no client mod needed): /golf swing [power] [accuracy] [shotType]"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Practice: /golf practice ball | /golf practice tee | /golf practice target list"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Solo: /golf course play [courseId] [hole] | /golf hole start [hole]"), false);
-		context.getSource().sendSuccess(() -> Component.literal("Visitors (Bedrock/vanilla): /golf spectator | /golf survival"), false);
+		context.getSource().sendSuccess(() -> Component.literal("Visitors (Bedrock/vanilla): /golf spectator | /golf spectator leave"), false);
 		return 1;
 	}
 
@@ -454,7 +455,7 @@ public final class GolfHoleCommands {
 		return 1;
 	}
 
-	private static int survivalView(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+	private static int leaveSpectator(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		VisitorService.instance().setMode(context.getSource().getPlayerOrException(),
 			VisitorService.Mode.SURVIVAL);
 		return 1;

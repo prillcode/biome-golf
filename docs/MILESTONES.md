@@ -149,7 +149,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
-| M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then play shelved and repurposed as Bedrock visitor mode (2026-09)**; client-light clients watch (spectator/survival) and are invited to Java (see docs/BEDROCK-VISITOR-MODE-PLAN.md). |
+| M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then play shelved and repurposed as Bedrock visitor mode (2026-09)**; client-light clients watch (`/golf spectator`) or join the world (`/golf spectator leave`) and are invited to Java (see docs/BEDROCK-VISITOR-MODE-PLAN.md). |
 
 ---
 

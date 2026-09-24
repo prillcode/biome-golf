@@ -17,7 +17,8 @@ public final class VisitorText {
 	public static List<String> welcome(String address, String link) {
 		List<String> lines = new ArrayList<>();
 		lines.add("[golf] Welcome to BirdieBiome! Golf is a Java mod experience, so you can watch and join the world here, but golf itself is on Java.");
-		lines.add("[golf] Watch: /golf spectator. Join in and build: /golf survival (course areas are protected).");
+		lines.add("[golf] Watch: /golf spectator. Join the world: /golf spectator leave.");
+		lines.add("[golf] You spawn inside protected golf course bounds — travel off golf course property to break or build.");
 		if (notBlank(address)) {
 			lines.add("[golf] Want to golf? Join on Java: " + address);
 		} else {

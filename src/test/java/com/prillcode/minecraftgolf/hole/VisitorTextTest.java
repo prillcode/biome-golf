@@ -14,9 +14,16 @@ class VisitorTextTest {
 		List<String> lines = VisitorText.welcome("golf.example.com", "https://example.com/mod");
 
 		assertTrue(lines.stream().anyMatch(line -> line.contains("/golf spectator")));
-		assertTrue(lines.stream().anyMatch(line -> line.contains("/golf survival")));
+		assertTrue(lines.stream().anyMatch(line -> line.contains("/golf spectator leave")));
 		assertTrue(lines.stream().anyMatch(line -> line.contains("golf.example.com")));
 		assertTrue(lines.stream().anyMatch(line -> line.contains("https://example.com/mod")));
+	}
+
+	@Test
+	void welcomeTellsVisitorsToLeaveCourseBoundsBeforeBuilding() {
+		List<String> lines = VisitorText.welcome("golf.example.com", null);
+
+		assertTrue(lines.stream().anyMatch(line -> line.contains("off golf course property")));
 	}
 
 	@Test

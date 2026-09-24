@@ -122,8 +122,8 @@ public final class VisitorService {
 		modes.put(player.getUUID(), mode);
 		applyMode(player, mode);
 		player.sendSystemMessage(Component.literal(mode == Mode.SPECTATOR
-			? "[golf] spectator view: fly around and watch. /golf survival to join in."
-			: "[golf] survival view: normal world play outside the protected courses. /golf spectator to watch."));
+			? "[golf] Spectator view: fly around and watch. /golf spectator leave to join the world."
+			: "[golf] Game mode now survival/peaceful. Leave golf course bounds to break/build."));
 	}
 
 	private static void applyMode(ServerPlayer player, Mode mode) {

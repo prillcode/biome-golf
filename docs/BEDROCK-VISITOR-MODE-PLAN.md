@@ -25,7 +25,7 @@ Visitors choose one view; golf itself stays Java-only:
 | Mode | Command | Behaviour |
 |---|---|---|
 | Spectator (default) | `/golf spectator` | Fly, phase through blocks, invisible, no interaction |
-| Survival | `/golf survival` | Normal world play — build and break freely outside authored course regions (which the course guard protects) |
+| Survival | `/golf spectator leave` | Normal world play — build and break freely outside authored course regions (which the course guard protects) |
 
 Both are blocked from all golf commands (`/golf swing`, hole/round start/restart/join, practice
 ball, pickup, tap-in, next-hole) with a message pointing to Java. `ShotService` also rejects
@@ -48,8 +48,9 @@ landscape perimeters — see `CourseBlockBreakGuard`). Recommendations for the s
 ## Onboarding and promotion
 
 - On join, a visitor is put into spectator mode, optionally teleported to a configured
-  viewpoint, and sent a welcome: the two view-mode commands plus the "join on Java to golf"
-  invite (address and optional mod link).
+  viewpoint, and sent a welcome: the two view commands plus the "join on Java to golf" invite
+  (address and optional mod link). The welcome also tells them they spawn inside protected
+  course bounds and must travel **off golf course property** to break or build.
 - A periodic action-bar reminder repeats the invite (default every 60s; `0` disables).
 - In-world **signage is world content** — vanilla signs such as "Wanna play? Join on Java!"
   at spawn/course entrances. Bedrock visitors see vanilla signs fine (unlike the custom
@@ -68,7 +69,7 @@ practice range). Operator commands (game-master level):
 /golf visitor spawn set | clear     # where visitors arrive
 ```
 
-Visitors themselves only need `/golf spectator` and `/golf survival`.
+Visitors themselves only need `/golf spectator` and `/golf spectator leave`.
 
 ## Verification performed
 
@@ -88,7 +89,7 @@ Visitors themselves only need `/golf spectator` and `/golf survival`.
 - **Address required.** The invite is only useful once `/golf visitor address` is set; until
   then the welcome asks the host for it.
 - **Ops on vanilla Java** become visitors too (they are client-light); run `/golf spectator`
-  or `/golf survival`, or use a modded client.
+  or `/golf spectator leave`, or use a modded client.
 
 ## Out of scope
 
