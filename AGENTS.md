@@ -69,7 +69,7 @@ the client has been restarted.
 
 ## Useful facts
 
-- Minecraft 26.2 / Fabric Loader 0.19.5 / Fabric API 0.159.0+26.2 / Loom 1.17.20 / Java 25 / Gradle 9.5.1 — pinned in `gradle.properties`.
+- Minecraft 26.2 / Fabric Loader 0.19.5 / Fabric API 0.160.0+26.2 / Loom 1.17.20 / Java 25 / Gradle 9.5.1 — pinned in `gradle.properties`.
 - Uses Loom's `splitEnvironmentSourceSets()` — `src/main` (common/server-safe) and `src/client` (client-only).
 - Unobfuscated development workflow (no Yarn mappings — Loom handles it).
 - Mod id: `minecraft_golf`; base package: `com.prillcode.minecraftgolf`.

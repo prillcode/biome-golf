@@ -9,13 +9,26 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- M10 client-light/Bedrock effort is **shelved**: the modded Java client remains the only
+- **Bedrock/vanilla visitor mode.** Client-light connections (`!canSend(HoleStatePayload)` —
+  Bedrock via Geyser or unmodified Java) are repurposed as promotional visitors instead of
+  degraded players. On join a visitor is put into survival/peaceful, optionally teleported to a
+  configured viewpoint, and sent a one-time welcome; `/golf spectator` watches a live round (and
+  shows the "join on Java" promo) while `/golf spectator leave` returns to survival. All golf
+  commands are blocked for visitors and `ShotService` rejects them as defence in depth. Operators
+  configure the promo with `/golf visitor address|link|spawn|status`. The modded Java client is
+  unaffected; see `docs/BEDROCK-VISITOR-MODE-PLAN.md`.
+- **M10.3 Tier 1 Java-safe cross-play** (`9e0f7b5`): the vanilla ball mirror appears only while a
+  client-light player is tracking the ball, the server-side ball camera was removed, and
+  `ClientLightPresentation` / `HeldShotService` add vanilla action-bar, boss-bar, and chat
+  fallbacks. No payload, `HoleStateNetworking`, or modded-HUD change; see `docs/M10.3-CLOSEOUT.md`.
+- **G1 client-light tap meter** (`c2c376d`): the hold-based input was replaced after the playtest
+  showed Geyser never delivered a release. It is dormant under visitor mode.
+- M10 client-light/Bedrock **play** is **shelved**: the modded Java client remains the only
   supported target. The connection fix, dual clubs, ball mirror, held-use input, and server
   ball camera stay in the tree but are gated to clients that cannot receive
-  `HoleStatePayload`, are not a supported path, and get no further parity work (a bounded,
-  Java-safe Tier 1 fallback slice is planned; see `docs/M10.3-PLAN.md`). The one Java-facing
-  change (replacing the custom cup/flag blocks with a cauldron/banner) was reverted, so the
-  modded client keeps its custom cup/flag models.
+  `HoleStatePayload`, are not a supported path, and get no further parity work. The one
+  Java-facing change (replacing the custom cup/flag blocks with a cauldron/banner) was reverted,
+  so the modded client keeps its custom cup/flag models. See `docs/M10.3-CLOSEOUT.md`.
 - M10.1 (experimental, unsupported) held-use shot input for client-light players: holding
   right-click near your own resting ball charges a shot (power from hold duration, capped at
   1 second) and release strikes along the look direction. Input funnels through the

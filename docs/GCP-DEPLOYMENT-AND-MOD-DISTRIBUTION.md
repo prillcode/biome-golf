@@ -19,9 +19,9 @@ The examples reflect the repository baseline at the time this guide was written:
 |---|---|
 | Minecraft Java Edition | `26.2` |
 | Fabric Loader | `0.19.5` or newer compatible version |
-| Fabric API | tested with `0.159.0+26.2` |
+| Fabric API | tested with `0.160.0+26.2` |
 | Java | `25` |
-| Minecraft Golf | `0.1.0` development baseline |
+| Minecraft Golf | `0.6.0` release baseline |
 | Server port | TCP `25565` |
 | Initial JVM heap | `4G` |
 
@@ -87,6 +87,27 @@ Authenticated Minecraft Java clients
 One server process owns the world and all gameplay state. Do not autoscale the
 Minecraft service horizontally: two containers writing the same world would not
 form a valid cluster.
+
+## Scope: Java Edition only
+
+This guide deploys the **Java** experience, which is the supported product. Bedrock
+(Geyser/Floodgate) is **not** part of a production deployment: the Bedrock play track is
+shelved, and the only client-light support is the promotional **visitor mode**, in which a
+Bedrock or unmodified-Java connection can watch a round (`/golf spectator`) or join the
+world (`/golf spectator leave`) but cannot play golf. See
+`docs/BEDROCK-VISITOR-MODE-PLAN.md`.
+
+To let visitors reach a *production* server you would additionally need to:
+
+- install and pin Geyser/Floodgate in the Compose service (the optional
+  `dev-server/docker-compose.geyser.yml` overlay is a reference and pins the tested builds);
+- open **UDP `19132`** in the VPC firewall, scoped by the same `minecraft-golf-server`
+  network tag — this guide otherwise opens only TCP `25565`; and
+- configure the invite with `/golf visitor address <host>:25565` (plus optional
+  `/golf visitor link` and `/golf visitor spawn set`).
+
+None of that is required for the Java deployment below, and no Bedrock play or support is
+claimed.
 
 ## Capacity and region
 
@@ -219,14 +240,18 @@ the static-address model in
 
 ## 4. Create the VM
 
-The following is a representative CLI creation command. Confirm current image
-families and flags before executing it:
+The following is a representative CLI creation command. It targets Ubuntu 26.04 LTS
+(`ubuntu-2604-lts-amd64`, current at the time of writing); Ubuntu 24.04 LTS
+(`ubuntu-2404-lts-amd64`) remains supported if you prefer it. Confirm the current image
+family and flags with
+`gcloud compute images list --project ubuntu-os-cloud --filter='family~ubuntu'` before
+executing it:
 
 ```bash
 gcloud compute instances create "$GOLF_VM" \
   --zone="$GOLF_ZONE" \
   --machine-type=e2-standard-2 \
-  --image-family=ubuntu-2404-lts-amd64 \
+  --image-family=ubuntu-2604-lts-amd64 \
   --image-project=ubuntu-os-cloud \
   --boot-disk-type=pd-balanced \
   --boot-disk-size=20GB \
@@ -329,7 +354,7 @@ Build the release locally or in CI, not on the production VM:
 ```
 
 The player/server artifact is the non-sources JAR under `build/libs/`, currently
-named like `minecraft-golf-0.1.0.jar`. Do not deploy the `-sources.jar`. Transfer
+named like `minecraft-golf-0.6.0.jar`. Do not deploy the `-sources.jar`. Transfer
 the release JAR to `/opt/minecraft-golf/mods/` using `gcloud compute scp`, `scp`,
 or a controlled artifact pipeline.
 
@@ -353,9 +378,17 @@ services:
       VERSION: "26.2"
       FABRIC_LOADER_VERSION: "0.19.5"
       MEMORY: "4G"
+      MODE: "survival"
+      DIFFICULTY: "peaceful"
       ONLINE_MODE: "TRUE"
       MOTD: "Minecraft Golf"
-      MODRINTH_PROJECTS: "fabric-api:0.159.0+26.2"
+      MODRINTH_PROJECTS: "fabric-api:0.160.0+26.2"
+      # Whitelist: replace with the family's Minecraft usernames before sharing the hostname.
+      ENABLE_WHITELIST: "TRUE"
+      ENFORCE_WHITELIST: "TRUE"
+      WHITELIST: |
+        PlayerOne
+        PlayerTwo
     volumes:
       - /srv/minecraft-golf/data:/data
       - /opt/minecraft-golf/mods:/mods:ro
@@ -377,7 +410,11 @@ Important production choices:
   startup in the deployment/release log.
 - Keep `/data` on the Persistent Disk and the staged mod directory read-only.
 - Keep `online-mode` enabled.
-- Configure and enforce a Minecraft whitelist before sharing the hostname.
+- Configure and enforce a Minecraft whitelist (`ENABLE_WHITELIST`/`ENFORCE_WHITELIST` plus
+  the `WHITELIST` list) before sharing the hostname.
+- Set `MODE`/`DIFFICULTY` to match the intended world. The tracked gameplay profile is
+  `survival`/`peaceful`, which is also the basis for the peaceful-server model and visitor
+  mode; change these only deliberately.
 - Never publish RCON. If enabled for local automation, bind it only to loopback or
   a private administrative path and use a strong secret outside version control.
 - Preserve the two-minute graceful-stop window so Minecraft can save before the
@@ -407,8 +444,10 @@ Do not accept a merely running container as success. Confirm:
 - Minecraft Golf and Fabric API are both loaded without errors;
 - the deployed Golf JAR SHA-256 matches the release artifact;
 - a properly configured external client can authenticate and join;
-- `/golf dev preparecourse` succeeds on the approved seed when provisioning the
-  repository's MVP course; and
+- a course is available and playable: author one with the supported operator commands
+  (`/golf course create …` → build → `/golf course finalize …` → `/golf course select …`),
+  or — if intentionally provisioning the repository's bundled sample campus — confirm
+  `/golf dev preparecourse` succeeds on the approved seed; and
 - a real shot, scoring update, disconnect/reconnect, and restart preserve state.
 
 ## 8. Point a domain at the server
@@ -532,7 +571,7 @@ Every published release should clearly state:
 Minecraft Java Edition: 26.2
 Mod loader: Fabric
 Fabric Loader: 0.19.5 or newer compatible version
-Fabric API: required; tested with 0.159.0+26.2
+Fabric API: required; tested with 0.160.0+26.2
 Java: 25 (normally supplied by the official launcher)
 Install side: client and server
 Server and client Minecraft Golf version: exact match required
@@ -540,6 +579,13 @@ Server and client Minecraft Golf version: exact match required
 
 Do not label the mod as server-only. Its HUD, input, camera, models, textures, and
 client networking require the client JAR.
+
+The exact-version rule is the supported-*play* rule, not a connection gate. Since the
+optional-registry connection fix, a client **without** the mod (vanilla Java, or Bedrock via
+Geyser) can still connect: it is treated as a client-light **visitor** that may watch or
+explore but cannot golf. A **stale** modded client is the real hazard — it may negotiate the
+same payload channels at a different build and misbehave. Immutable releases, published
+checksums, and an exact-match requirement for anyone who wants to play close that gap.
 
 ### Build and verify a release artifact
 
@@ -683,11 +729,12 @@ checksums close that gap.
 
 | Symptom | Likely check |
 |---|---|
-| Vanilla client starts but cannot use Golf | Minecraft Golf client JAR is missing |
+| Client joins but cannot use Golf (visitor welcome/action bar) | The Minecraft Golf client JAR is missing or mismatched; install the matching release to play |
 | Fabric reports a missing dependency | Install the compatible Fabric API release |
 | Incompatible game/version message | Confirm Minecraft is exactly `26.2` for this release |
 | Duplicate mod ID or launch failure | Remove older/duplicate Minecraft Golf JARs |
 | Server rejects the connection | Compare Minecraft, Fabric Loader, Fabric API, and Golf versions with the release matrix |
+| A Bedrock or unmodified-Java client sees the visitor welcome | Expected: that client is client-light and can only watch; golf requires a matching modded Java client |
 | `Invalid session` | Restart the authenticated official launcher/client; do not disable server online mode |
 | DNS name does not resolve | Check the DNS `A` record and propagation |
 | Connection times out | Check GCP firewall, VM state, Docker port mapping, container health, and server logs |

@@ -73,7 +73,7 @@ Visitors themselves only need `/golf spectator` and `/golf spectator leave`.
 
 ## Verification performed
 
-- `./gradlew test` / `./gradlew build`: 338 tests passing (adds `VisitorTextTest`).
+- `./gradlew test` / `./gradlew build`: 337 tests passing (adds `VisitorTextTest`).
 - Docker dev server synced and restarted; healthy; host/container JAR hashes matched.
 - RCON exercised the config commands and confirmed the world JSON persists reload.
 - Real Bedrock client (mobile): visitor welcome received and spectator behaviour confirmed.

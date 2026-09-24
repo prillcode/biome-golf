@@ -2,8 +2,11 @@
 
 A Fabric mod for Minecraft Java Edition that adds multiplayer golf to ordinary Minecraft worlds — arcade-realistic, skill-based, and played through real terrain.
 
-> **M8.10 — Course Landscape Protection is complete.** M0–M8.10 are complete, and M9
-> remains deferred. See `docs/M8.10-CLOSEOUT.md`.
+> **Java is the supported experience; Bedrock is a promotional visitor mode.** M0–M8.10 are
+> complete and M9 remains deferred. The client-light/Bedrock play track (M10/M10.3) is shelved:
+> Bedrock and unmodified-Java connections can watch a round (`/golf spectator`) or join the world
+> (`/golf spectator leave`) but cannot golf, and are invited to join on Java. See
+> `docs/BEDROCK-VISITOR-MODE-PLAN.md` and `docs/M10.3-CLOSEOUT.md`.
 
 Ready Golf play flow: use `/golf round list` to see every open lobby and finalized
 course. Create a shared round with `/golf round create <courseId>`, join a specific
