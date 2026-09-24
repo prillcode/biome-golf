@@ -1,9 +1,9 @@
 # Bedrock Guest Mode — Plan
 
-**Status:** Shelved (2026-09). The product direction is Java flagship and Bedrock is
-unmaintained. G1 (tap meter) was implemented and committed (`c2c376d`) but is unverified on a
-real Bedrock client. No further work is planned; this document is kept as the decision and
-evidence record.
+**Status:** Shelved as a play mode (2026-09). Superseded by the visitor mode
+(`docs/BEDROCK-VISITOR-MODE-PLAN.md`): client-light players watch rather than play. The product
+direction is Java flagship. G1 (tap meter) was implemented and committed (`c2c376d`) but is
+dormant. This document is kept as the decision and evidence record.
 **Supersedes the priority ordering of:** `docs/BEDROCK-PARITY-TRACK-PLAN.md` (which stays the
 source for the B0–B5 visual phases).
 **Prerequisite:** M10.3 Tier 1 (implemented, commit `9e0f7b5`).

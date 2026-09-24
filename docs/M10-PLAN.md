@@ -5,10 +5,11 @@ the modded Fabric Java client remains the only fully supported experience. The o
 slice, **M10.3 Tier 1**, was implemented (ball-mirror gate, vanilla presentation fallbacks,
 removal of the server camera), and a follow-up G1 tap-meter input fix was built. A Bedrock
 playtest then showed the blockers are input feel and ball-flight smoothness rather than
-visuals, and a strategic review chose to invest in the **Java experience** instead. All
-client-light code stays in the tree, gated on `!canSend(HoleStatePayload)` and unsupported.
+visuals, and a strategic review chose to invest in the **Java experience** instead. Client-light
+connections are now a promotional **visitor mode** (watch + "join on Java" invite) rather than a
+play mode; the play code stays in the tree, gated on `!canSend(HoleStatePayload)` and dormant.
 Visual parity (Tier 2) and a native Bedrock Add-On remain evaluated and deferred, not planned.
-See `docs/M10.3-CLOSEOUT.md`.
+See `docs/BEDROCK-VISITOR-MODE-PLAN.md` and `docs/M10.3-CLOSEOUT.md`.
 
 ## Why this was shelved
 
