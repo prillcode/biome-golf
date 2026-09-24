@@ -1467,6 +1467,10 @@ public final class ActiveHoleService {
 
 	/** Offers the player-facing course browser without requiring a custom keybind. */
 	public void sendPracticeEntryPoint(ServerPlayer player) {
+		if (VisitorService.isVisitor(player)) {
+			// Visitors watch; the visitor welcome/reminder carries the call to action instead.
+			return;
+		}
 		Component action = Component.literal("[Play a Round]")
 			.withStyle(style -> style.withColor(ChatFormatting.GOLD).withUnderlined(true)
 				.withClickEvent(new ClickEvent.RunCommand("/golf browse"))

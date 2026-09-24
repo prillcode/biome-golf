@@ -100,6 +100,11 @@ public final class HeldShotService {
 			// Modded clients drive the three-click meter themselves.
 			return InteractionResult.PASS;
 		}
+		if (VisitorService.isVisitor(serverPlayer)) {
+			// Visitor mode: client-light players watch, they do not play. The tap meter
+			// stays dormant in the tree for a possible future reactivation.
+			return InteractionResult.PASS;
+		}
 		if (GolfItems.clubOf(serverPlayer.getMainHandItem()) == null) {
 			return InteractionResult.PASS;
 		}

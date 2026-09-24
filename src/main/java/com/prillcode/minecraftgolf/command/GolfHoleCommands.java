@@ -26,6 +26,7 @@ import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.ActiveHoleService.StartResult;
 import com.prillcode.minecraftgolf.server.PracticeRangeService;
 import com.prillcode.minecraftgolf.server.PracticeRangeService.Location;
+import com.prillcode.minecraftgolf.server.VisitorService;
 import com.prillcode.minecraftgolf.block.GolfBlocks;
 import net.minecraft.world.level.block.Blocks;
 import com.prillcode.minecraftgolf.club.ShotType;
@@ -55,6 +56,22 @@ public final class GolfHoleCommands {
 			CommandBuildContext registryAccess, CommandSelection environment) {
 			dispatcher.register(Commands.literal("golf")
 			.then(Commands.literal("help").executes(GolfHoleCommands::help))
+			.then(Commands.literal("spectator").executes(GolfHoleCommands::spectatorView))
+			.then(Commands.literal("adventure").executes(GolfHoleCommands::adventureView))
+			.then(Commands.literal("visitor")
+				.then(Commands.literal("status").executes(GolfHoleCommands::visitorStatus))
+				.then(Commands.literal("address").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.then(Commands.argument("address", StringArgumentType.greedyString())
+						.executes(GolfHoleCommands::visitorAddress)))
+				.then(Commands.literal("link").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.then(Commands.argument("link", StringArgumentType.greedyString())
+						.executes(GolfHoleCommands::visitorLink)))
+				.then(Commands.literal("reminders").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.then(Commands.argument("seconds", IntegerArgumentType.integer(0))
+						.executes(GolfHoleCommands::visitorReminders)))
+				.then(Commands.literal("spawn").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.then(Commands.literal("set").executes(GolfHoleCommands::visitorSpawnSet))
+					.then(Commands.literal("clear").executes(GolfHoleCommands::visitorSpawnClear))))
 			.then(Commands.literal("round")
 				.then(Commands.literal("create")
 					.executes(GolfHoleCommands::createRound)
@@ -112,6 +129,7 @@ public final class GolfHoleCommands {
 
 	private static int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		StartResult result = ActiveHoleService.instance().start(player);
 		if (!result.success()) {
 			context.getSource().sendFailure(Component.literal(result.message()));
@@ -130,34 +148,41 @@ public final class GolfHoleCommands {
 		context.getSource().sendSuccess(() -> Component.literal("Swing (no client mod needed): /golf swing [power] [accuracy] [shotType]"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Practice: /golf practice ball | /golf practice tee | /golf practice target list"), false);
 		context.getSource().sendSuccess(() -> Component.literal("Solo: /golf course play [courseId] [hole] | /golf hole start [hole]"), false);
+		context.getSource().sendSuccess(() -> Component.literal("Visitors (Bedrock/vanilla): /golf spectator | /golf adventure"), false);
 		return 1;
 	}
 
 	private static int startAtHole(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		return sendResult(context, ActiveHoleService.instance().start(
-			context.getSource().getPlayerOrException(), IntegerArgumentType.getInteger(context, "hole")));
+			player, IntegerArgumentType.getInteger(context, "hole")));
 	}
 
 	private static int createRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-		return sendResult(context, ActiveHoleService.instance().createRound(
-			context.getSource().getPlayerOrException()));
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		return sendResult(context, ActiveHoleService.instance().createRound(player));
 	}
 
 	private static int createRoundForCourse(CommandContext<CommandSourceStack> context)
 			throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		return sendResult(context, ActiveHoleService.instance().createRound(
-			StringArgumentType.getString(context, "courseId"),
-			context.getSource().getPlayerOrException()));
+			StringArgumentType.getString(context, "courseId"), player));
 	}
 
 	private static int joinRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-		return sendResult(context, ActiveHoleService.instance().joinRound(
-			context.getSource().getPlayerOrException()));
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		return sendResult(context, ActiveHoleService.instance().joinRound(player));
 	}
 
 	private static int joinSpecificRound(CommandContext<CommandSourceStack> context)
 			throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		try {
 			return sendResult(context, ActiveHoleService.instance().joinRound(
 				UUID.fromString(StringArgumentType.getString(context, "roundId")), player));
@@ -194,8 +219,9 @@ public final class GolfHoleCommands {
 	}
 
 	private static int startRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-		return sendResult(context, ActiveHoleService.instance().startRound(
-			context.getSource().getPlayerOrException()));
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		return sendResult(context, ActiveHoleService.instance().startRound(player));
 	}
 
 	private static int leaveRound(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -205,8 +231,9 @@ public final class GolfHoleCommands {
 
 	private static int restartRound(CommandContext<CommandSourceStack> context)
 			throws CommandSyntaxException {
-		return sendResult(context, ActiveHoleService.instance().restartRound(
-			context.getSource().getPlayerOrException()));
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		return sendResult(context, ActiveHoleService.instance().restartRound(player));
 	}
 
 	private static int roundStatus(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -223,6 +250,7 @@ public final class GolfHoleCommands {
 
 	private static int restart(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		return sendResult(context, ActiveHoleService.instance().restart(player));
 	}
 
@@ -242,6 +270,7 @@ public final class GolfHoleCommands {
 	private static int dropPracticeBall(CommandContext<CommandSourceStack> context)
 			throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		return sendResult(context, ActiveHoleService.instance().dropPracticeBall(player));
 	}
 
@@ -343,16 +372,19 @@ public final class GolfHoleCommands {
 
 	private static int pickUp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		return sendResult(context, ActiveHoleService.instance().pickUp(player));
 	}
 
 	private static int tapIn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-		return sendResult(context, ActiveHoleService.instance().tapIn(
-			context.getSource().getPlayerOrException()));
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		return sendResult(context, ActiveHoleService.instance().tapIn(player));
 	}
 
 	private static int nextHole(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		return sendResult(context, ActiveHoleService.instance().nextHole(player));
 	}
 
@@ -364,6 +396,7 @@ public final class GolfHoleCommands {
 	 */
 	private static int swing(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
 		float power = optionalFloat(context, "power", 1.0f);
 		float accuracy = optionalFloat(context, "accuracy", 0.5f);
 		ShotType shotType;
@@ -404,6 +437,79 @@ public final class GolfHoleCommands {
 		}
 		throw new IllegalArgumentException("[golf] unknown shot type '" + raw
 			+ "'; use standard, chip, stinger, or flop");
+	}
+
+	/** Visitors (Bedrock/vanilla) can watch but not play; reject play commands with a clear message. */
+	private static boolean visitorBlocked(CommandContext<CommandSourceStack> context, ServerPlayer player) {
+		if (VisitorService.isVisitor(player)) {
+			context.getSource().sendFailure(Component.literal(VisitorService.playRejection()));
+			return true;
+		}
+		return false;
+	}
+
+	private static int spectatorView(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		VisitorService.instance().setMode(context.getSource().getPlayerOrException(),
+			VisitorService.Mode.SPECTATOR);
+		return 1;
+	}
+
+	private static int adventureView(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		VisitorService.instance().setMode(context.getSource().getPlayerOrException(),
+			VisitorService.Mode.ADVENTURE);
+		return 1;
+	}
+
+	private static int visitorStatus(CommandContext<CommandSourceStack> context) {
+		VisitorService service = VisitorService.instance();
+		String spawn = service.hasViewpoint()
+			? service.viewpoint().dimension() + " " + service.viewpoint().position()
+			: "not set";
+		context.getSource().sendSuccess(() -> Component.literal("[golf] visitor config: address="
+			+ display(service.javaAddress()) + " | link=" + display(service.modLink())
+			+ " | reminders=" + service.reminderSeconds() + "s | spawn=" + spawn), false);
+		return 1;
+	}
+
+	private static int visitorAddress(CommandContext<CommandSourceStack> context) {
+		String address = StringArgumentType.getString(context, "address");
+		VisitorService.instance().setJavaAddress(address);
+		context.getSource().sendSuccess(() -> Component.literal("[golf] Java address set to " + address), false);
+		return 1;
+	}
+
+	private static int visitorLink(CommandContext<CommandSourceStack> context) {
+		String link = StringArgumentType.getString(context, "link");
+		VisitorService.instance().setModLink(link);
+		context.getSource().sendSuccess(() -> Component.literal("[golf] mod link set to " + link), false);
+		return 1;
+	}
+
+	private static int visitorReminders(CommandContext<CommandSourceStack> context) {
+		int seconds = IntegerArgumentType.getInteger(context, "seconds");
+		VisitorService.instance().setReminderSeconds(seconds);
+		context.getSource().sendSuccess(() -> Component.literal(seconds == 0
+			? "[golf] visitor reminders disabled"
+			: "[golf] visitor reminders every " + seconds + "s"), false);
+		return 1;
+	}
+
+	private static int visitorSpawnSet(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		VisitorService.instance().setViewpoint(player.level().dimension().identifier().toString(),
+			new Vec3(player.getX(), player.getY(), player.getZ()));
+		context.getSource().sendSuccess(() -> Component.literal("[golf] visitor spawn set here"), true);
+		return 1;
+	}
+
+	private static int visitorSpawnClear(CommandContext<CommandSourceStack> context) {
+		VisitorService.instance().clearViewpoint();
+		context.getSource().sendSuccess(() -> Component.literal("[golf] visitor spawn cleared"), false);
+		return 1;
+	}
+
+	private static String display(String value) {
+		return value == null || value.isBlank() ? "(unset)" : value;
 	}
 
 	private static int sendResult(CommandContext<CommandSourceStack> context, StartResult result) {

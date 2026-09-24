@@ -20,6 +20,7 @@ import com.prillcode.minecraftgolf.golf.Vec3;
 import com.prillcode.minecraftgolf.item.GolfItems;
 import com.prillcode.minecraftgolf.server.ActiveHoleService;
 import com.prillcode.minecraftgolf.server.ActiveHoleService.ShotPermission;
+import com.prillcode.minecraftgolf.server.VisitorService;
 import com.prillcode.minecraftgolf.surface.SurfaceDefinition;
 
 /**
@@ -44,6 +45,9 @@ public final class ShotService {
 	 */
 	public static ShotOutcome attempt(ServerPlayer player, int ballId,
 			float aimYawDeg, float aimPitchDeg, float power, float accuracy, ShotType requestedType) {
+		if (VisitorService.isVisitor(player)) {
+			return ShotOutcome.VISITOR;
+		}
 		ServerLevel level = (ServerLevel) player.level();
 		GolfBallEntity ball = findBall(level, ballId);
 		if (ball == null) {

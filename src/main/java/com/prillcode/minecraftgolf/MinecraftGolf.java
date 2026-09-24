@@ -29,6 +29,7 @@ import com.prillcode.minecraftgolf.server.AuthoredCourseService;
 import com.prillcode.minecraftgolf.server.BallCameraService;
 import com.prillcode.minecraftgolf.server.HeldShotService;
 import com.prillcode.minecraftgolf.server.PracticeRangeService;
+import com.prillcode.minecraftgolf.server.VisitorService;
 import com.prillcode.minecraftgolf.server.CourseBlockBreakGuard;
 
 public class MinecraftGolf implements ModInitializer {
@@ -80,6 +81,7 @@ public class MinecraftGolf implements ModInitializer {
 		// operator authoring/selection commands. No course is selected at boot.
 		AuthoredCourseService.register();
 		PracticeRangeService.register();
+		VisitorService.register();
 		ActiveHoleService.register();
 		GolfCourseCommands.register();
 
@@ -109,12 +111,14 @@ public class MinecraftGolf implements ModInitializer {
 			player.sendSystemMessage(Component.literal("Use /golf help to get started."));
 			player.addTag(WELCOME_TAG);
 			ActiveHoleService.instance().onPlayerConnected(player);
+			VisitorService.instance().onPlayerJoined(player);
 		});
 
 		// S5: apply the Ready Golf suspension policy on disconnect.
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			BallCameraService.instance().forget(handler.getPlayer().getUUID());
 			HeldShotService.forget(handler.getPlayer().getUUID());
+			VisitorService.instance().onPlayerDisconnected(handler.getPlayer());
 			ActiveHoleService.instance().onPlayerDisconnected(handler.getPlayer(), server);
 		});
 	}

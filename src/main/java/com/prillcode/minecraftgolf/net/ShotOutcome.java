@@ -30,6 +30,8 @@ public enum ShotOutcome {
 	INVALID_SHOT_TYPE,
 	/** Shots off a club the player must be holding, and this is not one. */
 	UNKNOWN,
+	/** The player is a client-light visitor and cannot play. */
+	VISITOR,
 	/** Launch executed. */
 	SUCCESS;
 
@@ -51,6 +53,7 @@ public enum ShotOutcome {
 			case HOLE_COMPLETE -> "[golf] this hole is complete; use /golf hole restart, or /golf round restart after the round ends";
 			case DRIVER_NOT_ALLOWED_ON_SAND -> "[golf] Driver cannot be used from sand; select another club";
 			case INVALID_SHOT_TYPE -> "[golf] that shot type is not available for the held club";
+			case VISITOR -> "[golf] visitors can watch but not play — join on Java to golf";
 			case SUCCESS, UNKNOWN -> "";
 		};
 	}

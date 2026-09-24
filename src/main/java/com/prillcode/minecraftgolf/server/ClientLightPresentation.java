@@ -33,6 +33,11 @@ public final class ClientLightPresentation {
 		if (!isClientLight(player)) {
 			return;
 		}
+		if (VisitorService.isVisitor(player)) {
+			// Visitors are spectators who cannot play; the visitor reminder owns the action
+			// bar, so hole-status fallbacks are suppressed.
+			return;
+		}
 		String text = switch (payload.phase()) {
 			case ACTIVE -> ClientLightHudText.active(payload.holeNumber(), payload.par(),
 				payload.strokes(), payload.strokeLimit(), payload.distanceToCupBlocks(),
