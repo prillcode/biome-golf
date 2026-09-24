@@ -1,8 +1,10 @@
 package com.prillcode.minecraftgolf.server;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -11,7 +13,6 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.BossEvent.BossBarColor;
 import net.minecraft.world.BossEvent.BossBarOverlay;
@@ -19,11 +20,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.BlockHitResult;
 
 import com.prillcode.minecraftgolf.MinecraftGolf;
-import com.prillcode.minecraftgolf.club.ClubDefinition;
 import com.prillcode.minecraftgolf.club.HeldShotRules;
 import com.prillcode.minecraftgolf.club.ShotType;
 import com.prillcode.minecraftgolf.entity.GolfBallEntity;
@@ -32,36 +31,38 @@ import com.prillcode.minecraftgolf.net.ShotOutcome;
 import com.prillcode.minecraftgolf.net.ShotService;
 
 /**
- * M10.1 S1b: held-use shot input for client-light players.
+ * M10.1 S1b / M10.3 G1: tap-based shot input for client-light players.
  *
- * <p>A player without the mod holds right-click near their own resting ball. The
- * server enters the vanilla "using item" state (so the client sends a
- * {@code RELEASE_USE_ITEM} packet on release — Geyser does the same for Bedrock),
- * times the hold, and on release launches the ball through the unchanged
- * {@link ShotService} with power derived from {@link HeldShotRules}. Aim is the
- * player's look direction; shot type stays {@code STANDARD}.</p>
+ * <p>A player without the mod taps use near their own resting ball. Each tap advances a
+ * visible power step (boss bar); the shot fires shortly after the last tap, or immediately at
+ * the maximum step. This intentionally does not depend on a use/release pair: a 2026-09
+ * playtest showed Geyser never delivered a release for a club (an item with no use duration),
+ * so the earlier hold-based model always auto-fired at full power after the safety cap.</p>
  *
- * <p>Modded clients keep the three-click meter and are ignored here (detected via
- * {@link BallCameraService#isClientLight}). Everything remains server-authoritative:
- * the client only produces press/release, never an outcome.</p>
+ * <p>Aim is the player's look direction and shot type stays {@code STANDARD}. Modded clients
+ * keep the three-click meter and are ignored here (detected via
+ * {@link BallCameraService#isClientLight}). Everything remains server-authoritative: the
+ * client only produces taps, never an outcome; {@code /golf swing} remains the precise floor.</p>
  */
 public final class HeldShotService {
 
 	private static final double MAX_STRIKE_DISTANCE_SQ = 6.0 * 6.0;
 
-	/** Ticks after a shot during which a new charge is refused. */
+	/** Ticks after a shot during which new taps are refused. */
 	private static final int FIRE_COOLDOWN_TICKS = 8;
 
-	private static final Map<UUID, Charge> CHARGES = new HashMap<>();
+	private static final Map<UUID, Meter> METERS = new HashMap<>();
 	private static final Map<UUID, Integer> COOLDOWNS = new HashMap<>();
+	private static final Set<UUID> HINTED = new HashSet<>();
 
-	/** M10.3 S3: per-player boss bar showing held-use charge power to client-light players. */
-	private static final Map<UUID, ServerBossEvent> CHARGE_BARS = new HashMap<>();
-	private static final Component CHARGE_BAR_TITLE = Component.literal("Shot power");
+	/** M10.3 S3: per-player boss bar showing the tap-meter power step. */
+	private static final Map<UUID, ServerBossEvent> METER_BARS = new HashMap<>();
+	private static final Component METER_BAR_TITLE = Component.literal("Shot power");
 
 	private static boolean registered;
 
-	private record Charge(int ballId, int startTick) {
+	/** One in-progress tap meter for a player. */
+	private record Meter(int ballId, int taps, int lastTapTick) {
 	}
 
 	private HeldShotService() {
@@ -76,19 +77,19 @@ public final class HeldShotService {
 		UseBlockCallback.EVENT.register(HeldShotService::onUseBlock);
 		ServerTickEvents.END_SERVER_TICK.register(HeldShotService::onServerTick);
 		MinecraftGolf.LOGGER.info(
-			"Registered M10.1 held-use shot input (client-light players; /golf swing remains the command floor)");
+			"Registered M10.1/G1 tap-meter shot input (client-light players; /golf swing remains the command floor)");
 	}
 
 	private static InteractionResult onUseItem(Player player, Level level, InteractionHand hand) {
-		return tryStartCharge(player, level, hand);
+		return tap(player, level, hand);
 	}
 
 	private static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand,
 			BlockHitResult hitResult) {
-		return tryStartCharge(player, level, hand);
+		return tap(player, level, hand);
 	}
 
-	private static InteractionResult tryStartCharge(Player player, Level level, InteractionHand hand) {
+	private static InteractionResult tap(Player player, Level level, InteractionHand hand) {
 		if (level.isClientSide() || !(player instanceof ServerPlayer serverPlayer)) {
 			return InteractionResult.PASS;
 		}
@@ -114,133 +115,143 @@ public final class HeldShotService {
 			}
 			COOLDOWNS.remove(serverPlayer.getUUID());
 		}
-		if (CHARGES.containsKey(serverPlayer.getUUID())) {
+		GolfBallEntity ball = eligibleBall(serverPlayer);
+		if (ball == null) {
+			return InteractionResult.PASS;
+		}
+
+		UUID playerId = serverPlayer.getUUID();
+		Meter current = METERS.get(playerId);
+		int gap = current == null ? -1 : tick - current.lastTapTick();
+		if (gap >= 0 && HeldShotRules.isRepeatWithinGap(gap)) {
+			// Geyser may repeat the use action while a button is held; count it once.
+			MinecraftGolf.LOGGER.debug("{} use action ignored (repeat after {} ticks)",
+				serverPlayer.getName().getString(), gap);
 			return InteractionResult.SUCCESS;
 		}
-		GolfBallEntity ball = ShotService.nearestStrikeableBall(serverPlayer);
-		if (ball == null || !ball.isResting()) {
-			return InteractionResult.PASS;
+		int taps;
+		if (current == null || current.ballId() != ball.getId()
+				|| HeldShotRules.isNewMeter(current.taps(), gap)) {
+			taps = 1;
+		} else {
+			taps = Math.min(current.taps() + 1, HeldShotRules.MAX_TAPS);
 		}
-		if (ball.owner() != null && !ball.owner().equals(serverPlayer.getUUID())) {
-			return InteractionResult.PASS;
-		}
-		if (serverPlayer.distanceToSqr(ball) > MAX_STRIKE_DISTANCE_SQ) {
-			return InteractionResult.PASS;
-		}
-		ActiveHoleService.ShotPermission permission =
-			ActiveHoleService.instance().shotPermission(serverPlayer, ball);
-		if (permission == ActiveHoleService.ShotPermission.WRONG_BALL
-				|| permission == ActiveHoleService.ShotPermission.MISSING_BALL) {
-			return InteractionResult.PASS;
-		}
-		serverPlayer.startUsingItem(hand);
-		CHARGES.put(serverPlayer.getUUID(), new Charge(ball.getId(), tick));
-		startChargeBar(serverPlayer);
+		METERS.put(playerId, new Meter(ball.getId(), taps, tick));
+		showMeterBar(serverPlayer, taps);
+		MinecraftGolf.LOGGER.info("{} tapped shot power step {}/{} on ball {} (gap {})",
+			serverPlayer.getName().getString(), taps, HeldShotRules.MAX_TAPS, ball.getId(),
+			gap < 0 ? "new" : Integer.toString(gap));
+		sendHintOnce(serverPlayer);
 		return InteractionResult.SUCCESS;
 	}
 
+	/** Nearest ball this client-light player may tap right now, or {@code null}. */
+	private static GolfBallEntity eligibleBall(ServerPlayer player) {
+		GolfBallEntity ball = ShotService.nearestStrikeableBall(player);
+		if (ball == null || !ball.isResting()) {
+			return null;
+		}
+		if (ball.owner() != null && !ball.owner().equals(player.getUUID())) {
+			return null;
+		}
+		if (player.distanceToSqr(ball) > MAX_STRIKE_DISTANCE_SQ) {
+			return null;
+		}
+		ActiveHoleService.ShotPermission permission =
+			ActiveHoleService.instance().shotPermission(player, ball);
+		if (permission == ActiveHoleService.ShotPermission.WRONG_BALL
+				|| permission == ActiveHoleService.ShotPermission.MISSING_BALL) {
+			return null;
+		}
+		return ball;
+	}
+
 	private static void onServerTick(MinecraftServer server) {
-		if (CHARGES.isEmpty()) {
+		if (METERS.isEmpty()) {
 			return;
 		}
 		int tick = server.getTickCount();
-		Iterator<Map.Entry<UUID, Charge>> iterator = CHARGES.entrySet().iterator();
+		Iterator<Map.Entry<UUID, Meter>> iterator = METERS.entrySet().iterator();
 		while (iterator.hasNext()) {
-			Map.Entry<UUID, Charge> entry = iterator.next();
+			Map.Entry<UUID, Meter> entry = iterator.next();
 			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
 			if (player == null) {
-				clearChargeBar(entry.getKey());
+				hideMeterBar(entry.getKey());
 				iterator.remove();
 				continue;
 			}
-			Charge charge = entry.getValue();
-			int heldTicks = tick - charge.startTick;
-			GolfBallEntity ball = findBall(player, charge.ballId);
-			boolean stillValid = ball != null && ball.isResting()
-				&& (ball.owner() == null || ball.owner().equals(player.getUUID()))
-				&& player.distanceToSqr(ball) <= MAX_STRIKE_DISTANCE_SQ
-				&& GolfItems.clubOf(player.getMainHandItem()) != null;
+			Meter meter = entry.getValue();
+			int sinceTap = tick - meter.lastTapTick();
+			GolfBallEntity current = eligibleBall(player);
+			boolean stillValid = current != null && current.getId() == meter.ballId();
 			if (!stillValid) {
-				player.stopUsingItem();
-				clearChargeBar(player.getUUID());
+				hideMeterBar(player.getUUID());
 				iterator.remove();
 				continue;
 			}
-			boolean released = !player.isUsingItem();
-			boolean autoFire = HeldShotRules.shouldAutoFire(heldTicks);
-			if (!released && !autoFire) {
-				updateChargeBar(player.getUUID(), heldTicks);
+			if (!HeldShotRules.shouldFire(meter.taps(), sinceTap)) {
 				continue;
 			}
 			iterator.remove();
-			clearChargeBar(player.getUUID());
-			if (autoFire) {
-				player.stopUsingItem();
-			}
-			fire(player, ball, heldTicks);
+			hideMeterBar(player.getUUID());
+			fire(player, current, meter.taps());
 		}
 	}
 
-	/** Creates and shows the held-use power boss bar for a client-light charge. */
-	private static void startChargeBar(ServerPlayer player) {
-		clearChargeBar(player.getUUID());
-		ServerBossEvent bar = new ServerBossEvent(java.util.UUID.randomUUID(), CHARGE_BAR_TITLE,
-			BossBarColor.GREEN, BossBarOverlay.PROGRESS);
-		bar.setProgress(HeldShotRules.power(0));
-		bar.addPlayer(player);
-		CHARGE_BARS.put(player.getUUID(), bar);
-	}
-
-	/** Drives the charge boss bar from the same tick count that decides power. */
-	private static void updateChargeBar(UUID playerId, int heldTicks) {
-		ServerBossEvent bar = CHARGE_BARS.get(playerId);
+	/** Creates or updates the tap-meter boss bar for a client-light player. */
+	private static void showMeterBar(ServerPlayer player, int taps) {
+		ServerBossEvent bar = METER_BARS.get(player.getUUID());
 		if (bar == null) {
-			return;
+			bar = new ServerBossEvent(java.util.UUID.randomUUID(), METER_BAR_TITLE,
+				BossBarColor.GREEN, BossBarOverlay.PROGRESS);
+			bar.addPlayer(player);
+			METER_BARS.put(player.getUUID(), bar);
 		}
-		float power = HeldShotRules.power(heldTicks);
+		float power = HeldShotRules.powerForTaps(taps);
 		bar.setProgress(power);
-		bar.setName(CHARGE_BAR_TITLE.copy().append(" " + Math.round(power * 100) + "%"));
+		bar.setName(METER_BAR_TITLE.copy().append(" " + Math.round(power * 100) + "% ("
+			+ taps + "/" + HeldShotRules.MAX_TAPS + ")"));
 	}
 
-	/** Hides and forgets a player's charge boss bar, if any. */
-	private static void clearChargeBar(UUID playerId) {
-		ServerBossEvent bar = CHARGE_BARS.remove(playerId);
+	/** Hides and forgets a player's meter boss bar, if any. */
+	private static void hideMeterBar(UUID playerId) {
+		ServerBossEvent bar = METER_BARS.remove(playerId);
 		if (bar != null) {
 			bar.removeAllPlayers();
 		}
 	}
 
-	/** Forgets all transient held-use state for a disconnecting player. */
-	public static void forget(UUID playerId) {
-		CHARGES.remove(playerId);
-		COOLDOWNS.remove(playerId);
-		clearChargeBar(playerId);
+	/** One-time discoverability hint; the boss bar then carries the live power step. */
+	private static void sendHintOnce(ServerPlayer player) {
+		if (!HINTED.add(player.getUUID())) {
+			return;
+		}
+		player.sendSystemMessage(Component.literal(
+			"[golf] Tap once for a light shot; tap up to " + HeldShotRules.MAX_TAPS
+				+ " times for full power. Precise: /golf swing <power>"));
 	}
 
-	private static void fire(ServerPlayer player, GolfBallEntity ball, int heldTicks) {
-		float power = HeldShotRules.power(heldTicks);
+	/** Forgets all transient tap state for a disconnecting player. */
+	public static void forget(UUID playerId) {
+		METERS.remove(playerId);
+		COOLDOWNS.remove(playerId);
+		HINTED.remove(playerId);
+		hideMeterBar(playerId);
+	}
+
+	private static void fire(ServerPlayer player, GolfBallEntity ball, int taps) {
+		float power = HeldShotRules.powerForTaps(taps);
 		ShotOutcome outcome = ShotService.attempt(player, ball.getId(),
 			player.getYRot(), player.getXRot(), power, HeldShotRules.HELD_ACCURACY, ShotType.STANDARD);
 		if (outcome != ShotOutcome.SUCCESS) {
 			player.sendSystemMessage(Component.literal(outcome.description()), true);
 		} else {
-			MinecraftGolf.LOGGER.info("{} held-use shot power={} after {} ticks",
-				player.getName().getString(), power, heldTicks);
+			MinecraftGolf.LOGGER.info("{} tap-meter shot power={} ({} taps)",
+				player.getName().getString(), power, taps);
 		}
 		MinecraftServer server = player.level().getServer();
 		if (server != null) {
 			COOLDOWNS.put(player.getUUID(), server.getTickCount() + FIRE_COOLDOWN_TICKS);
 		}
-	}
-
-	private static GolfBallEntity findBall(ServerPlayer player, int id) {
-		ServerLevel level = (ServerLevel) player.level();
-		for (GolfBallEntity ball : level.getEntities(
-				EntityTypeTest.forClass(GolfBallEntity.class), ignored -> true)) {
-			if (ball.getId() == id) {
-				return ball;
-			}
-		}
-		return null;
 	}
 }
