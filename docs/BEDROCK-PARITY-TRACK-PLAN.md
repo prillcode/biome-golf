@@ -4,6 +4,12 @@
 **Prerequisite:** Complete M10.3 Tier 1 first
 **Target:** Geyser 2.11.3-b1245 / Floodgate 2.2.6 / Minecraft 26.2
 
+> **Amended 2026-09 by `docs/BEDROCK-GUEST-MODE-PLAN.md`.** The product decision is now
+> "Java flagship + Bedrock guest", and a playtest showed the blockers are input feel and ball
+> flight, not visuals. Feel work (G1/G2) now precedes the visual phases below; B4 (ball entity)
+> is gated on a positive G2 smoothness signal. The phase documents here remain the source for
+> the B0–B3/B5 visual work.
+
 ## Objective
 
 Provide as much visual parity as practical for Bedrock mobile, Windows, and console players
