@@ -148,8 +148,8 @@ The host operating system should not affect the Fabric server architecture.
 | M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
-| M10 | Client-Light / Bedrock Compatibility | **SHELVED** except M10.3 Tier 1; Java experience prioritized (see docs/M10-PLAN.md) |
-| M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented (2026-09)**; ball-mirror gate + vanilla action-bar/boss-bar/chat fallbacks, no camera/visual parity (see docs/M10.3-PLAN.md). Real Bedrock playtest pending. |
+| M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
+| M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then Bedrock re-shelved (2026-09)**; ball-mirror gate, vanilla fallbacks, G1 tap input. Not pursued further (see docs/M10.3-CLOSEOUT.md). |
 
 ---
 
@@ -1419,19 +1419,18 @@ To be defined after V1 priorities are established.
 
 ## Status
 
-**Shelved (2026-09), except M10.3 Tier 1.** Client-light/Bedrock visual and camera parity
-is not a goal. The assessment (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`) concluded
-**practical with tradeoffs**, and a real Bedrock client did connect, but the resulting
-experience is inherently below the modded Java client (server-driven spectate camera, no
-visible swing/power interaction). Per the priority order (`good golf > maintainable server >
-Java experience > client-light > Bedrock`), the expensive parity work is stopped.
+**Shelved (re-shelved 2026-09).** Client-light/Bedrock parity is not a goal. The assessment
+(`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`) concluded **practical with tradeoffs**; a real
+Bedrock client connected, but a playtest showed the blockers are input feel and ball-flight
+smoothness rather than visuals (the held-use input never saw a release; flight was choppy).
+Per the priority order (`good golf > maintainable server > Java experience > client-light >
+Bedrock`), development is returning to the **Java experience** and Bedrock is shelved.
 
-One bounded, Java-safe slice is implemented as **M10.3 Tier 1**: Bedrock and vanilla-Java
-players can compete side-by-side with different visuals, using only fallbacks gated
-on `!canSend(HoleStatePayload)`, and the ball mirror is now gated so modded Java stops seeing
-the vanilla proxy in the normal all-Java world. It builds no Bedrock resource pack and no camera
-parity. See `docs/M10.3-PLAN.md`; Tier 2 (Bedrock resource pack) is deferred to a separate
-research session. A real two-client Bedrock playtest remains the final manual acceptance step.
+**M10.3 Tier 1** was implemented first as the one bounded Java-safe slice: it gates the ball
+mirror (modded Java no longer sees the proxy in the all-Java world), removes the shaky server
+camera, and adds vanilla presentation fallbacks, all gated on `!canSend(HoleStatePayload)`.
+A G1 tap-meter input fix followed. All of it stays in the tree, gated and unsupported. See
+`docs/M10.3-CLOSEOUT.md`.
 
 ## Why It Is Shelved
 
@@ -1500,6 +1499,9 @@ landscape protection (break/place/TNT) with a per-course lock, verified automati
 Docker/RCON, and in-game as both operator and non-operator. M9 — Additional Game Modes
 remains deferred until an alternate mode is explicitly prioritized. M10 — Client-Light /
 Bedrock Compatibility was assessed (`docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`, verdict:
-practical with tradeoffs) and a Bedrock prototype ran, but it is now **shelved**: the modded
-Java client is the supported target, and the remaining client-light/Bedrock code is gated,
-unsupported, and not pursued further.
+practical with tradeoffs) and a Bedrock prototype ran. Its one bounded slice, **M10.3 Tier 1**,
+shipped (ball-mirror gate, vanilla fallbacks, G1 tap input), but a Bedrock playtest showed the
+remaining blockers are feel rather than visuals, so Bedrock is **shelved again**: the modded
+Java client is the supported target, development is returning to the Java experience, and the
+remaining client-light/Bedrock code is gated, unsupported, and not pursued further. See
+`docs/M10.3-CLOSEOUT.md`.

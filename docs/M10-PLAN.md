@@ -1,12 +1,14 @@
 # M10 - Client-Light / Bedrock Compatibility
 
-**Status: SHELVED with one bounded exception (2026-09).** The full client-light/Bedrock
-program is not a goal; visual parity and camera parity are dropped, and the modded Fabric
-client remains the only fully supported experience. A single Java-safe slice has been
-reopened as **M10.3 Tier 1** — see `docs/M10.3-PLAN.md`. It adds vanilla presentation
-fallbacks, fixes the ball mirror so modded Java stops seeing it, and removes the shaky
-server camera, all gated so the modded Java client is unchanged. Bedrock visual parity is
-deferred to a separate Tier 2 research effort.
+**Status: SHELVED (re-shelved 2026-09).** The full client-light/Bedrock program is not a goal;
+the modded Fabric Java client remains the only fully supported experience. The one bounded
+slice, **M10.3 Tier 1**, was implemented (ball-mirror gate, vanilla presentation fallbacks,
+removal of the server camera), and a follow-up G1 tap-meter input fix was built. A Bedrock
+playtest then showed the blockers are input feel and ball-flight smoothness rather than
+visuals, and a strategic review chose to invest in the **Java experience** instead. All
+client-light code stays in the tree, gated on `!canSend(HoleStatePayload)` and unsupported.
+Visual parity (Tier 2) and a native Bedrock Add-On remain evaluated and deferred, not planned.
+See `docs/M10.3-CLOSEOUT.md`.
 
 ## Why this was shelved
 

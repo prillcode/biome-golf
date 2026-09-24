@@ -1,6 +1,6 @@
 # Bedrock Parity Track
 
-**Status:** Future work item — planned, not started
+**Status:** Shelved (2026-09) — not planned. Kept as a reference for the Geyser visual phases.
 **Prerequisite:** Complete M10.3 Tier 1 first
 **Target:** Geyser 2.11.3-b1245 / Floodgate 2.2.6 / Minecraft 26.2
 
