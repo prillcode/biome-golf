@@ -13,15 +13,15 @@ public final class VisitorText {
 	private VisitorText() {
 	}
 
-	/** Welcome chat lines: the two watch modes plus the "join on Java to play" invite. */
+	/** Welcome chat lines: the two view modes plus the "join on Java to golf" invite. */
 	public static List<String> welcome(String address, String link) {
 		List<String> lines = new ArrayList<>();
-		lines.add("[golf] Welcome to BirdieBiome! This is a Java mod experience, so you can watch but not play here.");
-		lines.add("[golf] Fly and watch: /golf spectator. Walk around (visible): /golf adventure.");
+		lines.add("[golf] Welcome to BirdieBiome! Golf is a Java mod experience, so you can watch and join the world here, but golf itself is on Java.");
+		lines.add("[golf] Watch: /golf spectator. Join in and build: /golf survival (course areas are protected).");
 		if (notBlank(address)) {
-			lines.add("[golf] Want to play? Join on Java: " + address);
+			lines.add("[golf] Want to golf? Join on Java: " + address);
 		} else {
-			lines.add("[golf] Want to play? Ask the host for the Java server address.");
+			lines.add("[golf] Want to golf? Ask the host for the Java server address.");
 		}
 		if (notBlank(link)) {
 			lines.add("[golf] Install the Java mod: " + link);

@@ -38,19 +38,20 @@ import com.prillcode.minecraftgolf.hole.VisitorText;
  * play, with a "join on Java" invite. This turns the shelved Bedrock play mode into a
  * promotional surface rather than a degraded game.
  *
- * <p>Visitors pick one of two presentation modes, both non-playing:
- * {@link Mode#SPECTATOR} (fly, phase through blocks, invisible) and {@link Mode#ADVENTURE}
- * (walk, visible, cannot break blocks). The modded Java client never reaches any of this.</p>
+ * <p>Visitors pick one of two view modes: {@link Mode#SPECTATOR} (fly, phase through blocks,
+ * invisible) and {@link Mode#SURVIVAL} (normal world play — building and breaking are free
+ * outside authored course regions, which the course guard protects). Neither can golf. The
+ * modded Java client never reaches any of this.</p>
  *
  * <p>Config (Java address, mod link, reminder interval, optional viewpoint) persists to world
  * JSON, matching the practice-range pattern.</p>
  */
 public final class VisitorService {
 
-	/** Presentation only; neither mode can play golf. */
+	/** View modes; neither can golf, but Survival is a normal world player. */
 	public enum Mode {
 		SPECTATOR,
-		ADVENTURE
+		SURVIVAL
 	}
 
 	private static final String FILE_NAME = "minecraft_golf_visitor.json";
@@ -86,9 +87,9 @@ public final class VisitorService {
 		return BallCameraService.isClientLight(player);
 	}
 
-	/** Feedback when a visitor tries a play command. */
+	/** Feedback when a visitor tries a golf command. */
 	public static String playRejection() {
-		return "[golf] visitors can watch but not play — join on Java to golf";
+		return "[golf] golf is Java-only — join on Java to play golf (build and explore freely here)";
 	}
 
 	/** Puts a joining client-light player into spectator mode and sends the visitor welcome. */
@@ -121,12 +122,12 @@ public final class VisitorService {
 		modes.put(player.getUUID(), mode);
 		applyMode(player, mode);
 		player.sendSystemMessage(Component.literal(mode == Mode.SPECTATOR
-			? "[golf] spectator view: fly around and watch. /golf adventure to walk instead."
-			: "[golf] adventure view: walk around in the open. /golf spectator to fly instead."));
+			? "[golf] spectator view: fly around and watch. /golf survival to join in."
+			: "[golf] survival view: normal world play outside the protected courses. /golf spectator to watch."));
 	}
 
 	private static void applyMode(ServerPlayer player, Mode mode) {
-		player.setGameMode(mode == Mode.SPECTATOR ? GameType.SPECTATOR : GameType.ADVENTURE);
+		player.setGameMode(mode == Mode.SPECTATOR ? GameType.SPECTATOR : GameType.SURVIVAL);
 	}
 
 	private void onServerTick(MinecraftServer server) {

@@ -105,10 +105,13 @@ public class MinecraftGolf implements ModInitializer {
 		// S5: reconnect a suspended golfer and send the authoritative snapshot on join.
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.getPlayer();
-			player.sendSystemMessage(Component.literal(player.entityTags().contains(WELCOME_TAG)
-				? "Welcome back to BirdieBiome!"
-				: "BirdieBiome welcomes you!"));
-			player.sendSystemMessage(Component.literal("Use /golf help to get started."));
+			if (!VisitorService.isVisitor(player)) {
+				// Visitors get their own welcome from VisitorService; skip the generic lines.
+				player.sendSystemMessage(Component.literal(player.entityTags().contains(WELCOME_TAG)
+					? "Welcome back to BirdieBiome!"
+					: "BirdieBiome welcomes you!"));
+				player.sendSystemMessage(Component.literal("Use /golf help to get started."));
+			}
 			player.addTag(WELCOME_TAG);
 			ActiveHoleService.instance().onPlayerConnected(player);
 			VisitorService.instance().onPlayerJoined(player);
