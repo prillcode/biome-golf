@@ -1,6 +1,6 @@
-# Minecraft Golf Commands
+# Biome Golf Commands
 
-This is a reference for the commands registered by Minecraft Golf. Commands are shown
+This is a reference for the commands registered by Biome Golf. Commands are shown
 with the `/` prefix for in-game use. Replace values in angle brackets with the value
 described; square brackets mark optional values.
 

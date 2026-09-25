@@ -1,5 +1,4 @@
-# Minecraft Golf Mod
-## Product Requirements Document
+# Biome Golf — Product Requirements Document
 
 **Status:** Draft v0.2 — MVP scope-reviewed  
 **Platform direction:** Minecraft Java Edition + Fabric  
@@ -9,7 +8,7 @@
 
 ## 1. Overview
 
-Minecraft Golf is a multiplayer Fabric mod that adds an arcade-realistic golf experience to ordinary Minecraft worlds.
+Biome Golf is a multiplayer Fabric mod that adds an arcade-realistic golf experience to ordinary Minecraft worlds.
 
 The goal is not to recreate professional golf simulation inside Minecraft. Instead, the mod should make it fun for small groups of players to build unusual golf courses directly into Minecraft terrain and then play them together.
 
@@ -807,7 +806,7 @@ The strongest success signal is:
 
 ## 35. Product Identity
 
-Minecraft Golf should not position itself primarily as a realistic golf simulator.
+Biome Golf should not position itself primarily as a realistic golf simulator.
 
 Its identity is:
 

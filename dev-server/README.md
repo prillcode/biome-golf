@@ -1,9 +1,9 @@
-# Minecraft Golf Dev Server
+# Biome Golf Dev Server
 
 A Fabric dedicated server for realistic testing and LAN play. Runs via Docker
 Compose; portable across Docker hosts (this Linux machine, or a Windows 11
 mini-PC). The tracked gameplay profile uses Survival mode with Peaceful
-difficulty; Minecraft Golf does not replace vanilla block-breaking rules outside
+difficulty; Biome Golf does not replace vanilla block-breaking rules outside
 protected course zones.
 
 ## Requirements
@@ -17,7 +17,7 @@ sudo usermod -aG docker $USER   # then log out and back in
 
 ## Choose a testing environment
 
-Minecraft Golf uses both Loom and Docker because they prove different things.
+Biome Golf uses both Loom and Docker because they prove different things.
 
 | Workflow | Best for | Advantages | Limitations |
 |---|---|---|---|
@@ -30,7 +30,7 @@ Recommended hybrid workflow:
 2. Use `./gradlew runClient` with a cheats-enabled **Singleplayer** world using seed `-1928790872702396508` for rapid client-facing checks. Run `/golf dev preparecourse` once to prepare or restore the M5 campus.
 3. Use Docker for dedicated-server integration and final gameplay acceptance after syncing the JAR.
 
-> **Authentication:** the Docker server intentionally uses `online-mode=true`. Loom's `runClient` development identity cannot authenticate to it and reports `Failed to login: Invalid session`. Connect with an authenticated Java Edition client containing matching Fabric Loader, Fabric API, and Minecraft Golf versions. Do not weaken the tracked Docker server's authentication for Loom testing.
+> **Authentication:** the Docker server intentionally uses `online-mode=true`. Loom's `runClient` development identity cannot authenticate to it and reports `Failed to login: Invalid session`. Connect with an authenticated Java Edition client containing matching Fabric Loader, Fabric API, and Biome Golf versions. Do not weaken the tracked Docker server's authentication for Loom testing.
 
 ## Start / stop
 
@@ -57,7 +57,7 @@ sha256sum dev-server/mods/minecraft-golf.jar
 docker exec minecraft-golf-dev sha256sum /data/mods/minecraft-golf.jar
 ```
 
-A healthy container with an old JAR is not valid test evidence. Check startup logs for the Minecraft Golf registration messages after every sync/restart cycle.
+A healthy container with an old JAR is not valid test evidence. Check startup logs for the Biome Golf registration messages after every sync/restart cycle.
 
 ## Connecting
 
@@ -194,7 +194,7 @@ Before accepting a Docker gameplay run:
 
 1. Sync the current JAR and restart the server.
 2. Confirm matching local/container JAR hashes and healthy server status.
-3. Confirm Minecraft Golf registration messages and no relevant startup errors.
+3. Confirm Biome Golf registration messages and no relevant startup errors.
 4. Confirm the prepared tee, cup, boundary, daytime, and weather state.
 5. Exercise practice mode and the active-hole lifecycle, including recovery and replay scenarios required by the current milestone.
 6. Record any persistent-world contamination; reset only when a clean-world scenario is required.

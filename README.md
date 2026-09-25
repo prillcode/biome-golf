@@ -1,7 +1,9 @@
-# Minecraft Golf
+# Biome Golf
 
-Minecraft Golf is a multiplayer golf mod for Minecraft Java Edition, built with Fabric.
-It lets small groups build courses in ordinary Minecraft terrain and play together with
+Build and play golf courses in any Minecraft biome with Biome Golf.
+
+Biome Golf is a multiplayer golf mod for Minecraft Java Edition, built with Fabric. It
+lets small groups build courses in ordinary Minecraft terrain and play together with
 skill-based shots, server-authoritative scoring, and balls that interact with the world.
 Cliffs, caves, water, ice, slime, and player-built structures can all become part of a
 course.
@@ -14,11 +16,11 @@ the current focus is the Java golf experience. See the [product brief](docs/PRD.
 For gameplay, operator, and course-authoring commands, see the
 [command reference](docs/COMMANDS.md).
 
-The mod is named **Minecraft Golf**, with mod id `minecraft_golf` and package
-`com.prillcode.minecraftgolf`. A public server running it **MUST NOT** use the name
-“Minecraft Golf”; give the server its own identity and credit the mod as the source of
-its golf functionality—for example, “Golf course building and round play powered by the
-Java mod `minecraft_golf`.” See the
+The public-facing mod name is **Biome Golf**. Its mod id remains `minecraft_golf` and its
+Java package remains `com.prillcode.minecraftgolf`. A public server running it **MUST**
+have its own identity, distinct from the mod name, and credit the mod as the source of its
+golf functionality—for example,
+“Golf course building and round play powered by Biome Golf (`minecraft_golf`).” See the
 [changelog](CHANGELOG.md) for release history and [release guide](docs/RELEASING.md)
 for publishing details.
 

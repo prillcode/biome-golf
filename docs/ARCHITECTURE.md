@@ -1,4 +1,4 @@
-# Minecraft Golf Mod — Architecture
+# Biome Golf — Architecture
 
 **Status:** Initial architecture baseline  
 **Target platform:** Minecraft Java Edition 26.2 + Fabric  
@@ -10,7 +10,7 @@
 
 ## 1. Purpose
 
-This document defines the initial technical architecture for the Minecraft Golf mod described in the PRD.
+This document defines the initial technical architecture for the Biome Golf mod described in the PRD.
 
 The architecture is intentionally optimized for:
 
@@ -1322,7 +1322,7 @@ localhost:25565
 
 Other machines on the same LAN can connect using the host machine's LAN IP and port `25565`, assuming the host firewall permits it.
 
-Each connecting client must run a compatible Fabric client with the Minecraft Golf mod and any required client-side dependencies installed.
+Each connecting client must run a compatible Fabric client with the Biome Golf mod and any required client-side dependencies installed.
 
 The Docker server is not intended to be a production/public deployment architecture. It is a local integration and playtest environment.
 

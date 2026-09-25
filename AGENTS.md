@@ -1,6 +1,6 @@
-# Minecraft Golf — Agent Instructions
+# Biome Golf — Agent Instructions
 
-You are working on the Minecraft Golf mod. This file tells you how to work safely in this repository.
+You are working on the Biome Golf mod. This file tells you how to work safely in this repository.
 
 ## Before doing anything
 

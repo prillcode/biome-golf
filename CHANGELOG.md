@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Minecraft Golf are documented in this file.
+All notable changes to Biome Golf are documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and uses [Semantic Versioning](https://semver.org/).

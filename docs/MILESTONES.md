@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the execution milestones for the Minecraft Golf mod.
+This document defines the execution milestones for the Biome Golf mod.
 
 It is intended to guide both human development and autonomous/agentic development sessions. Milestones should be completed sequentially unless a documented blocker requires a change in order.
 
@@ -391,7 +391,7 @@ The Docker server must:
 
 - start successfully,
 - load Fabric,
-- load the Minecraft Golf mod,
+- load the Biome Golf mod,
 - reach a healthy/running state,
 - show no client-only class loading errors.
 
