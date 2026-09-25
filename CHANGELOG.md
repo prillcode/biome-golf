@@ -56,6 +56,13 @@ and uses [Semantic Versioning](https://semver.org/).
   (a dropped snowball) so clients without the mod can see it. Experimental; the custom
   renderer remains for modded clients.
 
+### Changed
+
+- Stinger shots on the long iron, fairway wood, and driver launch at a higher trajectory so
+  they fly and carry better: the stinger launch-vertical multiplier is raised from `0.42`
+  to `0.55`. The stinger's rollout (landing retention `0.60`, rolling friction `0.65`) is
+  unchanged, and it stays flatter than a chip and well below standard loft.
+
 ## [0.6.0] - 2026-09-19
 
 ### Added

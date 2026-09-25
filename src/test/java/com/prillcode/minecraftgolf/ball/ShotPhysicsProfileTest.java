@@ -25,6 +25,11 @@ class ShotPhysicsProfileTest {
 	void alternateProfilesHaveDistinctLaunchAndRollContracts() {
 		assertTrue(ShotPhysicsProfile.CHIP.launchVerticalMultiplier() < 1.0);
 		assertTrue(ShotPhysicsProfile.STINGER.launchVerticalMultiplier() < 1.0);
+		// Retuned 2026-09: stingers launch higher for carry, but must stay flatter than a
+		// chip and keep their distinct rollout so the low-flight identity is preserved.
+		assertTrue(ShotPhysicsProfile.STINGER.launchVerticalMultiplier() >= 0.5);
+		assertTrue(ShotPhysicsProfile.STINGER.launchVerticalMultiplier()
+			< ShotPhysicsProfile.CHIP.launchVerticalMultiplier());
 		assertEquals(0.65, ShotPhysicsProfile.STINGER.rollingFrictionMultiplier());
 		assertEquals(0.60, ShotPhysicsProfile.STINGER.landingHorizontalRetention());
 		assertTrue(ShotPhysicsProfile.STINGER.rollingFrictionMultiplier()
