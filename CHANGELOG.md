@@ -7,6 +7,10 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Changes made after the latest release will be recorded here.
+
+## [0.6.1] - 2026-09-24
+
 ### Added
 
 - **Bedrock/vanilla visitor mode.** Client-light connections (`!canSend(HoleStatePayload)` —
@@ -302,7 +306,8 @@ and uses [Semantic Versioning](https://semver.org/).
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/prillcode/minecraft-golf/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/prillcode/minecraft-golf/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/prillcode/minecraft-golf/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/prillcode/minecraft-golf/compare/v0.4.0...v0.5.0
