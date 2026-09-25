@@ -9,6 +9,13 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+### Changed
+
+- Builds are now reproducible: JAR entry timestamps are fixed and entry order is stable,
+  so a local `./gradlew build` and the CI release build produce identical bytes for the
+  same commit. This makes artifact SHA-256 checks comparable across local, Docker, and
+  released copies.
+
 ## [0.6.1] - 2026-09-24
 
 ### Added

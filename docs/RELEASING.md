@@ -22,6 +22,14 @@ attached.
 6. The release workflow builds and publishes the release. Check it with
    `gh release view v0.6.0`.
 
+## Reproducible builds
+
+The build pins JAR entry timestamps and entry order (`build.gradle`), so for the same
+commit a local `./gradlew build` and the CI release build produce byte-identical JARs.
+This is what makes the SHA-256 checks in the verification ladder and the go-live
+checklist meaningful: compare a deployed artifact's checksum against the **release asset**
+it was built from, or against a clean local build of the same commit.
+
 ## Rules
 
 - The tag **must** equal `v` plus `gradle.properties` `version`; the workflow fails

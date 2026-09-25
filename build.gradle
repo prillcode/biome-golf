@@ -47,6 +47,13 @@ processResources {
 	}
 }
 
+// Reproducible archives: fixed entry timestamps and stable entry ordering so a local
+// build and the CI release build produce byte-identical JARs for the same sources.
+tasks.withType(org.gradle.api.tasks.bundling.AbstractArchiveTask).configureEach {
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
+}
+
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 25
 }
