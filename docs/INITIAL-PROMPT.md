@@ -6,7 +6,10 @@ You are starting a new Minecraft Fabric mod project in a local directory named:
 minecraft-golf
 ```
 
-The public/product name of the mod has not been decided yet. Use **Minecraft Golf** as a temporary human-readable name where one is required, but keep identifiers and project structure easy to rename later.
+The mod is named **Minecraft Golf**, with mod id `minecraft_golf`. Keep the mod name and
+identifiers stable. A public server running the mod MUST NOT use the name “Minecraft
+Golf”; it must have its own identity and credit `minecraft_golf` as the mod powering its
+golf functionality.
 
 Your task is to create the repository foundation and complete:
 
@@ -115,15 +118,13 @@ The project must include:
 - resources
 - logging
 
-Use a temporary mod identifier that is easy to rename later.
-
-Preferred temporary identifier:
+Use the stable mod identifier:
 
 ```text
 minecraft_golf
 ```
 
-Preferred base package:
+Use the stable base package:
 
 ```text
 com.prillcode.minecraftgolf
@@ -509,7 +510,7 @@ Create a developer-oriented root README.
 Include:
 
 - project purpose
-- current temporary project name
+- current project name and identifiers
 - Java requirement
 - basic build commands
 - tests

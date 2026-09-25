@@ -381,7 +381,8 @@ services:
       MODE: "survival"
       DIFFICULTY: "peaceful"
       ONLINE_MODE: "TRUE"
-      MOTD: "Minecraft Golf"
+      # Give the public server its own identity; credit minecraft_golf as the golf mod.
+      MOTD: "Example Server | Golf powered by minecraft_golf"
       MODRINTH_PROJECTS: "fabric-api:0.160.0+26.2"
       # Whitelist: replace with the family's Minecraft usernames before sharing the hostname.
       ENABLE_WHITELIST: "TRUE"
