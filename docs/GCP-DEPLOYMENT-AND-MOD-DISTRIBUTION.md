@@ -354,7 +354,7 @@ Build the release locally or in CI, not on the production VM:
 ```
 
 The player/server artifact is the non-sources JAR under `build/libs/`, currently
-named like `minecraft-golf-0.6.0.jar`. Do not deploy the `-sources.jar`. Transfer
+named like `biome-golf-0.6.0.jar`. Do not deploy the `-sources.jar`. Transfer
 the release JAR to `/opt/minecraft-golf/mods/` using `gcloud compute scp`, `scp`,
 or a controlled artifact pipeline.
 
@@ -607,11 +607,11 @@ Before publishing:
    ```
 
 4. Complete the required manual multiplayer checks.
-5. Select `build/libs/minecraft-golf-<version>.jar`, not the sources JAR.
+5. Select `build/libs/biome-golf-<version>.jar`, not the sources JAR.
 6. Calculate and publish its checksum:
 
    ```bash
-   sha256sum build/libs/minecraft-golf-<version>.jar
+   sha256sum build/libs/biome-golf-<version>.jar
    ```
 
 7. Install that exact artifact on a clean client and a clean dedicated server and

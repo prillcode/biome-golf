@@ -2,23 +2,23 @@
 	"schemaVersion": 1,
 	"id": "minecraft_golf",
 	"version": "${version}",
-	"name": "Minecraft Golf",
-	"description": "A Minecraft golf mod: hit balls through real Minecraft terrain using a skill-based swing.",
+	"name": "Biome Golf",
+	"description": "Build and play golf courses in any Minecraft biome with Biome Golf.",
 	"authors": [
 		"prillcode"
 	],
 	"contact": {
-		"sources": "https://github.com/prillcode/minecraft-golf"
+		"sources": "https://github.com/prillcode/biome-golf"
 	},
 	"license": "MIT",
 	"icon": "assets/minecraft_golf/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.prillcode.minecraftgolf.MinecraftGolf"
+			"pro.apdev.biomegolf.MinecraftGolf"
 		],
 		"client": [
-			"com.prillcode.minecraftgolf.client.MinecraftGolfClient"
+			"pro.apdev.biomegolf.client.MinecraftGolfClient"
 		]
 	},
 	"mixins": [],

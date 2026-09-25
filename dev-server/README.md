@@ -36,7 +36,7 @@ Recommended hybrid workflow:
 
 ```bash
 # from the repository root:
-./scripts/dev-server-sync.sh     # build the mod and sync its JAR into dev-server/mods/
+./scripts/dev-server-sync.sh 0.6.1 # build and sync dev-server/mods/biome-golf-0.6.1.jar
 ./scripts/dev-server-up.sh       # start the server (detached; Compose copies /mods into /data/mods)
 ./scripts/dev-server-logs.sh     # follow server logs
 ./scripts/dev-server-restart.sh  # restart
@@ -44,17 +44,17 @@ Recommended hybrid workflow:
 ./scripts/dev-server-reset.sh    # delete the dev world (asks for confirmation)
 ```
 
-Run the sync step before starting or restarting whenever code changes. `dev-server-up.sh` and `dev-server-restart.sh` verify that the staged JAR exists, but they do not rebuild it.
+Pass the version matching the build artifact to the sync step before starting or restarting whenever code changes. The start and restart scripts verify that a versioned Biome Golf JAR is staged, but they do not rebuild it.
 
 ## JAR synchronization and identity
 
 ```bash
-./scripts/dev-server-sync.sh
+./scripts/dev-server-sync.sh 0.6.1
 ./scripts/dev-server-restart.sh   # or dev-server-up.sh if stopped
 
 # Optional identity check: these hashes must match after the server starts.
-sha256sum dev-server/mods/minecraft-golf.jar
-docker exec minecraft-golf-dev sha256sum /data/mods/minecraft-golf.jar
+sha256sum dev-server/mods/biome-golf-0.6.1.jar
+docker exec minecraft-golf-dev sha256sum /data/mods/biome-golf-0.6.1.jar
 ```
 
 A healthy container with an old JAR is not valid test evidence. Check startup logs for the Biome Golf registration messages after every sync/restart cycle.
@@ -112,7 +112,7 @@ claimed (see `docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`, `docs/M10-PLAN.md`).
 - The mod is mounted read-only from `dev-server/mods/`.
 - `dev-server-restart.sh` preserves the world, configuration, and other volume state.
 - `dev-server-reset.sh` stops the server and removes the volume after an explicit typed confirmation. This is the only sanctioned way to delete the dev world; it does not delete source code, the staged mod JAR, or unrelated Minecraft worlds.
-- After a reset, run `dev-server-sync.sh` and `dev-server-up.sh` to create a fresh server.
+- After a reset, run `dev-server-sync.sh <VERSION>` and `dev-server-up.sh` to create a fresh server.
 
 Persistent state is useful for repeatable gameplay, but it can retain stale entities or configuration. Prefer a normal restart for code changes and use reset only when the test explicitly requires a clean world.
 

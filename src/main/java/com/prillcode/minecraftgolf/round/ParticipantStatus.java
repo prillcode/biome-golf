@@ -1,8 +1,0 @@
-package com.prillcode.minecraftgolf.round;
-
-/** Connection and participation status used by the Ready Golf barrier. */
-public enum ParticipantStatus {
-	ACTIVE,
-	SUSPENDED,
-	WITHDRAWN
-}

@@ -25,7 +25,7 @@ Loom client       ./gradlew runClient
       ↓
 Loom server       ./gradlew runServer
       ↓
-Docker server     ../scripts/dev-server-sync.sh && ../scripts/dev-server-up.sh
+Docker server     ../scripts/dev-server-sync.sh <VERSION> && ../scripts/dev-server-up.sh
       ↓
 manual gameplay   (where applicable, per milestone)
 ```
@@ -33,13 +33,14 @@ manual gameplay   (where applicable, per milestone)
 ### Local Client Deployment
 
 When testing with the authenticated launcher client rather than `./gradlew runClient`,
-building is not enough. Use `scripts/deploy-client.sh`, which builds and copies the JAR
-into a client's `mods/` folder as `minecraft-golf.jar`. It defaults to the vanilla
-`~/.minecraft` location and accepts a game directory (or a `mods/` directory) override:
+building is not enough. Use `scripts/deploy-client.sh <VERSION> [GAME_DIR]`, which builds
+and copies the selected version into a client's `mods/` folder as
+`biome-golf-<VERSION>.jar`. It defaults to the vanilla `~/.minecraft` location and
+accepts a game directory (or a `mods/` directory) override:
 
 ```bash
-./scripts/deploy-client.sh              # -> ~/.minecraft/mods/minecraft-golf.jar
-./scripts/deploy-client.sh <GAME_DIR>   # custom launcher instance
+./scripts/deploy-client.sh 0.6.1        # -> ~/.minecraft/mods/biome-golf-0.6.1.jar
+./scripts/deploy-client.sh 0.6.1 <GAME_DIR>   # custom launcher instance
 ```
 
 The user plays through the custom `bhmc-launcher`; its golf instance is named
@@ -48,7 +49,7 @@ launcher metadata and deploy there:
 
 ```bash
 GAME_DIR=$(python3 -c "import json,os;i=json.load(open(os.path.expanduser('~/.local/share/bhmc-launcher/instances.json')))['instances'];print(next(v['gameDirectory'] for v in i.values() if v['name']=='BirdieBiome - Golf'))")
-./scripts/deploy-client.sh "$GAME_DIR"
+./scripts/deploy-client.sh 0.6.1 "$GAME_DIR"
 ```
 
 Fully exit and relaunch the game after deploying; Fabric loads mod JARs only at startup.
@@ -57,7 +58,7 @@ you update it, close the launcher first or the running process will overwrite yo
 The Loom development client uses the compiled classes directly and does not test the
 installed JAR.
 
-For Docker testing, also run `./scripts/dev-server-sync.sh` followed by
+For Docker testing, also run `./scripts/dev-server-sync.sh <VERSION>` followed by
 `./scripts/dev-server-restart.sh`, then verify the container hash and health. Do not
 claim client gameplay verification until the local client JAR has been updated and
 the client has been restarted.
@@ -72,7 +73,7 @@ the client has been restarted.
 - Minecraft 26.2 / Fabric Loader 0.19.5 / Fabric API 0.160.0+26.2 / Loom 1.17.20 / Java 25 / Gradle 9.5.1 — pinned in `gradle.properties`.
 - Uses Loom's `splitEnvironmentSourceSets()` — `src/main` (common/server-safe) and `src/client` (client-only).
 - Unobfuscated development workflow (no Yarn mappings — Loom handles it).
-- Mod id: `minecraft_golf`; base package: `com.prillcode.minecraftgolf`.
+- Mod id: `minecraft_golf`; base package: `pro.apdev.biomegolf`.
 - Gradle wrapper is the only supported build entry point — always `./gradlew`, never a system Gradle.
 - Dev server: see `dev-server/README.md`. Docker host may be this Linux machine or the Windows 11 mini-PC; keep compose portable.
 - Do not commit build output, run/, dev-server data, or secrets (see `.gitignore`).

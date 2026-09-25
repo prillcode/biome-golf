@@ -313,18 +313,18 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/minecraft-golf/compare/v0.6.1...HEAD
-[0.6.1]: https://github.com/prillcode/minecraft-golf/compare/v0.6.0...v0.6.1
-[0.6.0]: https://github.com/prillcode/minecraft-golf/compare/v0.5.1...v0.6.0
-[0.5.1]: https://github.com/prillcode/minecraft-golf/compare/v0.5.0...v0.5.1
-[0.5.0]: https://github.com/prillcode/minecraft-golf/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/prillcode/minecraft-golf/compare/v0.3.3...v0.4.0
-[0.3.3]: https://github.com/prillcode/minecraft-golf/compare/v0.3.2...v0.3.3
-[0.3.2]: https://github.com/prillcode/minecraft-golf/compare/v0.3.1...v0.3.2
-[0.3.1]: https://github.com/prillcode/minecraft-golf/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/prillcode/minecraft-golf/compare/v0.2.9...v0.3.0
-[0.2.4]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.4
-[0.2.3]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.3
-[0.2.2]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.2
-[0.2.1]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.1
-[0.2.0]: https://github.com/prillcode/minecraft-golf/releases/tag/v0.2.0
+[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/prillcode/biome-golf/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/prillcode/biome-golf/compare/v0.5.1...v0.6.0
+[0.5.1]: https://github.com/prillcode/biome-golf/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/prillcode/biome-golf/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/prillcode/biome-golf/compare/v0.3.3...v0.4.0
+[0.3.3]: https://github.com/prillcode/biome-golf/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/prillcode/biome-golf/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/prillcode/biome-golf/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/prillcode/biome-golf/compare/v0.2.9...v0.3.0
+[0.2.4]: https://github.com/prillcode/biome-golf/releases/tag/v0.2.4
+[0.2.3]: https://github.com/prillcode/biome-golf/releases/tag/v0.2.3
+[0.2.2]: https://github.com/prillcode/biome-golf/releases/tag/v0.2.2
+[0.2.1]: https://github.com/prillcode/biome-golf/releases/tag/v0.2.1
+[0.2.0]: https://github.com/prillcode/biome-golf/releases/tag/v0.2.0

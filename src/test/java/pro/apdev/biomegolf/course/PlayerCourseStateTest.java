@@ -1,0 +1,157 @@
+package pro.apdev.biomegolf.course;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.stream.IntStream;
+
+import org.junit.jupiter.api.Test;
+
+import pro.apdev.biomegolf.golf.Vec3;
+import pro.apdev.biomegolf.hole.HoleBoundary;
+import pro.apdev.biomegolf.hole.HoleDefinition;
+import pro.apdev.biomegolf.hole.PlayerHoleState;
+
+class PlayerCourseStateTest {
+
+	@Test
+	void advancesOnlyAfterTerminalHoleAndBuildsFinalScorecard() {
+		PlayerCourseState state = PlayerCourseState.start(course());
+		assertEquals(1, state.currentHole().hole().number());
+		assertThrows(IllegalStateException.class, state::advance);
+		assertThrows(IllegalStateException.class, state::finalScorecard);
+
+		for (int expectedHole = 1; expectedHole <= 3; expectedHole++) {
+			PlayerHoleState completed = state.currentHole().recordAcceptedShot().holeOut();
+			state = state.updateCurrentHole(completed).advance();
+			if (expectedHole < 3) {
+				assertEquals(expectedHole + 1, state.currentHole().hole().number());
+			}
+		}
+
+		assertTrue(state.isComplete());
+		CourseScorecard scorecard = state.finalScorecard();
+		assertEquals(3, scorecard.totalStrokes());
+		assertEquals(12, scorecard.totalPar());
+		assertEquals(-9, scorecard.scoreToPar());
+		assertEquals(List.of(1, 2, 3), scorecard.holes().stream().map(HoleScore::holeNumber).toList());
+		assertThrows(IllegalStateException.class, state::advance);
+	}
+
+	@Test
+	void cumulativeScoreAndResetDoNotLeakPriorRoundState() {
+		PlayerCourseState state = PlayerCourseState.start(course());
+		state = state.updateCurrentHole(state.currentHole().pickUp()).advance();
+
+		assertEquals(10, state.completedStrokes());
+		assertEquals(4, state.completedPar());
+		assertEquals(6, state.completedScoreToPar());
+
+		PlayerCourseState reset = state.reset();
+		assertFalse(reset.isComplete());
+		assertEquals(0, reset.completedStrokes());
+		assertEquals(0, reset.completedHoles().size());
+		assertEquals(1, reset.currentHole().hole().number());
+	}
+
+	@Test
+	void restartingCurrentHolePreservesCompletedScoresButClearsCurrentStrokes() {
+		PlayerCourseState state = PlayerCourseState.start(course());
+		state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut()).advance();
+		state = state.updateCurrentHole(state.currentHole().recordAcceptedShot());
+
+		PlayerCourseState restarted = state.restartCurrentHole();
+
+		assertEquals(1, restarted.completedHoles().size());
+		assertEquals(1, restarted.completedStrokes());
+		assertEquals(2, restarted.currentHole().hole().number());
+		assertEquals(0, restarted.currentHole().strokes());
+	}
+
+	@Test
+	void identifiesTerminalFinalHoleForAutomaticCourseCompletion() {
+		PlayerCourseState state = PlayerCourseState.start(course());
+		for (int hole = 1; hole < 3; hole++) {
+			state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut()).advance();
+		}
+		assertFalse(state.isFinalHoleTerminal());
+
+		state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut());
+
+		assertTrue(state.isFinalHoleTerminal());
+		assertTrue(state.advance().isComplete());
+	}
+
+	@Test
+	void completesAndBuildsScorecardForAnAuthoredNineHoleCourse() {
+		PlayerCourseState state = PlayerCourseState.start(course(9));
+
+		for (int hole = 1; hole <= 9; hole++) {
+			state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut()).advance();
+		}
+
+		CourseScorecard scorecard = state.finalScorecard();
+		assertEquals(9, scorecard.holes().size());
+		assertEquals(9, scorecard.totalStrokes());
+		assertEquals(36, scorecard.totalPar());
+		assertEquals(List.of(1, 2, 3, 4, 5, 6, 7, 8, 9),
+			scorecard.holes().stream().map(HoleScore::holeNumber).toList());
+	}
+
+	@Test
+	void startsAtSelectedHoleAndScoresOnlyRemainingHoles() {
+		PlayerCourseState state = PlayerCourseState.start(course(), 2);
+		assertEquals(1, state.startHoleIndex());
+		assertEquals(2, state.currentHole().hole().number());
+		assertEquals(8, state.scheduledPar());
+
+		while (!state.isComplete()) {
+			state = state.updateCurrentHole(state.currentHole().recordAcceptedShot().holeOut()).advance();
+		}
+
+		CourseScorecard scorecard = state.finalScorecard();
+		assertEquals(List.of(2, 3), scorecard.holes().stream().map(HoleScore::holeNumber).toList());
+		assertEquals(2, scorecard.totalStrokes());
+		assertEquals(8, scorecard.totalPar());
+		assertEquals(2, state.reset().currentHole().hole().number());
+	}
+
+	@Test
+	void rejectsStartHoleOutsideAuthoredCourse() {
+		assertThrows(IllegalArgumentException.class, () -> PlayerCourseState.start(course(), 0));
+		assertThrows(IllegalArgumentException.class, () -> PlayerCourseState.start(course(), 4));
+	}
+
+	@Test
+	void rejectsWrongHoleAndScoreRegressionUpdates() {
+		PlayerCourseState state = PlayerCourseState.start(course());
+		PlayerHoleState otherHole = PlayerHoleState.start(course().hole(2));
+		assertThrows(IllegalArgumentException.class, () -> state.updateCurrentHole(otherHole));
+
+		PlayerCourseState afterShot = state.updateCurrentHole(state.currentHole().recordAcceptedShot());
+		PlayerHoleState zeroStrokes = PlayerHoleState.start(course().hole(1));
+		assertThrows(IllegalArgumentException.class, () -> afterShot.updateCurrentHole(zeroStrokes));
+	}
+
+	private static CourseDefinition course() {
+		return course(3);
+	}
+
+	private static CourseDefinition course(int holeCount) {
+		return new CourseDefinition("test", "Test Course", "minecraft:overworld",
+			new GeneratedLayoutIdentity("test-course", 1),
+			IntStream.rangeClosed(1, holeCount)
+				.mapToObj(number -> hole(number, number == 2 ? 3 : number == 3 ? 5 : 4)).toList());
+	}
+
+	private static HoleDefinition hole(int number, int par) {
+		Vec3 tee = new Vec3(number * 20.0, 64.25, 0.0);
+		Vec3 cup = new Vec3(number * 20.0 + 10.0, 64.25, 0.0);
+		return new HoleDefinition("test:" + number, number, "minecraft:overworld", tee, cup, par,
+			new HoleBoundary(new Vec3(0.0, 0.0, -10.0), new Vec3(220.0, 100.0, 10.0)),
+			new GeneratedLayoutIdentity("test-hole-" + number, 1), HoleTransition.at(tee));
+	}
+}

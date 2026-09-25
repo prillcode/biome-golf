@@ -5,8 +5,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/../dev-server"
 
-if [[ ! -f mods/minecraft-golf.jar ]]; then
-	echo "ERROR: mods/minecraft-golf.jar missing. Run ../scripts/dev-server-sync.sh first." >&2
+if ! compgen -G 'mods/biome-golf-*.jar' >/dev/null; then
+	echo "ERROR: no biome-golf-<version>.jar found in mods/. Run ../scripts/dev-server-sync.sh <VERSION> first." >&2
 	exit 1
 fi
 

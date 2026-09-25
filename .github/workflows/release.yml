@@ -39,7 +39,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          JAR="$(ls build/libs/minecraft-golf-*.jar | grep -v -- '-sources\.jar$' | sort -V | tail -n1)"
+          JAR="$(ls build/libs/biome-golf-*.jar | grep -v -- '-sources\.jar$' | sort -V | tail -n1)"
           echo "Attaching ${JAR}"
           gh release create "${GITHUB_REF_NAME}" "${JAR}" \
             --title "${GITHUB_REF_NAME}" \

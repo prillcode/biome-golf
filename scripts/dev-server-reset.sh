@@ -14,7 +14,7 @@ echo "This will DELETE development server world/runtime data:"
 echo "  - Docker volume: $VOLUME"
 [[ -d data ]] && echo "  - Local directory: $(pwd)/data"
 echo
-echo "Source code, built mods (mods/minecraft-golf.jar) and any other worlds are NOT touched."
+echo "Source code, built mods (mods/biome-golf-<version>.jar) and any other worlds are NOT touched."
 echo
 read -r -p "Type 'reset' to confirm: " confirm
 if [[ "$confirm" != "reset" ]]; then

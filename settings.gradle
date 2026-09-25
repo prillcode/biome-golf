@@ -9,4 +9,4 @@ pluginManagement {
 	}
 }
 
-rootProject.name = 'minecraft-golf'
+rootProject.name = 'biome-golf'
