@@ -1,3 +1,10 @@
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 }
@@ -72,7 +79,81 @@ jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
 
+	// Loom writes the client-only entries in filesystem-traversal order, which differs
+	// between machines, after the archive is assembled. Rewrite them sorted so the
+	// manifest (and therefore the whole JAR) is byte-identical across a local build and
+	// CI. See docs/RELEASING.md.
+	doLast {
+		sortLoomClientOnlyEntries(archiveFile.get().asFile)
+	}
+
 	from("LICENSE") {
 		rename { "${it}_$projectName"}
 	}
+}
+
+/** Rewrites the JAR in place with Fabric-Loom-Client-Only-Entries sorted. */
+def sortLoomClientOnlyEntries(File jarFile) {
+	def temp = new File(jarFile.parentFile, jarFile.name + ".sorted")
+	new ZipInputStream(new FileInputStream(jarFile)).withCloseable { input ->
+		new ZipOutputStream(new FileOutputStream(temp)).withCloseable { output ->
+			ZipEntry entry
+			while ((entry = input.nextEntry) != null) {
+				def name = entry.name
+				def bytes = input.readAllBytes()
+				if (name == "META-INF/MANIFEST.MF") {
+					bytes = sortManifestText(new String(bytes, StandardCharsets.UTF_8))
+						.getBytes(StandardCharsets.UTF_8)
+				}
+				def replacement = new ZipEntry(name)
+				replacement.time = entry.time
+				output.putNextEntry(replacement)
+				output.write(bytes)
+				output.closeEntry()
+			}
+		}
+	}
+	Files.move(temp.toPath(), jarFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+}
+
+/** Sorts the semicolon-separated Fabric-Loom-Client-Only-Entries attribute value. */
+def sortManifestText(String text) {
+	def marker = "Fabric-Loom-Client-Only-Entries:"
+	def lines = text.split("\r\n", -1) as List
+	def result = []
+	def index = 0
+	while (index < lines.size()) {
+		def line = lines[index]
+		if (line.startsWith(marker)) {
+			def value = line.substring(marker.length()).trim()
+			index++
+			while (index < lines.size() && lines[index].startsWith(" ")) {
+				value += lines[index].substring(1)
+				index++
+			}
+			def sorted = value.split(";").toList().sort().join(";")
+			result.addAll(wrapManifestLine(marker + " " + sorted))
+		} else {
+			result.add(line)
+			index++
+		}
+	}
+	return result.join("\r\n")
+}
+
+/** Wraps one manifest attribute value at the 72-byte limit with space continuations. */
+def wrapManifestLine(String content) {
+	def lines = []
+	def bytes = content.getBytes(StandardCharsets.UTF_8)
+	def offset = 0
+	def continuation = false
+	while (offset < bytes.length) {
+		def max = continuation ? 71 : 72
+		def length = Math.min(max, bytes.length - offset)
+		def chunk = new String(bytes, offset, length, StandardCharsets.UTF_8)
+		lines.add(continuation ? " " + chunk : chunk)
+		offset += length
+		continuation = true
+	}
+	return lines
 }
