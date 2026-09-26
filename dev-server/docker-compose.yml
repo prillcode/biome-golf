@@ -1,31 +1,40 @@
 services:
   minecraft:
-    image: itzg/minecraft-server:latest
-    container_name: minecraft-golf-dev
+    # Parameterised so the same file serves local development (defaults) and the
+    # apcode.dev Droplet (env overrides written by cloud-init). Local behaviour
+    # is unchanged: named volume, container name, MOTD, and port all default to
+    # their previous values.
+    image: ${MINECRAFT_IMAGE:-itzg/minecraft-server:latest}
+    container_name: ${MINECRAFT_CONTAINER_NAME:-minecraft-golf-dev}
     ports:
-      - "25565:25565"
+      - "${MINECRAFT_PORT:-25565}:25565"
     environment:
       EULA: "TRUE"
       TYPE: FABRIC
       VERSION: "26.2"
       SEED: "-1928790872702396508"
-      MEMORY: "4G"
+      MEMORY: "${MINECRAFT_MEMORY:-4G}"
       VIEW_DISTANCE: "16"
       SIMULATION_DISTANCE: "16"
       MODE: survival
       DIFFICULTY: peaceful
       ONLINE_MODE: "true"
-      MOTD: "Biome Golf dev server"
+      MOTD: "${MINECRAFT_MOTD:-Biome Golf dev server}"
       MODRINTH_PROJECTS: "fabric-api:0.160.0+26.2"
       RCON_CMDS_STARTUP: |-
         time set day
         gamerule minecraft:advance_time false
         gamerule minecraft:advance_weather false
         weather clear
+        golf visitor address ${MINECRAFT_VISITOR_ADDRESS:-bbmc.apcode.dev:25565}
     volumes:
-      - minecraft-golf-data:/data
+      # Named volume locally; the Droplet sets MINECRAFT_DATA_DIR to the
+      # persistent Volume mount path.
+      - ${MINECRAFT_DATA_DIR:-minecraft-golf-data}:/data
       - ./mods:/mods:ro
     restart: unless-stopped
+    # Give Minecraft at least two minutes to save and stop cleanly.
+    stop_grace_period: 2m
     healthcheck:
       test: ["CMD", "mc-health"]
       interval: 30s

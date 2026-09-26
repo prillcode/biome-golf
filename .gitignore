@@ -88,3 +88,6 @@ tmp/
 
 # Server logs produced by runServer at repo root
 logs/
+
+# Server deployment bundle build output
+dist-server/

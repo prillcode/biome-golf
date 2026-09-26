@@ -22,6 +22,23 @@ attached.
 6. The release workflow builds and publishes the release. Check it with
    `gh release view v0.6.0`.
 
+## Server deployment bundle
+
+Each release also attaches a consistently named server deployment bundle,
+`birdie-biome-server.tar.gz`, built by `scripts/build-server-bundle.sh`. It
+contains the parameterised `dev-server/docker-compose.yml`, the
+`docker-compose.geyser.yml` visitor-mode overlay, and the mod JAR. The apcode.dev
+deployment consumes it from a stable URL:
+
+```text
+https://github.com/prillcode/biome-golf/releases/latest/download/birdie-biome-server.tar.gz
+```
+
+Because the asset name never changes, cutting a mod release requires **no** change
+on the deployment side. The Compose file is parameterised with local-development
+defaults (named volume, `minecraft-golf-dev` container, dev MOTD); the Droplet
+overrides those via environment variables written by cloud-init.
+
 ## Reproducible builds
 
 The build pins JAR entry timestamps and entry order (`build.gradle`), so for the same
