@@ -9,12 +9,24 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.7.0] - 2026-09-26
+
 ### Changed
 
+- **Biome Golf branding.** The public mod name is now **Biome Golf**. The mod id
+  (`minecraft_golf`) and Java package (`pro.apdev.biomegolf`) are unchanged, so existing
+  worlds and installations keep working. Includes a refreshed README and branding docs.
 - Builds are now reproducible: JAR entry timestamps are fixed and entry order is stable,
   so a local `./gradlew build` and the CI release build produce identical bytes for the
   same commit. This makes artifact SHA-256 checks comparable across local, Docker, and
   released copies.
+
+### Added
+
+- Releases are published to [Modrinth](https://modrinth.com/mod/biome-golf) via the
+  Minotaur Gradle plugin, alongside the GitHub release.
+- `docs/COMMANDS.md`: a reference for player, operator, and course-builder `/golf`
+  commands.
 
 ## [0.6.1] - 2026-09-24
 
@@ -313,7 +325,8 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/prillcode/biome-golf/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/prillcode/biome-golf/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/prillcode/biome-golf/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/prillcode/biome-golf/compare/v0.5.0...v0.5.1

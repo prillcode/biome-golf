@@ -174,7 +174,7 @@ afterEvaluate {
 		versionName = "Biome Golf ${project.version}"
 		versionType = 'release'
 		uploadFile = tasks.named('jar').get().archiveFile.get().asFile
-		gameVersions = ['26.2']
+		gameVersions = [project.minecraft_version]
 		loaders = ['fabric']
 		changelog = releaseChangelog(project.version.toString())
 		dependencies {
