@@ -7,6 +7,7 @@ import java.util.zip.ZipOutputStream
 
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'com.modrinth.minotaur' version '2.10.0'
 }
 
 repositories {
@@ -156,4 +157,44 @@ def wrapManifestLine(String content) {
 		continuation = true
 	}
 	return lines
+}
+
+// ---------------------------------------------------------------------------
+// Modrinth publishing
+//
+// `./gradlew modrinth` uploads the remapped JAR to https://modrinth.com/mod/biome-golf.
+// CI runs this on tag releases; it requires the MODRINTH_TOKEN environment variable (a
+// personal access token with VERSION_CREATE scope, stored as a repository secret).
+// ---------------------------------------------------------------------------
+afterEvaluate {
+	modrinth {
+		token = System.getenv('MODRINTH_TOKEN')
+		projectId = 'biome-golf'
+		versionNumber = project.version.toString()
+		versionName = "Biome Golf ${project.version}"
+		versionType = 'release'
+		uploadFile = tasks.named('jar').get().archiveFile.get().asFile
+		gameVersions = ['26.2']
+		loaders = ['fabric']
+		changelog = releaseChangelog(project.version.toString())
+		dependencies {
+			required.project 'fabric-api'
+		}
+	}
+	tasks.named('modrinth') {
+		dependsOn 'jar'
+	}
+}
+
+/** Extracts the `## [<version>]` section from CHANGELOG.md for the Modrinth changelog. */
+def releaseChangelog(String version) {
+	def changelogFile = rootProject.file('CHANGELOG.md')
+	if (!changelogFile.exists()) {
+		return "Release ${version}."
+	}
+	def pattern = java.util.regex.Pattern.compile(
+		"(?ms)^##\\s*\\[?" + java.util.regex.Pattern.quote(version) + "\\]?.*?(?=^##\\s|\\z)"
+	)
+	def matcher = pattern.matcher(changelogFile.getText('UTF-8'))
+	return matcher.find() ? matcher.group().trim() : "Release ${version}."
 }

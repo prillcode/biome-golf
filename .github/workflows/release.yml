@@ -35,11 +35,7 @@ jobs:
       - name: build and test
         run: ./gradlew build
 
-      - name: build server deployment bundle
-        run: |
-          JAR="$(ls build/libs/biome-golf-*.jar | grep -v -- '-sources\.jar$' | sort -V | tail -n1)"
-          ./scripts/build-server-bundle.sh "${GITHUB_REF_NAME#v}" "${JAR}"
-
+      # Internal record of each release. Player-facing distribution is Modrinth.
       - name: publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -50,11 +46,7 @@ jobs:
             --title "${GITHUB_REF_NAME}" \
             --generate-notes
 
-      - name: attach server deployment bundle
+      - name: publish to Modrinth
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Consistently named so apcode.dev can use a stable
-          # releases/latest/download/birdie-biome-server.tar.gz URL.
-          gh release upload "${GITHUB_REF_NAME}" \
-            dist-server/birdie-biome-server.tar.gz --clobber
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: ./gradlew modrinth

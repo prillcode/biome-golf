@@ -2,8 +2,9 @@
 
 Releases are driven by git tags. Pushing a `v*` tag triggers
 `.github/workflows/release.yml`, which verifies the tag matches `gradle.properties`,
-runs the full build (including tests), and publishes a GitHub Release with the mod JAR
-attached.
+runs the full build (including tests), publishes the mod to
+[Modrinth](https://modrinth.com/mod/biome-golf), and attaches the JAR to an internal
+GitHub Release. Player-facing distribution is Modrinth.
 
 ## Cut a release
 
@@ -22,22 +23,22 @@ attached.
 6. The release workflow builds and publishes the release. Check it with
    `gh release view v0.6.0`.
 
-## Server deployment bundle
+## Modrinth
 
-Each release also attaches a consistently named server deployment bundle,
-`birdie-biome-server.tar.gz`, built by `scripts/build-server-bundle.sh`. It
-contains the parameterised `dev-server/docker-compose.yml`, the
-`docker-compose.geyser.yml` visitor-mode overlay, and the mod JAR. The apcode.dev
-deployment consumes it from a stable URL:
+Each release publishes the remapped mod JAR to
+[Modrinth](https://modrinth.com/mod/biome-golf) with the
+[Minotaur](https://github.com/modrinth/minotaur) Gradle plugin (`./gradlew modrinth`,
+configured at the bottom of `build.gradle`). The version, loader (`fabric`), game
+version (`26.2`), required `fabric-api` dependency, and changelog (the matching
+`## [x.y.z]` section of `CHANGELOG.md`) are derived automatically.
 
-```text
-https://github.com/prillcode/biome-golf/releases/latest/download/birdie-biome-server.tar.gz
-```
+CI needs a repository secret `MODRINTH_TOKEN`: a Modrinth personal access token with
+`VERSION_CREATE` (and `PROJECT_WRITE`) scope. A new project or version is reviewed by
+Modrinth moderators before it is publicly listed.
 
-Because the asset name never changes, cutting a mod release requires **no** change
-on the deployment side. The Compose file is parameterised with local-development
-defaults (named volume, `minecraft-golf-dev` container, dev MOTD); the Droplet
-overrides those via environment variables written by cloud-init.
+The dedicated server downloads the same public Modrinth JAR at boot; there is no
+separate server bundle. Compose files live in the deployment repository
+(`apcode-dev`), not here.
 
 ## Reproducible builds
 
