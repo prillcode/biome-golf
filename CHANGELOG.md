@@ -9,6 +9,17 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+### Changed
+
+- Water and lava penalties now drop the ball on the nearest safe land near the point where
+  it first touched the hazard, instead of always returning it to the previous shot
+  position. The server walks back along the incoming shot line within a widening cone,
+  then falls back to a bounded search in any direction around the entry point. Bunker
+  sand and other hazard surfaces are skipped while non-hazard land is available, so a
+  drop is not placed in a bunker at the water's edge. Shots that land short and roll into
+  water now keep most of their distance, and the player is moved to the drop like they
+  are after a normal stopped ball. Out-of-bounds recovery is unchanged.
+
 ## [0.7.1] - 2026-09-27
 
 ### Fixed

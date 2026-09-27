@@ -27,6 +27,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.entity.EntityTypeTest;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.ball.PracticeBallCleanup;
@@ -41,6 +42,9 @@ import pro.apdev.biomegolf.entity.GolfBallEntities;
 import pro.apdev.biomegolf.entity.GolfBallEntity;
 import pro.apdev.biomegolf.golf.Vec3;
 import pro.apdev.biomegolf.hole.CupDetector;
+import pro.apdev.biomegolf.hole.HazardDropSearch;
+import pro.apdev.biomegolf.hole.HazardFluidCrossing;
+import pro.apdev.biomegolf.hole.HoleBoundary;
 import pro.apdev.biomegolf.hole.HoleDefinition;
 import pro.apdev.biomegolf.hole.HoleLifecycle;
 import pro.apdev.biomegolf.hole.HoleScoringDisplay;
@@ -62,12 +66,21 @@ import pro.apdev.biomegolf.round.ReadyGolfRoundRegistry;
 import pro.apdev.biomegolf.round.RoundLobbyProjection;
 import pro.apdev.biomegolf.round.RoundPhase;
 import pro.apdev.biomegolf.server.TravelDestinationSearch.Destination;
+import pro.apdev.biomegolf.world.CollisionShapeTop;
+import pro.apdev.biomegolf.world.GolfBlockSurfaceResolver;
 
 /** Server-authoritative solo and Ready Golf lifecycle for the selected course. */
 public final class ActiveHoleService {
 
 	private static final double PRACTICE_SPAWN_FORWARD = 2.0;
 	private static final double PRACTICE_SPAWN_UP = 1.0;
+
+	/** Vertical window (blocks) around a hazard entry point that the drop scan inspects. */
+	private static final int DROP_SCAN_BLOCKS_UP = 6;
+	private static final int DROP_SCAN_BLOCKS_DOWN = 10;
+
+	/** Classifies a drop column's support block so bunkers and other hazards are avoided. */
+	private static final GolfBlockSurfaceResolver DROP_SURFACE_RESOLVER = new GolfBlockSurfaceResolver();
 
 	public enum ShotPermission {
 		PRACTICE,
@@ -1060,8 +1073,14 @@ public final class ActiveHoleService {
 			applyPenalty(ball, owner, session, PenaltyType.OUT_OF_BOUNDS);
 			return;
 		}
-		if (crossesHazardFluid((ServerLevel) ball.level(), from, to)) {
-			applyPenalty(ball, owner, session, PenaltyType.WATER);
+		ServerLevel level = (ServerLevel) ball.level();
+		Optional<Vec3> hazardContact = HazardFluidCrossing.firstContact(
+			from, to, GolfBallEntity.BALL_RADIUS,
+			(x, y, z) -> isHazardFluid(level, BlockPos.containing(x, y, z)));
+		if (hazardContact.isPresent()) {
+			Vec3 entry = hazardContact.orElseThrow();
+			Vec3 recovery = waterDropTarget(level, session, from, entry);
+			applyPenalty(ball, owner, session, PenaltyType.WATER, recovery);
 			return;
 		}
 
@@ -1132,17 +1151,25 @@ public final class ActiveHoleService {
 		player.sendSystemMessage(Component.literal(travel.message()));
 	}
 
+	/** Applies a penalty that recovers to the previous-shot position. */
 	private void applyPenalty(GolfBallEntity ball, UUID owner, PlayerHoleSession session, PenaltyType penalty) {
+		applyPenalty(ball, owner, session, penalty, session.lastSafePosition());
+	}
+
+	private void applyPenalty(GolfBallEntity ball, UUID owner, PlayerHoleSession session,
+			PenaltyType penalty, Vec3 recoveryPosition) {
 		PlayerHoleSession updatedSession = session.applyPenalty(penalty);
 		PlayerHoleState updated = updatedSession.state();
 		lifecycle.update(owner, updatedSession);
 		updateCourseState(owner, updated);
 		overspeedCupEntries.remove(ball.getUUID());
-		ball.placeAtRest(session.lastSafePosition());
+		ball.placeAtRest(recoveryPosition);
 		ServerPlayer player = ball.level().getServer().getPlayerList().getPlayer(owner);
 		if (player != null) {
-			String label = penalty == PenaltyType.WATER ? "Water or lava" : "Out of Bounds";
-			player.sendSystemMessage(Component.literal("[golf] " + label + " — one penalty stroke; ball returned"
+			String label = penalty == PenaltyType.WATER
+				? "Water or lava — one penalty stroke; ball dropped at the hazard edge"
+				: "Out of Bounds — one penalty stroke; ball returned";
+			player.sendSystemMessage(Component.literal("[golf] " + label
 				+ " | " + updated.strokes() + "/" + updated.hole().strokeLimit()));
 			player.sendSystemMessage(Component.literal(HoleScoringDisplay.from(updated,
 				courseState(owner)).actionBarText()), true);
@@ -1151,28 +1178,85 @@ public final class ActiveHoleService {
 				sendCompleteSnapshot(player, updated);
 				notifyTerminalBarrierForPlayer(player.level().getServer(), owner);
 			} else {
-				sendActiveSnapshot(player, updated, session.lastSafePosition());
+				sendActiveSnapshot(player, updated, recoveryPosition);
+				if (penalty == PenaltyType.WATER) {
+					movePlayerToBall(player, ball);
+				}
 			}
 		}
 		MinecraftGolf.LOGGER.info("Applied {} penalty to player {} on hole {}; recovered ball {} to {}",
-			penalty, owner, updated.hole().id(), ball.getUUID(), session.lastSafePosition());
+			penalty, owner, updated.hole().id(), ball.getUUID(), recoveryPosition);
 	}
 
-	private static boolean crossesHazardFluid(ServerLevel level, Vec3 from, Vec3 to) {
-		double distance = to.subtract(from).length();
-		int steps = Math.max(1, (int) Math.ceil(distance / 0.2));
-		for (int i = 0; i <= steps; i++) {
-			double t = (double) i / steps;
-			double x = from.x() + (to.x() - from.x()) * t;
-			double y = from.y() + (to.y() - from.y()) * t;
-			double z = from.z() + (to.z() - from.z()) * t;
-			if (isHazardFluid(level, BlockPos.containing(x, y, z))
-					|| isHazardFluid(level,
-						BlockPos.containing(x, y - GolfBallEntity.BALL_RADIUS, z))) {
-				return true;
-			}
+	/**
+	 * Chooses a water/lava recovery target: the nearest safe land near the entry
+	 * point (back on the line, then a bounded radial fallback), or the
+	 * previous-shot position when no safe drop exists.
+	 */
+	private static Vec3 waterDropTarget(ServerLevel level, PlayerHoleSession session,
+			Vec3 from, Vec3 entry) {
+		HoleBoundary boundary = session.state().hole().boundary();
+		Vec3 heading = entry.subtract(from);
+		Optional<Vec3> clear = HazardDropSearch.findDrop(entry, heading, boundary,
+			(x, z) -> resolveDropRest(level, entry, x, z, false));
+		if (clear.isPresent()) {
+			return clear.orElseThrow();
 		}
-		return false;
+		// Last resort before the previous-shot position: accept a hazard surface
+		// (a bunker or honey) rather than give the whole shot distance back.
+		return HazardDropSearch.findDrop(entry, heading, boundary,
+			(x, z) -> resolveDropRest(level, entry, x, z, true))
+			.orElse(session.lastSafePosition());
+	}
+
+	/**
+	 * Resolves a safe ball rest site for a horizontal column: scans down from just
+	 * above the entry point for the first solid support with a fluid-free block
+	 * above it, and returns the ball center resting on that support.
+	 *
+	 * @param allowHazardSurfaces when false, a support block that resolves to a golf
+	 *                           hazard surface (bunker sand, honey) is skipped so the
+	 *                           drop keeps looking for fairway-like land
+	 */
+	private static Optional<Vec3> resolveDropRest(ServerLevel level, Vec3 entryPoint,
+			double x, double z, boolean allowHazardSurfaces) {
+		int columnX = (int) Math.floor(x);
+		int columnZ = (int) Math.floor(z);
+		double centerX = columnX + 0.5;
+		double centerZ = columnZ + 0.5;
+		int top = (int) Math.floor(entryPoint.y()) + DROP_SCAN_BLOCKS_UP;
+		int bottom = (int) Math.floor(entryPoint.y()) - DROP_SCAN_BLOCKS_DOWN;
+		for (int blockY = top; blockY >= bottom; blockY--) {
+			BlockPos support = new BlockPos(columnX, blockY, columnZ);
+			BlockPos body = support.above();
+			// Resolve the actual top of the support's collision shape; assuming a full
+			// block top would float the ball above carpets, slabs, snow, and similar.
+			double supportTop = collisionTop(level, support, centerX, centerZ);
+			if (Double.isNaN(supportTop) || !level.getFluidState(support).isEmpty()) {
+				continue;
+			}
+			if (!level.getFluidState(body).isEmpty()
+					|| !level.getBlockState(body).getCollisionShape(level, body).isEmpty()) {
+				continue;
+			}
+			if (!allowHazardSurfaces
+					&& DROP_SURFACE_RESOLVER.resolve(level.getBlockState(support)).hazard()) {
+				continue;
+			}
+			return Optional.of(Vec3.of(centerX,
+				blockY + supportTop + GolfBallEntity.BALL_RADIUS, centerZ));
+		}
+		return Optional.empty();
+	}
+
+	/**
+	 * Highest collision-shape top under the given horizontal point within one
+	 * block, or {@link Double#NaN} when the block has no collision there.
+	 */
+	private static double collisionTop(ServerLevel level, BlockPos support,
+			double centerX, double centerZ) {
+		VoxelShape shape = level.getBlockState(support).getCollisionShape(level, support);
+		return CollisionShapeTop.at(shape, centerX - support.getX(), centerZ - support.getZ());
 	}
 
 	private static boolean isHazardFluid(ServerLevel level, BlockPos position) {
@@ -1423,16 +1507,30 @@ public final class ActiveHoleService {
 	}
 
 	private StartResult travelToNextShot(ServerPlayer player, GolfBallEntity ball) {
-		BlockPos ballBlock = BlockPos.containing(ball.getX(), ball.getY(), ball.getZ());
-		Optional<Destination> destination = TravelDestinationSearch.find(
-			ballBlock.getX(), ballBlock.getY(), ballBlock.getZ(),
-			candidate -> isSafeTravelDestination(player.level(), candidate));
+		Optional<Destination> destination = safeStandingNear(player, ball);
 		if (destination.isEmpty()) {
 			return new StartResult(false, "[golf] no safe standing position found near the ball");
 		}
 		Destination safe = destination.orElseThrow();
 		player.teleportTo(safe.x() + 0.5, safe.y(), safe.z() + 0.5);
 		return new StartResult(true, "[golf] Ball stopped — moved safely to your next shot");
+	}
+
+	/**
+	 * Moves the player beside a just-relocated ball after a hazard drop, matching
+	 * the automatic move performed on a natural physics rest. Best-effort: with no
+	 * safe standing position the player simply walks.
+	 */
+	private static void movePlayerToBall(ServerPlayer player, GolfBallEntity ball) {
+		safeStandingNear(player, ball).ifPresent(safe ->
+			player.teleportTo(safe.x() + 0.5, safe.y(), safe.z() + 0.5));
+	}
+
+	private static Optional<Destination> safeStandingNear(ServerPlayer player, GolfBallEntity ball) {
+		BlockPos ballBlock = BlockPos.containing(ball.getX(), ball.getY(), ball.getZ());
+		return TravelDestinationSearch.find(
+			ballBlock.getX(), ballBlock.getY(), ballBlock.getZ(),
+			candidate -> isSafeTravelDestination(player.level(), candidate));
 	}
 
 	private static boolean isSafeTravelDestination(ServerLevel level, Destination destination) {

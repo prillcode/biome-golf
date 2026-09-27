@@ -853,16 +853,26 @@ For MVP, a global/default configuration is sufficient.
 
 # 18. Penalties and Recovery
 
-Keep MVP recovery deliberately simple.
+Recovery stays deliberately simple and deterministic.
 
 ## Water
 
-When the ball enters water:
+When the ball first touches water or lava:
 
 ```text
 +1 penalty stroke
-return to last legal shot position
+drop on the nearest safe land near the hazard entry point
 ```
+
+The target is found by walking back from the first fluid contact along the incoming shot
+line first (so the drop keeps going back past a bunker rather than stepping sideways),
+then widening into a cone, then a bounded search in any direction around the entry point.
+The drop must stay inside the hole boundary and out of fluid, and golf hazard surfaces
+(bunker sand, honey from `SurfaceDefinition.hazard()`) are skipped while non-hazard land
+exists. A hazard surface is used only as a last resort before falling back to the
+previous-shot position. This logic lives in the Minecraft-free `HazardDropSearch` and
+`HazardFluidCrossing` classes, with the block queries supplied by `ActiveHoleService` at
+the integration boundary.
 
 ## Out of Bounds
 
@@ -873,7 +883,8 @@ When the ball leaves the hole boundary:
 return to last legal shot position
 ```
 
-This is intentionally not a full implementation of official golf drop rules.
+Out-of-bounds play keeps the simplified previous-shot recovery; only water/lava uses an
+entry-point drop. Neither is a full implementation of official golf drop rules.
 
 The architecture should represent penalties explicitly so future recovery strategies can change without rewriting round scoring.
 

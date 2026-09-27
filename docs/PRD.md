@@ -529,14 +529,26 @@ When the limit is reached, the golfer completes the hole at the configured maxim
 
 ## 25. Hazards and Penalties
 
-MVP hazard rules should be intentionally simple and deterministic.
+Hazard rules should be intentionally simple and deterministic.
 
 ### Water
 
-Default MVP behavior:
+Current behavior:
 
 - add one penalty stroke,
-- return the ball to the position from which the previous shot was taken.
+- drop the ball on the nearest safe land near the point where it first touched water,
+  walking back along the incoming shot line first, then widening into a cone, then a
+  bounded search in any direction around the entry point,
+- skip golf hazard surfaces (bunker sand, honey) while any non-hazard land is available,
+  so a bunker at the water's edge never becomes the drop,
+- if no non-hazard land exists, accept a hazard surface rather than give the whole shot
+  distance back, and only if that also fails return the ball to the previous-shot
+  position.
+
+The drop anchors on the first hazard-fluid contact (water or lava) and never lands in
+fluid, and is server-authoritative like the rest of the round state. A ball that skips
+across water without settling still incurs the penalty; distinguishing a skipped shot
+from one that lands in the hazard is a separate physics improvement.
 
 ### Out of Bounds
 
@@ -545,7 +557,7 @@ Default MVP behavior:
 - add one penalty stroke,
 - return the ball to the previous-shot position.
 
-More realistic entry-point/drop-zone logic is deferred until after MVP.
+More realistic entry-point/drop-zone logic for out-of-bounds play is deferred.
 
 Because the server tracks every golf ball, a traditional lost-ball mechanic is unnecessary.
 
@@ -737,7 +749,7 @@ The following should **not** block MVP completion:
 - polished in-game course-authoring commands
 - visual course editor
 - polygonal or complex course boundaries
-- realistic water drop locations
+- realistic water drop locations (delivered post-MVP; see section 25)
 - realistic out-of-bounds drop rules
 - custom golf-specific mob/hunger/PvP controls
 - player progression
@@ -892,7 +904,11 @@ Minecraft already provides difficulty and gamerules. A custom rules subsystem do
 
 ### Simplified: Hazard and out-of-bounds recovery
 
-Returning the ball to its previous-shot location is easy to understand, deterministic, and requires much less geometric/state logic than calculating hazard-entry points or legal drop areas.
+Water recovery now drops near the hazard entry point (section 25), which keeps the lost
+distance from a shot that rolled into water believable. Out-of-bounds recovery is still
+simplified: returning the ball to its previous-shot location is easy to understand and
+deterministic, and requires much less geometric/state logic than calculating legal
+drop areas.
 
 ### Simplified: Course boundaries
 
