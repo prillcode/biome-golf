@@ -22,6 +22,41 @@ GitHub Release. Player-facing distribution is Modrinth.
 
 6. The release workflow builds and publishes the release. Check it with
    `gh release view v0.6.0`.
+7. After the release is available on Modrinth, update the live server as described
+   below. Tagging and publishing alone do not update the production instance.
+
+## After release: update the live server
+
+The on-demand production server (`birdie-biome`, hosted at `bbmc.apcode.dev`) is
+controlled by the `apcode-api` Worker (`api.apcode.dev`) in the `apcode-dev`
+repository. Its `BIRDIE_BIOME_MOD_URL` Worker secret is currently pinned to the
+Modrinth CDN JAR for `biome-golf-0.7.0.jar`. A new release does not change this
+secret, so the live server remains on its existing version until the pin is
+updated.
+
+After confirming the new version is published and downloadable on Modrinth:
+
+1. In the `apcode-dev` checkout, follow `docs/secrets.md` to update the
+   `BIRDIE_BIOME_MOD_URL` Worker secret to the exact versioned JAR URL from that
+   Modrinth release. Do not put secret values in this repository or its logs.
+   The server must use the pinned version URL, not the moving `latest` alias.
+2. Follow `apcode-dev/docs/deployment.md` and
+   `apcode-dev/docs/minecraft-operations.md` to apply the Worker configuration
+   and start the on-demand Droplet (`birdie-biome`). The Droplet downloads the
+   configured JAR on its next start; an already-running server does not hot-swap
+   the mod.
+3. Verify the server is healthy and that its startup logs identify the expected
+   mod version, using the apcode-dev operational procedures. If startup or
+   download fails, stop and resolve it there before calling the release live.
+
+This manual pin is the current production contract. Dynamic Modrinth version
+resolution could remove the per-release secret update, but is not enabled; only
+adopt it after the Modrinth project is approved and the apcode-dev deployment is
+explicitly changed and verified.
+
+For course or other world-content changes, use the separate
+[world sync workflow](WORLD-SYNC-WORKFLOW.md); publishing a mod release does not
+promote local world edits.
 
 ## Modrinth
 
@@ -36,9 +71,9 @@ CI needs a repository secret `MODRINTH_TOKEN`: a Modrinth personal access token 
 `VERSION_CREATE` (and `PROJECT_WRITE`) scope. A new project or version is reviewed by
 Modrinth moderators before it is publicly listed.
 
-The dedicated server downloads the same public Modrinth JAR at boot; there is no
-separate server bundle. Compose files live in the deployment repository
-(`apcode-dev`), not here.
+The dedicated server downloads the public Modrinth JAR at boot. Its production
+configuration lives in the deployment repository (`apcode-dev`), not here; this
+repository's development Compose files are not the production deployment.
 
 ## Reproducible builds
 

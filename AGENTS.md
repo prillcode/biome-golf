@@ -7,8 +7,9 @@ You are working on the Biome Golf mod. This file tells you how to work safely in
 1. Read `docs/PRD.md` — what the product is.
 2. Read `docs/ARCHITECTURE.md` — how the technical pieces fit.
 3. Read `docs/MILESTONES.md` — what to build now, what to defer.
-4. Determine the **current milestone** (see the status table in `docs/MILESTONES.md` and the root `README.md`).
-5. Work only within that milestone. Do not start the next milestone early.
+4. Read `docs/RELEASING.md` — release and live-instance deployment workflow.
+5. Determine the **current milestone** (see the status table in `docs/MILESTONES.md` and the root `README.md`).
+6. Work only within that milestone. Do not start the next milestone early.
 
 ## Non-negotiables
 
