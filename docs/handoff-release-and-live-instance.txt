@@ -1,0 +1,33 @@
+Biome Golf: define the release -> live-instance update path
+
+THE PROBLEM
+The repo documents the Modrinth release (tag -> CI -> publish) but not how the live
+server gets the new JAR. The production Droplet (apcode-dev) pins the JAR URL in the
+Worker secret BIRDIE_BIOME_MOD_URL, so tagging a release never updates the running
+instance. A biome-golf-only agent will publish correctly and then stop, leaving the
+server on the old version.
+
+WHAT WE TRIED
+- docs/RELEASING.md covers version bump, CHANGELOG, tag, and Minotaur publish.
+- It never mentions BIRDIE_BIOME_MOD_URL, the pinned version, or the apcode-dev steps.
+- AGENTS.md does not list docs/RELEASING.md in its required "Before doing anything" reading.
+- Removed stale docs/GCP-DEPLOYMENT-AND-MOD-DISTRIBUTION.md (Google Cloud) and its README pointer.
+- scripts/build-server-bundle.sh still describes the retired GitHub bundle pipeline; nothing references it.
+
+WHAT NEEDS TO HAPPEN NEXT
+1. Add an "After release: update the live server" section to docs/RELEASING.md:
+   BIRDIE_BIOME_MOD_URL is pinned in apcode-dev; update it (or move to dynamic Modrinth
+   version resolution once the project is approved), then the on-demand Droplet picks
+   up the JAR on its next start.
+2. Add docs/RELEASING.md to the "Before doing anything" reading list in AGENTS.md.
+3. Remove or mark deprecated scripts/build-server-bundle.sh (retired bundle pipeline).
+4. Cross-link docs/WORLD-SYNC-WORKFLOW.md from docs/RELEASING.md for world-content changes.
+
+CURRENT STATE
+- Release: tag vX.Y.Z must equal gradle.properties version; .github/workflows/release.yml
+  builds/tests, publishes to Modrinth via Minotaur, and attaches the JAR to a GitHub Release.
+- Live: apcode-api Worker (api.apcode.dev); server name birdie-biome; host bbmc.apcode.dev;
+  BIRDIE_BIOME_MOD_URL pinned to biome-golf-0.7.0.jar on the Modrinth CDN.
+- apcode-dev: docs/minecraft-operations.md, docs/secrets.md, docs/deployment.md;
+  helper apps/birdie-biome-server/scripts/world-sync.sh.
+- Repo is public again by owner choice; the Modrinth page links docs/COMMANDS.md.
