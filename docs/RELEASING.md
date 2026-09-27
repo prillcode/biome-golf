@@ -30,7 +30,7 @@ GitHub Release. Player-facing distribution is Modrinth.
 The on-demand production server (`birdie-biome`, hosted at `bbmc.apcode.dev`) is
 controlled by the `apcode-api` Worker (`api.apcode.dev`) in the `apcode-dev`
 repository. Its `BIRDIE_BIOME_MOD_URL` Worker secret is currently pinned to the
-Modrinth CDN JAR for `biome-golf-0.7.0.jar`. A new release does not change this
+Modrinth CDN JAR for `biome-golf-0.7.1.jar`. A new release does not change this
 secret, so the live server remains on its existing version until the pin is
 updated.
 
