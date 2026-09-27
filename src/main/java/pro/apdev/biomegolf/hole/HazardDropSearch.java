@@ -15,10 +15,10 @@ import pro.apdev.biomegolf.golf.Vec3;
  * "back on the line" relief and recovers shots that landed short and rolled
  * into a hazard.</p>
  *
- * <p><b>Phase 2 — bounded radial fallback.</b> When the line search finds
+ * <p><b>Phase 2 — bounded radial fallback.</b> When the line and cone find
  * nothing (open water straight back, or the near shore lies outside the hole),
- * the search sweeps every direction around the entry point out to the same
- * bounded distance.</p>
+ * the search sweeps every direction around the entry point, but only within a
+ * short radius so it cannot reach the far bank across a wide hazard.</p>
  *
  * <p>All phases honour the hole boundary and the caller's resting-site
  * resolver. The caller falls back to the previous-shot position when all
@@ -26,8 +26,11 @@ import pro.apdev.biomegolf.golf.Vec3;
  */
 public final class HazardDropSearch {
 
-	/** Farthest the drop search walks from the entry point, in blocks. */
+	/** Default farthest the drop search walks back along the shot line, in blocks. */
 	public static final double MAX_BACKTRACK_BLOCKS = 24.0;
+
+	/** The all-directions fallback stays near the entry so it cannot reach the far bank. */
+	private static final double RADIAL_MAX_BLOCKS = 24.0;
 
 	private static final double STEP_BLOCKS = 0.5;
 	private static final double[] LINE_ANGLES_DEGREES = { 0.0 };
@@ -78,8 +81,8 @@ public final class HazardDropSearch {
 		if (cone.isPresent()) {
 			return cone;
 		}
-		return scan(entryPoint, heading, boundary, maxBacktrackBlocks,
-			RADIAL_ANGLES_DEGREES, resolver);
+		return scan(entryPoint, heading, boundary,
+			Math.min(maxBacktrackBlocks, RADIAL_MAX_BLOCKS), RADIAL_ANGLES_DEGREES, resolver);
 	}
 
 	private static Optional<Vec3> scan(Vec3 entryPoint, Vec3 heading, HoleBoundary boundary,

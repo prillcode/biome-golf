@@ -51,6 +51,31 @@ class HazardDropSearchTest {
 	}
 
 	@Test
+	void reachesFarBackLandWhenTheCapAllows() {
+		// Entry at x=100 heading +x (back is -x); land exists only at x <= 0.
+		Vec3 entry = new Vec3(100.0, 64.0, 0.0);
+		HoleBoundary wide = new HoleBoundary(new Vec3(-50.0, 0.0, -10.0), new Vec3(120.0, 80.0, 10.0));
+
+		var drop = HazardDropSearch.findDrop(entry, new Vec3(1.0, 0.0, 0.0), wide, 105.0,
+			(x, z) -> x <= 0.0 ? Optional.of(new Vec3(x, 64.0, z)) : Optional.empty());
+
+		assertTrue(drop.isPresent());
+		assertTrue(drop.orElseThrow().x() <= 1.0);
+	}
+
+	@Test
+	void radialFallbackStaysNearTheEntryPoint() {
+		// Land exists only far ahead (+x); the bounded radial sweep must not reach it.
+		Vec3 entry = new Vec3(0.0, 64.0, 0.0);
+		HoleBoundary wide = new HoleBoundary(new Vec3(-10.0, 0.0, -60.0), new Vec3(60.0, 80.0, 60.0));
+
+		var drop = HazardDropSearch.findDrop(entry, new Vec3(1.0, 0.0, 0.0), wide, 100.0,
+			(x, z) -> x >= 40.0 ? Optional.of(new Vec3(x, 64.0, z)) : Optional.empty());
+
+		assertTrue(drop.isEmpty());
+	}
+
+	@Test
 	void fallsBackToBoundedRadialSearchWhenTheLineNeverFindsLand() {
 		// Land exists only in front of the ball (the far bank), never behind it.
 		var drop = HazardDropSearch.findDrop(ENTRY, HEADING, BOUNDARY,

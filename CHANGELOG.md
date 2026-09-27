@@ -9,6 +9,16 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+### Changed
+
+- Water and lava relief now follows the straight flight line from where the shot was
+  played to the entry point, so a ball dropped on the far side of a hazard is moved back
+  to the shore the shot came from instead of a shoreline beyond the water. The back-on-
+  the-line search now runs the full length of the shot rather than a fixed 24 blocks, and
+  the vertical scan reaches elevated tee-side banks. A full carry into water therefore
+  gives up the carry distance, matching real golf; short shots that roll in still keep
+  their distance.
+
 ## [0.8.0] - 2026-09-27
 
 ### Changed

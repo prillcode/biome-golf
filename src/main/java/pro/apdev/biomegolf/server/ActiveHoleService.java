@@ -75,9 +75,20 @@ public final class ActiveHoleService {
 	private static final double PRACTICE_SPAWN_FORWARD = 2.0;
 	private static final double PRACTICE_SPAWN_UP = 1.0;
 
-	/** Vertical window (blocks) around a hazard entry point that the drop scan inspects. */
-	private static final int DROP_SCAN_BLOCKS_UP = 6;
-	private static final int DROP_SCAN_BLOCKS_DOWN = 10;
+	/**
+	 * Vertical window (blocks) around a hazard entry point that the drop scan
+	 * inspects: low enough for a deep water column, high enough for an elevated
+	 * tee-side bank.
+	 */
+	private static final int DROP_SCAN_BLOCKS_UP = 16;
+	private static final int DROP_SCAN_BLOCKS_DOWN = 12;
+
+	/** Minimum horizontal shot-origin-to-entry distance before the flight chord is trusted. */
+	private static final double MIN_FLIGHT_LINE_BLOCKS = 2.0;
+	/** Hard cap on the back-on-the-line search, in blocks. */
+	private static final double MAX_LINE_BACKTRACK_BLOCKS = 256.0;
+	/** Extra line search past the shot origin so its own column is fully considered. */
+	private static final double LINE_CAP_MARGIN = 4.0;
 
 	/** Classifies a drop column's support block so bunkers and other hazards are avoided. */
 	private static final GolfBlockSurfaceResolver DROP_SURFACE_RESOLVER = new GolfBlockSurfaceResolver();
@@ -1080,6 +1091,9 @@ public final class ActiveHoleService {
 		if (hazardContact.isPresent()) {
 			Vec3 entry = hazardContact.orElseThrow();
 			Vec3 recovery = waterDropTarget(level, session, from, entry);
+			MinecraftGolf.LOGGER.info(
+				"Water hazard contact at {} for ball {}; recovery {} from shot origin {}",
+				entry, ball.getUUID(), recovery, session.lastSafePosition());
 			applyPenalty(ball, owner, session, PenaltyType.WATER, recovery);
 			return;
 		}
@@ -1189,30 +1203,40 @@ public final class ActiveHoleService {
 	}
 
 	/**
-	 * Chooses a water/lava recovery target: the nearest safe land near the entry
-	 * point (back on the line, then a bounded radial fallback), or the
-	 * previous-shot position when no safe drop exists.
+	 * Chooses a water/lava recovery target: the nearest safe land along the
+	 * straight flight line back from the entry point toward where the shot was
+	 * played, then a bounded radial fallback, or the previous-shot position when
+	 * no safe drop exists.
 	 */
 	private static Vec3 waterDropTarget(ServerLevel level, PlayerHoleSession session,
 			Vec3 from, Vec3 entry) {
 		HoleBoundary boundary = session.state().hole().boundary();
-		Vec3 heading = entry.subtract(from);
-		Optional<Vec3> clear = HazardDropSearch.findDrop(entry, heading, boundary,
+		Vec3 origin = session.lastSafePosition();
+		// Real-golf relief follows the straight line from where the shot was played
+		// to the hazard. The final physics-tick heading can point anywhere after a
+		// bounce, so it is only a fallback when there is no usable flight line.
+		Vec3 flight = entry.subtract(origin);
+		Vec3 heading = flight.horizontalLength() >= MIN_FLIGHT_LINE_BLOCKS
+			? flight : entry.subtract(from);
+		double lineCap = Math.min(MAX_LINE_BACKTRACK_BLOCKS,
+			Math.max(HazardDropSearch.MAX_BACKTRACK_BLOCKS,
+				flight.horizontalLength() + LINE_CAP_MARGIN));
+		Optional<Vec3> clear = HazardDropSearch.findDrop(entry, heading, boundary, lineCap,
 			(x, z) -> resolveDropRest(level, entry, x, z, false));
 		if (clear.isPresent()) {
 			return clear.orElseThrow();
 		}
 		// Last resort before the previous-shot position: accept a hazard surface
 		// (a bunker or honey) rather than give the whole shot distance back.
-		return HazardDropSearch.findDrop(entry, heading, boundary,
+		return HazardDropSearch.findDrop(entry, heading, boundary, lineCap,
 			(x, z) -> resolveDropRest(level, entry, x, z, true))
 			.orElse(session.lastSafePosition());
 	}
 
 	/**
-	 * Resolves a safe ball rest site for a horizontal column: scans down from just
-	 * above the entry point for the first solid support with a fluid-free block
-	 * above it, and returns the ball center resting on that support.
+	 * Resolves a safe ball rest site for a horizontal column. Ground at or below the
+	 * hazard entry level is preferred (the realistic water-margin drop); a higher
+	 * tee-side bank is the fallback.
 	 *
 	 * @param allowHazardSurfaces when false, a support block that resolves to a golf
 	 *                           hazard surface (bunker sand, honey) is skipped so the
@@ -1224,29 +1248,60 @@ public final class ActiveHoleService {
 		int columnZ = (int) Math.floor(z);
 		double centerX = columnX + 0.5;
 		double centerZ = columnZ + 0.5;
-		int top = (int) Math.floor(entryPoint.y()) + DROP_SCAN_BLOCKS_UP;
-		int bottom = (int) Math.floor(entryPoint.y()) - DROP_SCAN_BLOCKS_DOWN;
-		for (int blockY = top; blockY >= bottom; blockY--) {
-			BlockPos support = new BlockPos(columnX, blockY, columnZ);
-			BlockPos body = support.above();
-			// Resolve the actual top of the support's collision shape; assuming a full
-			// block top would float the ball above carpets, slabs, snow, and similar.
-			double supportTop = collisionTop(level, support, centerX, centerZ);
-			if (Double.isNaN(supportTop) || !level.getFluidState(support).isEmpty()) {
-				continue;
+		int entryBlockY = (int) Math.floor(entryPoint.y());
+		Optional<Vec3> atOrBelow = scanDropColumn(level, columnX, columnZ, centerX, centerZ,
+			entryBlockY, entryBlockY - DROP_SCAN_BLOCKS_DOWN, allowHazardSurfaces);
+		if (atOrBelow.isPresent()) {
+			return atOrBelow;
+		}
+		return scanDropColumn(level, columnX, columnZ, centerX, centerZ,
+			entryBlockY + 1, entryBlockY + DROP_SCAN_BLOCKS_UP, allowHazardSurfaces);
+	}
+
+	/**
+	 * Scans one column between two block heights (inclusive) in the caller's chosen
+	 * direction and returns the first supported, fluid-free rest site. The caller
+	 * controls direction so the search prefers the ground nearest the hazard level.
+	 */
+	private static Optional<Vec3> scanDropColumn(ServerLevel level, int columnX, int columnZ,
+			double centerX, double centerZ, int fromBlockY, int toBlockY,
+			boolean allowHazardSurfaces) {
+		int step = fromBlockY <= toBlockY ? 1 : -1;
+		for (int blockY = fromBlockY; blockY != toBlockY + step; blockY += step) {
+			Optional<Vec3> rest = dropAt(level, columnX, columnZ, centerX, centerZ,
+				blockY, allowHazardSurfaces);
+			if (rest.isPresent()) {
+				return rest;
 			}
-			if (!level.getFluidState(body).isEmpty()
-					|| !level.getBlockState(body).getCollisionShape(level, body).isEmpty()) {
-				continue;
-			}
-			if (!allowHazardSurfaces
-					&& DROP_SURFACE_RESOLVER.resolve(level.getBlockState(support)).hazard()) {
-				continue;
-			}
-			return Optional.of(Vec3.of(centerX,
-				blockY + supportTop + GolfBallEntity.BALL_RADIUS, centerZ));
 		}
 		return Optional.empty();
+	}
+
+	/**
+	 * Resolves one candidate rest site from a single support block, or empty when
+	 * that block cannot hold the ball (no collision, fluid, blocked body, or a
+	 * skipped hazard surface).
+	 */
+	private static Optional<Vec3> dropAt(ServerLevel level, int columnX, int columnZ,
+			double centerX, double centerZ, int blockY, boolean allowHazardSurfaces) {
+		BlockPos support = new BlockPos(columnX, blockY, columnZ);
+		BlockPos body = support.above();
+		// Resolve the actual top of the support's collision shape; assuming a full
+		// block top would float the ball above carpets, slabs, snow, and similar.
+		double supportTop = collisionTop(level, support, centerX, centerZ);
+		if (Double.isNaN(supportTop) || !level.getFluidState(support).isEmpty()) {
+			return Optional.empty();
+		}
+		if (!level.getFluidState(body).isEmpty()
+				|| !level.getBlockState(body).getCollisionShape(level, body).isEmpty()) {
+			return Optional.empty();
+		}
+		if (!allowHazardSurfaces
+				&& DROP_SURFACE_RESOLVER.resolve(level.getBlockState(support)).hazard()) {
+			return Optional.empty();
+		}
+		return Optional.of(Vec3.of(centerX,
+			blockY + supportTop + GolfBallEntity.BALL_RADIUS, centerZ));
 	}
 
 	/**
