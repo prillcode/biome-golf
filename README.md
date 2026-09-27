@@ -68,9 +68,9 @@ From the repository root:
 ./scripts/dev-server-down.sh
 ```
 
-Pass the artifact version when syncing. Sync the JAR before starting or restarting after code changes. For a production-oriented
-Google Compute Engine deployment, backups, and end-user mod distribution, see the
-[deployment guide](docs/GCP-DEPLOYMENT-AND-MOD-DISTRIBUTION.md).
+Pass the artifact version when syncing. Sync the JAR before starting or restarting after
+code changes. For release and player-facing distribution, see
+[`docs/RELEASING.md`](docs/RELEASING.md).
 
 ### Repository layout
 
