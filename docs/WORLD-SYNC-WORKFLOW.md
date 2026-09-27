@@ -1,33 +1,26 @@
 # Develop Locally, Publish to the Live Server (World Sync)
 
-This is the recommended workflow for adding courses or making landscape edits to
-the live server **without authoring on it directly**. You keep the live server
-open for players, do the work in a local world, then promote that world back with
-a short maintenance step.
-
-For moving a course built in a normal Java Edition instance on the mini-PC into a
-local development server, see
-[IMPORTING-WORLD-TAILSCALE.md](IMPORTING-WORLD-TAILSCALE.md). This document covers
-the other half: local development server -> live/on-demand server.
+This is the workflow for adding courses or making landscape edits without
+authoring on the live server. You keep the live server open for players, do the
+work in a local world, then promote that world back in a short maintenance step.
 
 ## Why this is needed
 
 There is no course import/export command. Everything a course needs lives in the
 saved world:
 
-| Data                                   | Location in the world save        |
-| -------------------------------------- | --------------------------------- |
-| Course definitions (tee/cup/par/bounds/landscape) | `world/data/minecraft_golf_authored_courses.json` |
-| Course terrain (fairways, greens, hazards, builds) | `world/region/*.mca` (plus `entities/`, `poi/`) |
+| Data                                                       | Location in the world save                        |
+| ---------------------------------------------------------- | ------------------------------------------------- |
+| Course definitions (tee/cup/par/bounds/landscape)          | `world/data/minecraft_golf_authored_courses.json` |
+| Course terrain (fairways, greens, hazards, builds)         | `world/region/*.mca` (+ `entities/`, `poi/`)      |
 
-The in-game authoring commands (`/golf course create`, `/golf hole tee`,
-`/golf course landscape ...`, etc. -- see
-[COURSE-CREATION-STEPS.md](COURSE-CREATION-STEPS.md)) mutate the live store. So
+The in-game authoring commands (see
+[COURSE-CREATION-STEPS.md](COURSE-CREATION-STEPS.md)) mutate the live store, so
 without a world-sync step, authoring means editing the running server.
 
-The production server keeps its world on a persistent DigitalOcean Volume that is
-only attached while a Droplet is running. A Volume can attach to only one Droplet
-at a time, which is why promotion goes through the running Droplet.
+The live server keeps its world on a persistent DigitalOcean Volume that is only
+attached while a Droplet is running, and a Volume attaches to only one Droplet at
+a time. Promotion therefore goes through the running Droplet.
 
 ## The loop
 
@@ -37,140 +30,116 @@ PULL  ->  DEVELOP LOCALLY  ->  PUSH  ->  verify
 ```
 
 - The live server runs normally *between* pull and push.
-- Pull and push each briefly stop Minecraft. Players connected at that moment are
-  disconnected; the graceful stop saves their progress first, so nothing is lost,
-  but schedule both when the server is idle.
-- You cannot copy region files while Minecraft is running: chunks may be mid-write.
-  Always stop the container before copying the world, in both directions.
-- Keep the stopped window short. The session guard runs every 5 minutes and will
-  auto-stop an idle server (detaching the Volume), so a long copy can be
-  interrupted. The world is small enough that a normal sync finishes in seconds.
+- Pull and push each briefly stop Minecraft; connected players are disconnected.
+  The graceful stop saves first, so nothing is lost, but schedule both when the
+  server is idle. Keep the stopped window short: the session guard's idle timeout
+  can auto-stop the Droplet mid-copy (the world is small and syncs in seconds).
+- You cannot copy region files while Minecraft is running: chunks may be
+  mid-write. Always stop the container before copying, in both directions.
 
-## Prerequisites
+## Tooling
 
-- SSH access to the Droplet (the operator's key) and `rsync`.
-- The operator control script (`mc-ctl.sh`) for start/stop/status, and `doctl`
-  authenticated against the DigitalOcean account. These live with the server
-  infrastructure, not in this repository.
-- A local development environment with the **same Minecraft version and mod
-  version** as the live server (currently Minecraft `26.2`, Fabric, the pinned
-  Fabric API). The live seed is `-1928790872702396508`.
+The transport helper lives with the production control plane (apcode-dev), not in
+this repo:
 
-Throughout, replace:
-
-- `<server-ip>` -- the Droplet public IPv4 (from `mc-ctl.sh status` or `doctl`).
-- `<volume-id>` -- the persistent Volume ID (`BIRDIE_BIOME_VOLUME_ID`).
-
-The examples use `~/birdie-world/world` as the local working copy.
-
-## 1. Pull the live world
-
-```bash
-# From the apcode-dev repo (mc-ctl.sh lives in apps/api):
-cd apps/api
-./mc-ctl.sh start birdie-biome
-./mc-ctl.sh watch birdie-biome        # wait for status=running
-
-# Flush the world and release the lock.
-ssh root@<server-ip> 'docker stop birdie-biome-server'
-
-# Copy the world down (145 MB at the time of writing).
-mkdir -p ~/birdie-world
-rsync -a --delete --exclude session.lock \
-  root@<server-ip>:/mnt/minecraft-golf-data/world/ ~/birdie-world/world/
-
-# Put the live server back the way you found it, then stop it to save cost.
-ssh root@<server-ip> 'docker start birdie-biome-server'
-./mc-ctl.sh stop birdie-biome
+```text
+apcode-dev/apps/birdie-biome-server/scripts/world-sync.sh
 ```
 
-If `rsync` is not available on the Droplet, `scp -r` works for a one-shot copy,
-or stage a `tar` and pull that. Always exclude `session.lock`.
+It drives the Droplet lifecycle through the apcode API (the same control plane as
+`mc-ctl.sh`) and uses `doctl`, `ssh`, `rsync`, and `python3`. This repo supplies
+the authoring model and the course formats.
 
-## 2. Develop locally
+Prerequisites:
 
-Pick one local host for the copy:
+- An SSH key authorized on the Droplet, and `doctl` authenticated for the account.
+- The controls: `mc-ctl.sh` (apcode-dev), `rsync`, and `python3`.
+- A local development environment matching the live Minecraft/mod version
+  (currently Minecraft `26.2`, Fabric, the pinned Fabric API; seed
+  `-1928790872702396508`).
 
-- **Gradle server** (fastest iteration on mod code): replace `run/world` with the
-  pulled world and run `./gradlew runServer`.
-- **Docker dev server** (closest to production): put the world into the
-  `dev-server_minecraft-golf-data` volume (see
-  [IMPORTING-WORLD-TAILSCALE.md](IMPORTING-WORLD-TAILSCALE.md) for the
-  tar-into-volume commands) and use `./scripts/dev-server-up.sh`.
-
-Then build terrain, author/finalize courses, and set the default exactly as in
-[COURSE-CREATION-STEPS.md](COURSE-CREATION-STEPS.md). Changes persist to the local
-`world/data/minecraft_golf_authored_courses.json` on each successful mutation.
-
-## 3. Push the world back
-
-Do this during a maintenance moment. **Take a snapshot first** so the change is
-reversible.
+## Commands
 
 ```bash
-# 1. Attach the Volume again.
-./mc-ctl.sh start birdie-biome
-./mc-ctl.sh watch birdie-biome
+# Show server state and the local copy.
+world-sync.sh status
 
-# 2. Quiesce Minecraft.
-ssh root@<server-ip> 'docker stop birdie-biome-server'
+# Pull the live world down to ~/birdie-world/world (default local dir).
+world-sync.sh pull
 
-# 3. Safety net: a DigitalOcean Volume snapshot.
-doctl compute volume snapshot <volume-id> \
-  --snapshot-name "birdie-biome-pre-push-$(date -u +%Y%m%dT%H%M%SZ)"
+# Preview exactly which files a course push would send.
+world-sync.sh course-files
 
-# 4. Write the world back.
-#    FULL REPLACE (local copy is authoritative; live changes since the pull are lost):
-rsync -a --delete --exclude session.lock \
-  ~/birdie-world/world/ root@<server-ip>:/mnt/minecraft-golf-data/world/
-#
-#    DELTA (recommended if players used the live server while you developed):
-#    copy only files your local copy changed; leave the rest of the live world alone.
-# rsync -a --update --exclude session.lock \
-#   ~/birdie-world/world/ root@<server-ip>:/mnt/minecraft-golf-data/world/
+# Push the local course work back (course-scoped delta; default).
+world-sync.sh push
 
-# 5. Reload the new world.
-ssh root@<server-ip> 'docker start birdie-biome-server'
+# Replace the entire live world instead.
+world-sync.sh push --full
 ```
 
-### Full replace vs. delta
+Useful flags:
 
-- **Full replace** (`--delete`) is simplest and predictable, but it overwrites
-  *everything* that changed on the live server since your pull. Use it when you
-  want the local copy to become the world of record and nobody has built since.
-- **Delta** (`--update`, no `--delete`) pushes only files where your local copy is
-  newer. Live changes in untouched regions are preserved. The risk is narrower:
-  if a player edited the same region file you edited (a 32x32-chunk area), your
-  version wins for that region. Coordinate so nobody builds in the course area
-  while you develop.
+| Flag                | Meaning                                                       |
+| ------------------- | ------------------------------------------------------------- |
+| `--local DIR`       | Local working directory (default `~/birdie-world`)            |
+| `--name NAME`       | apcode server name (default `birdie-biome`)                   |
+| `--full`            | Replace the whole world (`rsync --delete`) instead of delta   |
+| `--no-snapshot`     | Skip the pre-push DigitalOcean Volume snapshot                |
+| `--stop-after`      | Stop the server when the command finishes                     |
+| `--dry-run`         | Preview without stopping the server, snapshotting, or writing |
 
-Either way, `world/data/minecraft_golf_authored_courses.json` is a single file: if
-the live server authored/finalized courses while you developed, one side wins.
+A `--dry-run` needs the server already running (it reads remote checksums); it
+will not start a billable Droplet for you.
 
-## 4. Verify
+## Course-scoped delta (default)
 
-1. Wait for the container to become healthy.
-2. Run `/golf course list` (RCON or in-game) and confirm the expected courses and
-   the default.
-3. Join and play-test, then leave the world in place.
-4. Keep the pre-push snapshot (and any local tarball) until you are satisfied.
+The default push honours "course areas are authoritative; everything else is a
+playground":
+
+1. The script reads the local `world/data/minecraft_golf_authored_courses.json`.
+2. It maps every course's landscape perimeter and hole boundaries to the region
+   files that cover them (holes without an explicit boundary fall back to a box
+   around the tee/cup). Region files span 512x512 blocks, so a course area can
+   pull in adjacent chunks at the edges.
+3. It force-pushes only those region files plus the course store JSON.
+
+Everything outside a course's bounds is left exactly as the live server has it,
+so player builds in the playground survive. If someone built where you made a
+course, the local course files win for that region.
+
+The push uses `rsync --checksum`, not mtimes. This matters: `docker stop` makes
+the live server save loaded chunks, which rewrites region files with a fresh
+mtime. A plain `rsync --update` would then treat the live files as newer and
+silently skip your edits. Checksums compare content, so the selected course files
+always win.
+
+## Full replace
+
+`--full` replaces the entire `world/` directory with the local copy
+(`rsync --checksum --delete`). Use it for changes outside any course bounds, or
+when you want the local copy to become the single source of truth. It overwrites
+everything players changed on the live server since the pull.
+
+## Safety
+
+- Always stop the container before copying (the script does this).
+- Always exclude `session.lock` (the script does this); a stale lock makes the
+  next boot think another instance owns the world.
+- The script snapshots the Volume before a push unless `--no-snapshot` is given.
+- Only `world/` is synced. Do not sync `/data/mods`, `/data/libraries`, or
+  `/data/versions`; the server image manages those from `MODRINTH_PROJECTS`.
+- Keep local and live versions/seeds in sync; mismatched versions rewrite or
+  reject world data.
+- Course areas take precedence. Tell players to stay out of the course area while
+  you develop if you want zero surprises in that region.
 
 ## Rollback
 
-- **DigitalOcean snapshot:** create a new Volume from the snapshot
-  (`doctl compute volume create <name> --region <region> --size <size>
-  --snapshot <snapshot-id>`), point `BIRDIE_BIOME_VOLUME_ID` at it, and restart.
-  The old Volume is untouched until you delete it.
+- **DigitalOcean snapshot:** create a new Volume from the pre-push snapshot,
+  point `BIRDIE_BIOME_VOLUME_ID` at it, and restart. The old Volume is untouched
+  until you delete it.
 - **Local backup:** keep timestamped `world` tarballs of the pulled state; pushing
   one back is the same push procedure.
 
-## Guardrails
-
-- Never copy region files while Minecraft is running.
-- Always `--exclude session.lock`; a stale lock makes the next boot think another
-  instance owns the world.
-- Always snapshot before a push.
-- Only sync `world/`. Do not sync `/data/mods`, `/data/libraries`, or
-  `/data/versions` -- the server image manages those from `MODRINTH_PROJECTS`.
-- Keep the live seed/version and your local dev environment in sync; mismatched
-  versions rewrite or reject world data.
+See [COURSE-CREATION-STEPS.md](COURSE-CREATION-STEPS.md) for the authoring
+commands and `apcode-dev/docs/minecraft-operations.md` for server operations.

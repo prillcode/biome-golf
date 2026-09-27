@@ -116,11 +116,11 @@ claimed (see `docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`, `docs/M10-PLAN.md`).
 
 Persistent state is useful for repeatable gameplay, but it can retain stale entities or configuration. Prefer a normal restart for code changes and use reset only when the test explicitly requires a clean world.
 
-### Importing a world from another Tailscale host
+### Working with the live server world
 
-See [`docs/IMPORTING-WORLD-TAILSCALE.md`](../docs/IMPORTING-WORLD-TAILSCALE.md)
-for the complete archive, transfer, backup, Docker volume replacement, and
-verification procedure.
+To pull the live server's world into this dev server, develop locally, then push
+the result back, see
+[`docs/WORLD-SYNC-WORKFLOW.md`](../docs/WORLD-SYNC-WORKFLOW.md).
 
 ## Prepared practice area
 

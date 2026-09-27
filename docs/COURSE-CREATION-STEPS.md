@@ -4,9 +4,7 @@ This is the basic workflow for creating a course on existing Minecraft terrain.
 The authoring commands require server operator permissions.
 
 > Working against the live server? To develop locally instead and promote the
-> finished world, see [WORLD-SYNC-WORKFLOW.md](WORLD-SYNC-WORKFLOW.md). To bring a
-> single-player world into a local dev server first, see
-> [IMPORTING-WORLD-TAILSCALE.md](IMPORTING-WORLD-TAILSCALE.md).
+> finished world, see [WORLD-SYNC-WORKFLOW.md](WORLD-SYNC-WORKFLOW.md).
 
 ## 1. Build the Terrain
 
