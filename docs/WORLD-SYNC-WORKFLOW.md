@@ -11,8 +11,11 @@ saved world:
 
 | Data                                                       | Location in the world save                        |
 | ---------------------------------------------------------- | ------------------------------------------------- |
-| Course definitions (tee/cup/par/bounds/landscape)          | `world/data/minecraft_golf_authored_courses.json` |
-| Course terrain (fairways, greens, hazards, builds)         | `world/region/*.mca` (+ `entities/`, `poi/`)      |
+| Course definitions (tee/cup/par/bounds/landscape)          | `world/data/minecraft_golf_authored_courses.json`                              |
+| Course terrain (fairways, greens, hazards, builds)         | `world/dimensions/<dim>/region/*.mca` (+ `entities/`, `poi/`)                  |
+
+`<dim>` is the dimension path, e.g. `minecraft/overworld`. The course store is one
+world-level file shared by all dimensions.
 
 The in-game authoring commands (see
 [COURSE-CREATION-STEPS.md](COURSE-CREATION-STEPS.md)) mutate the live store, so
@@ -98,9 +101,11 @@ playground":
 
 1. The script reads the local `world/data/minecraft_golf_authored_courses.json`.
 2. It maps every course's landscape perimeter and hole boundaries to the region
-   files that cover them (holes without an explicit boundary fall back to a box
-   around the tee/cup). Region files span 512x512 blocks, so a course area can
-   pull in adjacent chunks at the edges.
+   files that cover them, per dimension (holes without an explicit boundary fall
+   back to a box around the tee/cup). Since the landscape perimeter is the
+   grief-proof area, this scope matches the protected course area. Region files
+   span 512x512 blocks, so a course area can pull in adjacent chunks at the
+   edges.
 3. It force-pushes only those region files plus the course store JSON.
 
 Everything outside a course's bounds is left exactly as the live server has it,
