@@ -9,6 +9,8 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.8.1] - 2026-09-27
+
 ### Changed
 
 - Water and lava relief now follows the straight flight line from where the shot was
@@ -358,7 +360,8 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/prillcode/biome-golf/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/prillcode/biome-golf/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/prillcode/biome-golf/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/prillcode/biome-golf/compare/v0.6.1...v0.7.0
