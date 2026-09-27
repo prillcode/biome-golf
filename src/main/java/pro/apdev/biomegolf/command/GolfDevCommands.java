@@ -43,7 +43,6 @@ import pro.apdev.biomegolf.server.ActiveHoleService;
  * /golf spawn [x y z]                    summon a ball (drops and settles)
  * /golf launch &lt;forward&gt; &lt;up&gt; [id]   launch nearest (or given) ball
  * /golf inspect [id]                     print BallState of nearest (or given) ball
- * /golf clear                            remove every loaded golf ball
  * /golf dev preparehole                  explicitly prepare the configured flat test hole
  * /golf dev preparecourse                explicitly prepare the bounded M5 ocean campus
  * /golf dev testhole &lt;1-3&gt;              select a generated hole for lifecycle testing
@@ -106,9 +105,6 @@ public final class GolfDevCommands {
 						.executes(GolfDevCommands::inspectNearest)
 						.then(Commands.argument("id", IntegerArgumentType.integer())
 								.executes(GolfDevCommands::inspectById)))
-				.then(Commands.literal("clear")
-						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-						.executes(GolfDevCommands::clearAll))
 				.then(Commands.literal("dev")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.then(Commands.literal("preparehole")
@@ -119,7 +115,7 @@ public final class GolfDevCommands {
 								.then(Commands.argument("hole", IntegerArgumentType.integer(1, 3))
 									.executes(GolfDevCommands::selectTestHole)))));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf developer commands (spawn, launch, inspect, clear, dev preparehole, dev preparecourse, dev testhole)");
+			"Registered /golf developer commands (spawn, launch, inspect, dev preparehole, dev preparecourse, dev testhole)");
 	}
 
 	private static int selectTestHole(CommandContext<CommandSourceStack> ctx) {
@@ -356,31 +352,6 @@ public final class GolfDevCommands {
 					+ " | speed " + String.format("%.2f", speedBlocksPerSecond) + " blocks/s"
 					+ " | grounded=" + state.grounded() + " resting=" + state.resting();
 		}
-		MinecraftGolf.LOGGER.info(msg);
-		source.sendSuccess(() -> Component.literal(msg), false);
-		return 1;
-	}
-
-	// ------------------------------------------------------------------
-	// /golf clear
-	// ------------------------------------------------------------------
-
-	private static int clearAll(CommandContext<CommandSourceStack> ctx) {
-		CommandSourceStack source = ctx.getSource();
-		ServerLevel level = source.getLevel();
-		if (level.isClientSide()) {
-			source.sendFailure(Component.literal("golf: clear must run on the server"));
-			return 0;
-		}
-		java.util.List<? extends GolfBallEntity> balls =
-				level.getEntities(EntityTypeTest.forClass(GolfBallEntity.class), ignored -> true);
-		int removed = 0;
-		for (GolfBallEntity ball : balls) {
-			ball.discard();
-			removed++;
-		}
-		String msg = "golf: cleared " + removed + " golf ball" + (removed == 1 ? "" : "s") + " from "
-				+ level.dimension().identifier();
 		MinecraftGolf.LOGGER.info(msg);
 		source.sendSuccess(() -> Component.literal(msg), false);
 		return 1;

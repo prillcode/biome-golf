@@ -29,6 +29,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.entity.EntityTypeTest;
 
 import pro.apdev.biomegolf.MinecraftGolf;
+import pro.apdev.biomegolf.ball.PracticeBallCleanup;
 import pro.apdev.biomegolf.block.GolfBlocks;
 import pro.apdev.biomegolf.course.CourseDefinition;
 import pro.apdev.biomegolf.course.CourseScorecard;
@@ -606,6 +607,7 @@ public final class ActiveHoleService {
 		}
 		double yaw = Math.toRadians(player.getYRot());
 		ball.setOwner(player.getUUID());
+		ball.markAsPracticeBall();
 		ball.setPos(
 			player.getX() - Math.sin(yaw) * PRACTICE_SPAWN_FORWARD,
 			player.getY() + PRACTICE_SPAWN_UP,
@@ -618,14 +620,15 @@ public final class ActiveHoleService {
 		return new StartResult(true, "[golf] dropped a practice ball");
 	}
 
-	/** Removes only this player's unassigned practice balls; active round balls are preserved. */
+	/** Removes only this player's explicitly marked practice balls; assigned balls are always preserved. */
 	public StartResult clearPracticeBalls(ServerPlayer player) {
-		UUID assignedBall = lifecycle.session(player.getUUID()).map(PlayerHoleSession::ballUuid).orElse(null);
+		UUID playerId = player.getUUID();
+		UUID assignedBall = lifecycle.session(playerId).map(PlayerHoleSession::ballUuid).orElse(null);
 		int removed = 0;
 		for (ServerLevel level : player.level().getServer().getAllLevels()) {
 			for (GolfBallEntity ball : level.getEntities(EntityTypeTest.forClass(GolfBallEntity.class),
-				candidate -> player.getUUID().equals(candidate.owner())
-					&& (assignedBall == null || !assignedBall.equals(candidate.getUUID())))) {
+				candidate -> PracticeBallCleanup.shouldClear(
+					playerId, candidate.owner(), candidate.isPracticeBall(), assignedBall, candidate.getUUID()))) {
 				overspeedCupEntries.remove(ball.getUUID());
 				ball.discard();
 				removed++;

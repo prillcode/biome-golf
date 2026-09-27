@@ -70,6 +70,7 @@ public class GolfBallEntity extends Entity {
 	private static final String NBT_GROUNDED = "golf_grounded";
 	private static final String NBT_RESTING = "golf_resting";
 	private static final String NBT_OWNER = "golf_owner"; // owner player UUID, or "" when unowned
+	private static final String NBT_PRACTICE = "golf_practice";
 	private static final String NBT_LANDING_RETENTION = "golf_landing_retention";
 	private static final String NBT_ROLLING_MULTIPLIER = "golf_rolling_multiplier";
 	private static final String NBT_SHOT_DISTANCE = "golf_shot_distance";
@@ -92,6 +93,7 @@ public class GolfBallEntity extends Entity {
 	 * claimed by whoever first launches it. Persisted to NBT between loads.
 	 */
 	private java.util.UUID ownerUuid;
+	private boolean practiceBall;
 
 	private final GolfBlockSurfaceResolver surfaceResolver = new GolfBlockSurfaceResolver();
 	private final MinecraftBallCollisionWorld collisionWorld;
@@ -268,6 +270,18 @@ public class GolfBallEntity extends Entity {
 		entityData.set(DATA_OWNER, playerUuid == null ? "" : playerUuid.toString());
 	}
 
+	/** Marks this owned ball as a practice ball. Server-side only. */
+	public void markAsPracticeBall() {
+		if (!level().isClientSide()) {
+			practiceBall = true;
+		}
+	}
+
+	/** Whether this ball was explicitly created for practice. */
+	public boolean isPracticeBall() {
+		return practiceBall;
+	}
+
 	/** Whether the given player may strike this ball (owns it, or it is unclaimed). */
 	public boolean canBeStruckBy(java.util.UUID playerUuid) {
 		return playerUuid != null && (ownerUuid == null || ownerUuid.equals(playerUuid));
@@ -357,6 +371,7 @@ public class GolfBallEntity extends Entity {
 			input.getDoubleOr(NBT_ROLLING_MULTIPLIER, 1.0));
 		String owner = input.getStringOr(NBT_OWNER, "");
 		ownerUuid = (owner == null || owner.isEmpty()) ? null : java.util.UUID.fromString(owner);
+		practiceBall = input.getBooleanOr(NBT_PRACTICE, false);
 		String visualId = input.getStringOr(NBT_VISUAL_UUID, "");
 		visualUuid = (visualId == null || visualId.isEmpty()) ? null : java.util.UUID.fromString(visualId);
 	}
@@ -379,6 +394,7 @@ public class GolfBallEntity extends Entity {
 		output.putDouble(NBT_ROLLING_MULTIPLIER, shotProfile.rollingFrictionMultiplier());
 		output.putDouble(NBT_SHOT_DISTANCE, shotDistance.blocks());
 		output.putString(NBT_OWNER, ownerUuid == null ? "" : ownerUuid.toString());
+		output.putBoolean(NBT_PRACTICE, practiceBall);
 		output.putString(NBT_VISUAL_UUID, visualUuid == null ? "" : visualUuid.toString());
 	}
 

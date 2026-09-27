@@ -16,12 +16,12 @@ GitHub Release. Player-facing distribution is Modrinth.
 5. Create and push an annotated tag that matches the version exactly:
 
    ```bash
-   git tag -a v0.6.0 -m "Release 0.6.0"
-   git push origin v0.6.0
+   git tag -a vX.Y.Z -m "Release X.Y.Z"
+   git push origin vX.Y.Z
    ```
 
-6. The release workflow builds and publishes the release. Check it with
-   `gh release view v0.6.0`.
+6. The release workflow builds and publishes the release. Check that release with
+   `gh release view vX.Y.Z` (using the tag you just pushed).
 7. After the release is available on Modrinth, update the live server as described
    below. Tagging and publishing alone do not update the production instance.
 

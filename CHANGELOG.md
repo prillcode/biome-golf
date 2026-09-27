@@ -9,6 +9,16 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.7.1] - 2026-09-27
+
+### Fixed
+
+- `/golf practice clear` now removes only explicitly marked practice balls owned by the
+  executing player. Assigned in-play balls, other players' balls, and non-practice balls
+  are preserved.
+- Removed the legacy `/golf clear` developer command, which discarded all loaded golf
+  balls in the command's dimension regardless of owner or purpose.
+
 ## [0.7.0] - 2026-09-26
 
 ### Changed
@@ -325,7 +335,8 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/prillcode/biome-golf/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/prillcode/biome-golf/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/prillcode/biome-golf/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/prillcode/biome-golf/compare/v0.5.1...v0.6.0

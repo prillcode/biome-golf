@@ -86,7 +86,7 @@ in-game swing meter and shot-type controls.
 | Command | What it does |
 |---|---|
 | `/golf practice ball` | Drop a practice ball. |
-| `/golf practice clear` | Remove your unassigned practice balls. |
+| `/golf practice clear` | Remove only practice balls you own, across dimensions. Your assigned in-play ball and other players' balls are preserved. |
 | `/golf practice tee` | Teleport to the configured practice tee, if it is set in your current dimension. |
 | `/golf practice target list` | Show the saved practice tee and targets. |
 
@@ -152,7 +152,6 @@ normal play.
 | `/golf launch <forward> <up> <id>` | Apply a launch to a golf ball by entity ID. |
 | `/golf inspect` | Inspect the nearest golf ball. |
 | `/golf inspect <id>` | Inspect a golf ball by entity ID. |
-| `/golf clear` | Clear loaded golf balls. |
 | `/golf dev preparehole` | Prepare the configured development hole. |
 | `/golf dev preparecourse` | Generate the development course layout in its approved development world. |
 | `/golf dev testhole <1-3>` | Select one of the generated development test holes. |
