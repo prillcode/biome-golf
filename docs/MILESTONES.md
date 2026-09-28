@@ -1498,7 +1498,7 @@ only mentions `preparecourse` in a javadoc comment, and no test references the c
 
 `scripts/dev-server-new-world.sh <world-name> <seed>` registers and generates a fresh
 local-only world, then captures its pristine baseline. See
-[`WORLD-SYNC-WORKFLOW.md`](WORLD-SYNC-WORKFLOW.md#baselines-and-reset).
+[apcode-dev world sync workflow](https://github.com/prillcode/apcode-dev/blob/main/docs/WORLD-SYNC-WORKFLOW.md#baselines-and-reset).
 
 ## Consume `GET /mc/servers` from the site — complete
 

@@ -125,7 +125,8 @@ claimed (see `docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`, `docs/M10-PLAN.md`).
 - After a reset, run `dev-server-up.sh` to start from the restored world.
 
 Baselines live in `<MINECRAFT_DATA_DIR>-baselines` and are pruned to the newest
-five by default. See [`docs/WORLD-SYNC-WORKFLOW.md`](../docs/WORLD-SYNC-WORKFLOW.md).
+five by default. See the
+[apcode-dev world sync workflow](https://github.com/prillcode/apcode-dev/blob/main/docs/WORLD-SYNC-WORKFLOW.md).
 A world with no baseline cannot be reset; starting a new world means a new
 directory (and name), not a reset.
 
@@ -134,8 +135,8 @@ Persistent state is useful for repeatable gameplay, but it can retain stale enti
 ### Working with the live server world
 
 To pull the live server's world into this dev server, develop locally, then push
-the result back, see
-[`docs/WORLD-SYNC-WORKFLOW.md`](../docs/WORLD-SYNC-WORKFLOW.md). `pull` binds the
+the result back, see the [apcode-dev world sync workflow](https://github.com/prillcode/apcode-dev/blob/main/docs/WORLD-SYNC-WORKFLOW.md).
+`pull` binds the
 world directory into this server via `MINECRAFT_DATA_DIR`, so the dev server runs
 exactly the live world; `dev-server-reset.sh` returns to that pulled state.
 

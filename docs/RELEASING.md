@@ -55,7 +55,7 @@ adopt it after the Modrinth project is approved and the apcode-dev deployment is
 explicitly changed and verified.
 
 For course or other world-content changes, use the separate
-[world sync workflow](WORLD-SYNC-WORKFLOW.md); publishing a mod release does not
+[world sync workflow](https://github.com/prillcode/apcode-dev/blob/main/docs/WORLD-SYNC-WORKFLOW.md); publishing a mod release does not
 promote local world edits.
 
 ## Modrinth

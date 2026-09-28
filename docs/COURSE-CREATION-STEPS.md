@@ -4,7 +4,8 @@ This is the basic workflow for creating a course on existing Minecraft terrain.
 The authoring commands require server operator permissions.
 
 > Working against the live server? To develop locally instead and promote the
-> finished world, see [WORLD-SYNC-WORKFLOW.md](WORLD-SYNC-WORKFLOW.md).
+> finished world, see the
+> [apcode-dev world sync workflow](https://github.com/prillcode/apcode-dev/blob/main/docs/WORLD-SYNC-WORKFLOW.md).
 
 ## 1. Build the Terrain
 

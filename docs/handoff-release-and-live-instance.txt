@@ -21,7 +21,8 @@ WHAT NEEDS TO HAPPEN NEXT
    up the JAR on its next start.
 2. Add docs/RELEASING.md to the "Before doing anything" reading list in AGENTS.md.
 3. Remove or mark deprecated scripts/build-server-bundle.sh (retired bundle pipeline).
-4. Cross-link docs/WORLD-SYNC-WORKFLOW.md from docs/RELEASING.md for world-content changes.
+4. Complete: `docs/RELEASING.md` links to the authoritative apcode-dev world sync
+   workflow (`apcode-dev/docs/WORLD-SYNC-WORKFLOW.md`).
 
 CURRENT STATE
 - Release: tag vX.Y.Z must equal gradle.properties version; .github/workflows/release.yml
