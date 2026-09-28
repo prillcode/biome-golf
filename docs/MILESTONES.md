@@ -1494,21 +1494,18 @@ Deprecate first, delete later:
 No structural blocker: `CourseBlockBreakGuard` exempts operators by permission level and
 only mentions `preparecourse` in a javadoc comment, and no test references the command.
 
-## New-world bootstrap for the local dev server
+## New-world bootstrap for the local dev server — complete
 
-Starting a world on a fresh seed is a convention, not a command: add a local-only section
-to `worlds.conf` (apcode-dev `minecraft/tools/worlds.conf`), point `dev-server/.env`
-`MINECRAFT_DATA_DIR` at a new directory, and let the server generate from `SEED`. A
-`dev-server-new-world.sh` should wrap that: create/validate the directory, register the
-world, and bank its baseline before any authoring.
+`scripts/dev-server-new-world.sh <world-name> <seed>` registers and generates a fresh
+local-only world, then captures its pristine baseline. See
+[`WORLD-SYNC-WORKFLOW.md`](WORLD-SYNC-WORKFLOW.md#baselines-and-reset).
 
-## Consume `GET /mc/servers` from the site
+## Consume `GET /mc/servers` from the site — complete
 
-`api.apcode.dev` exposes a public, read-only fleet summary (`GET /mc/servers`) with
-lifecycle state and no infrastructure identifiers. `apps/birdie-biome-site` is still a
-placeholder; a server-status widget is its intended consumer once it is scaffolded.
-
-Full handoff for both: `apcode-dev/docs/handoff-world-tooling-next.txt`.
+`apps/biome-golf-site` is an Astro promo/docs site for the mod. Its optional
+BirdieBiome server-status section renders the public lifecycle-only fleet listing using
+a server-side request to `https://api.apcode.dev/mc/servers`; it requires no API token
+and adds no browser CORS dependency.
 
 ---
 

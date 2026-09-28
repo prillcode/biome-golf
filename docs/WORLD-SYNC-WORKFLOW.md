@@ -90,6 +90,9 @@ world-sync.sh push birdie-biome-world --full
 
 # Capture the current local world as a baseline (usually done by 'pull').
 world-sync.sh baseline birdie-biome-world
+
+# Bootstrap a fresh local-only world from a chosen seed.
+../scripts/dev-server-new-world.sh my-course-world 8675309
 ```
 
 Useful flags:
@@ -188,8 +191,15 @@ override the location and retention for one invocation. The reset script reads
 Reset is the recovery path for a drifted development world. It supersedes the
 legacy M5-era `/golf dev preparecourse` rebuild, which is slated for removal.
 
-Reset is *not* how you start a new world. A new world (a new seed, or a separate
-course project) is a new directory with its own name and its own baseline.
+Reset is *not* how you start a new world. Use `scripts/dev-server-new-world.sh
+<world-name> <seed>` to bootstrap one. It refuses registered names and non-empty
+target/baseline directories, registers a local-only entry, points `dev-server/.env`
+at the new directory and seed, starts the Docker server to generate the save, stops
+it cleanly, and banks the pristine generated world as its baseline. The dev server
+must be stopped before starting; afterward the new world remains selected and
+stopped, ready to start with `scripts/dev-server-up.sh`. The registry defaults to
+`../apcode-dev/minecraft/tools/worlds.conf` and can be overridden with
+`WORLDS_CONF`; set `WORLD_SYNC_TOOL` if the tooling checkout is elsewhere.
 
 ## Full replace
 
