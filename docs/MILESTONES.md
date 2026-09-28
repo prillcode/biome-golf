@@ -1466,6 +1466,44 @@ Bedrock visual parity is claimed. See `docs/M10.3-PLAN.md`.
 
 ---
 
+# Backlog — Deferred Cleanup
+
+Deferred work that is not assigned to a milestone. Keep it short; delete entries when they ship.
+
+## Deprecate `/golf dev preparecourse`
+
+`/golf dev preparecourse` is M5-era development scaffolding: it rebuilds the fixed
+`minecraft_golf:m5_ocean_campus` v11 layout inside the seed-specific envelope
+`X[-640..448] Y[32..192] Z[-256..640]`. It predates authored courses and world sync, and
+the current workflow no longer starts from a generated campus:
+
+- The known-good starting state for a local world is now its **baseline**, captured by
+  `world-sync.sh pull` and restored by `dev-server-reset.sh`. That supersedes
+  `preparecourse` as the recovery path — exact, offline, and with no 574k-block replan.
+- Course work happens on the live world pulled into the dev server, not on a generated
+  practice campus.
+
+Deprecate first, delete later:
+
+1. Mark the command deprecated in `docs/COMMANDS.md`.
+2. Delete the command, the M5 layout generator, and the dev-only code paths that exist
+   to serve it.
+3. Prune the stale references across `docs/M5-*.md`, `docs/M6-*.md`, `docs/M7-*.md`, and
+   the M5 anchor in this file.
+
+No structural blocker: `CourseBlockBreakGuard` exempts operators by permission level and
+only mentions `preparecourse` in a javadoc comment, and no test references the command.
+
+## world-sync.sh is single-server
+
+`world-sync.sh` hardcodes the live identity: `CONTAINER=birdie-biome-server`,
+`VOLUME_NAME=birdie-biome-data`, and `REMOTE_DATA=/mnt/minecraft-golf-data`. `--name`
+changes only the apcode API server name. A second live world (its own Droplet and Volume)
+would need those parameterised or a per-server profile. Not needed while there is exactly
+one live world; local-only worlds need none of it.
+
+---
+
 # Milestone Completion Protocol
 
 When an agent or developer completes a milestone:

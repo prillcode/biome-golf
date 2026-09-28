@@ -41,7 +41,7 @@ Recommended hybrid workflow:
 ./scripts/dev-server-logs.sh     # follow server logs
 ./scripts/dev-server-restart.sh  # restart
 ./scripts/dev-server-down.sh     # stop
-./scripts/dev-server-reset.sh    # delete the dev world (asks for confirmation)
+./scripts/dev-server-reset.sh    # restore the pulled baseline (asks for confirmation)
 ```
 
 Pass the version matching the build artifact to the sync step before starting or restarting whenever code changes. The start and restart scripts verify that a versioned Biome Golf JAR is staged, but they do not rebuild it.
@@ -108,19 +108,34 @@ claimed (see `docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`, `docs/M10-PLAN.md`).
 
 ## Data, restart, and reset
 
-- Server world and configuration live in the Compose volume `dev-server_minecraft-golf-data` (persistent across restarts and image updates; survives bind-mount permission quirks).
+- Server world and configuration live in the directory named by
+  `MINECRAFT_DATA_DIR` (default: the Compose volume
+  `dev-server_minecraft-golf-data`). `dev-server/.env` points it at the world
+  pulled from the live server (e.g. `~/birdie-biome-world`); a bind directory is
+  required for `world-sync.sh` to read and write the world directly.
 - The mod is mounted read-only from `dev-server/mods/`.
-- `dev-server-restart.sh` preserves the world, configuration, and other volume state.
-- `dev-server-reset.sh` stops the server and removes the volume after an explicit typed confirmation. This is the only sanctioned way to delete the dev world; it does not delete source code, the staged mod JAR, or unrelated Minecraft worlds.
-- After a reset, run `dev-server-sync.sh <VERSION>` and `dev-server-up.sh` to create a fresh server.
+- `dev-server-restart.sh` preserves the world, configuration, and other state.
+- `dev-server-reset.sh` stops the server and restores the newest **baseline** —
+  the pristine state captured by `world-sync.sh pull` — after an explicit typed
+  confirmation. Local work since that pull is discarded, and the script refuses
+  when no baseline exists. It never touches the live server, source code, or the
+  staged mod JAR.
+- After a reset, run `dev-server-up.sh` to start from the restored world.
 
-Persistent state is useful for repeatable gameplay, but it can retain stale entities or configuration. Prefer a normal restart for code changes and use reset only when the test explicitly requires a clean world.
+Baselines live in `<MINECRAFT_DATA_DIR>-baselines` and are pruned to the newest
+five by default. See [`docs/WORLD-SYNC-WORKFLOW.md`](../docs/WORLD-SYNC-WORKFLOW.md).
+A world with no baseline cannot be reset; starting a new world means a new
+directory (and name), not a reset.
+
+Persistent state is useful for repeatable gameplay, but it can retain stale entities or configuration. Prefer a normal restart for code changes and reset only when you want the known-good starting state back.
 
 ### Working with the live server world
 
 To pull the live server's world into this dev server, develop locally, then push
 the result back, see
-[`docs/WORLD-SYNC-WORKFLOW.md`](../docs/WORLD-SYNC-WORKFLOW.md).
+[`docs/WORLD-SYNC-WORKFLOW.md`](../docs/WORLD-SYNC-WORKFLOW.md). `pull` binds the
+world directory into this server via `MINECRAFT_DATA_DIR`, so the dev server runs
+exactly the live world; `dev-server-reset.sh` returns to that pulled state.
 
 ## Prepared practice area
 
@@ -197,7 +212,7 @@ Before accepting a Docker gameplay run:
 3. Confirm Biome Golf registration messages and no relevant startup errors.
 4. Confirm the prepared tee, cup, boundary, daytime, and weather state.
 5. Exercise practice mode and the active-hole lifecycle, including recovery and replay scenarios required by the current milestone.
-6. Record any persistent-world contamination; reset only when a clean-world scenario is required.
+6. Record any persistent-world contamination; reset to the pulled baseline when a known-good starting state is required.
 
 ## Notes
 

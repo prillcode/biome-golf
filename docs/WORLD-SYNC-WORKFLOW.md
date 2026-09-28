@@ -78,6 +78,9 @@ world-sync.sh push
 
 # Replace the entire live world instead.
 world-sync.sh push --full
+
+# Capture the current local world as a baseline (usually done by 'pull').
+world-sync.sh baseline
 ```
 
 Useful flags:
@@ -118,6 +121,41 @@ mtime. A plain `rsync --update` would then treat the live files as newer and
 silently skip your edits. Checksums compare content, so the selected course files
 always win.
 
+## Baselines and reset
+
+Each local world has a **baseline**: a tarball of its known-good origin. Reset
+restores that tarball — it never deletes or regenerates the world.
+
+- `pull` captures a baseline automatically, after the copy and while the
+  container is still stopped, so it is pristine. Retention defaults to the
+  newest five.
+- `world-sync.sh baseline` captures the current local copy on demand. Use it
+  only to bootstrap a world pulled before baselines existed; the result is only
+  as good as the local copy at that moment.
+- `scripts/dev-server-reset.sh` stops the dev server and restores the newest
+  baseline, discarding local work done since the pull. It is local-only: it
+  never contacts the live server. A world with no baseline is refused.
+
+Baselines live *beside* the world directory, never inside it, because everything
+inside the local world directory is bind-mounted into the dev server as `/data`:
+
+```text
+~/birdie-biome-world/              # MINECRAFT_DATA_DIR; bind-mounted as /data
+~/birdie-biome-world-baselines/    # baseline-<server>-<utc-stamp>.tar.gz (+ .meta)
+```
+
+Both paths follow `--local` / `WORLD_SYNC_DIR`, so a differently named local
+world (`bogey-biome-world`) gets its own baseline directory with no extra setup.
+`WORLD_SYNC_BASELINE_DIR` and `WORLD_SYNC_BASELINE_KEEP` override the location
+and retention. The reset script reads `MINECRAFT_DATA_DIR` from
+`dev-server/.env`.
+
+Reset is the recovery path for a drifted development world. It supersedes the
+legacy M5-era `/golf dev preparecourse` rebuild, which is slated for removal.
+
+Reset is *not* how you start a new world. A new world (a new seed, or a separate
+course project) is a new directory with its own name and its own baseline.
+
 ## Full replace
 
 `--full` replaces the entire `world/` directory with the local copy
@@ -131,6 +169,8 @@ everything players changed on the live server since the pull.
 - Always exclude `session.lock` (the script does this); a stale lock makes the
   next boot think another instance owns the world.
 - The script snapshots the Volume before a push unless `--no-snapshot` is given.
+- Baselines and reset are local-only; they never touch the live server or the
+  DigitalOcean Volume. Only `pull`/`push` do.
 - Only `world/` is synced. Do not sync `/data/mods`, `/data/libraries`, or
   `/data/versions`; the server image manages those from `MODRINTH_PROJECTS`.
 - Keep local and live versions/seeds in sync; mismatched versions rewrite or
@@ -140,11 +180,15 @@ everything players changed on the live server since the pull.
 
 ## Rollback
 
+- **Reset to baseline (fastest):** `world-sync.sh pull` banked the pre-development
+  state; `scripts/dev-server-reset.sh` restores it. This local rollback needs no
+  network and no live downtime.
 - **DigitalOcean snapshot:** create a new Volume from the pre-push snapshot,
   point `BIRDIE_BIOME_VOLUME_ID` at it, and restart. The old Volume is untouched
   until you delete it.
 - **Local backup:** keep timestamped `world` tarballs of the pulled state; pushing
-  one back is the same push procedure.
+  one back is the same push procedure. Baselines are exactly this, captured
+  automatically.
 
 See [COURSE-CREATION-STEPS.md](COURSE-CREATION-STEPS.md) for the authoring
 commands and `apcode-dev/docs/minecraft-operations.md` for server operations.
