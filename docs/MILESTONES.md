@@ -1502,10 +1502,23 @@ local-only world, then captures its pristine baseline. See
 
 ## Consume `GET /mc/servers` from the site — complete
 
-`apps/biome-golf-site` is an Astro promo/docs site for the mod. Its optional
+`apps/biome-golf-site` is an Astro promo/docs scaffold for the mod. Its optional
 BirdieBiome server-status section renders the public lifecycle-only fleet listing using
 a server-side request to `https://api.apcode.dev/mc/servers`; it requires no API token
-and adds no browser CORS dependency.
+and adds no browser CORS dependency. Brand and full documentation remain future work.
+
+## Biome Golf site branding and documentation
+
+The deployed Astro site is a useful placeholder, not the finished public identity or
+wiki. Future work:
+
+- Align the visual identity with the Biome Golf Modrinth project logo and branding.
+- Build substantive player-facing docs/wiki pages for installation, gameplay, and
+  course creation.
+- Reference the canonical `docs/COMMANDS.md` command guide from the site and keep it
+  discoverable without duplicating content that can drift.
+- Keep the BirdieBiome public server listing as a secondary way to try the mod, not
+  the focus of the site.
 
 ---
 
