@@ -1,9 +1,10 @@
 services:
   minecraft:
     # Parameterised so the same file serves local development (defaults) and the
-    # apcode.dev Droplet (env overrides written by cloud-init). Local behaviour
-    # is unchanged: named volume, container name, MOTD, and port all default to
-    # their previous values.
+    # apcode.dev Droplet (env overrides written by cloud-init). Defaults match the
+    # apcode-dev copy: container name, MOTD, and port keep their previous values;
+    # the named volume default was renamed to `birdie-biome-data` for consistency
+    # with the Volume and the world directories.
     image: ${MINECRAFT_IMAGE:-itzg/minecraft-server:latest}
     container_name: ${MINECRAFT_CONTAINER_NAME:-minecraft-golf-dev}
     ports:
@@ -30,7 +31,7 @@ services:
     volumes:
       # Named volume locally; the Droplet sets MINECRAFT_DATA_DIR to the
       # persistent Volume mount path.
-      - ${MINECRAFT_DATA_DIR:-minecraft-golf-data}:/data
+      - ${MINECRAFT_DATA_DIR:-birdie-biome-data}:/data
       - ./mods:/mods:ro
     restart: unless-stopped
     # Give Minecraft at least two minutes to save and stop cleanly.
@@ -43,4 +44,4 @@ services:
       start_period: 120s
 
 volumes:
-  minecraft-golf-data:
+  birdie-biome-data:

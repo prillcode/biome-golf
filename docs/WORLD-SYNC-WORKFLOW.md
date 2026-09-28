@@ -110,7 +110,7 @@ directory and, for a live world, to its server:
 server = birdie-biome
 container = birdie-biome-server
 volume = birdie-biome-data
-remote_data = /mnt/minecraft-golf-data
+remote_data = /mnt/birdie-biome-data
 ```
 
 - `dir` and `baselines` are optional; they default to `$WORLDS_ROOT/<world>` and
