@@ -112,11 +112,13 @@ claimed (see `docs/BEDROCK-COMPATIBILITY-ASSESSMENT.md`, `docs/M10-PLAN.md`).
   `MINECRAFT_DATA_DIR` (default: the Compose volume
   `dev-server_minecraft-golf-data`). `dev-server/.env` points it at the world
   pulled from the live server (e.g. `~/birdie-biome-world`); a bind directory is
-  required for `world-sync.sh` to read and write the world directly.
+  required for `world-sync.sh` to read and write the world directly. The world
+  name in `worlds.conf` (apcode-dev) must resolve to this same directory.
 - The mod is mounted read-only from `dev-server/mods/`.
 - `dev-server-restart.sh` preserves the world, configuration, and other state.
 - `dev-server-reset.sh` stops the server and restores the newest **baseline** —
-  the pristine state captured by `world-sync.sh pull` — after an explicit typed
+  the pristine state captured by `world-sync.sh pull birdie-biome-world` — after
+  an explicit typed
   confirmation. Local work since that pull is discarded, and the script refuses
   when no baseline exists. It never touches the live server, source code, or the
   staged mod JAR.

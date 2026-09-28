@@ -2,12 +2,12 @@
 # Reset the local development world to its baseline.
 #
 # A baseline is this world's known-good origin: the state captured by
-# `world-sync.sh pull` (with the container already stopped, so it is pristine).
-# Reset restores that state so local development starts over from a known point.
-# It does NOT delete or regenerate the world.
+# `world-sync.sh pull <world>` (with the container already stopped, so it is
+# pristine). Reset restores that state so local development starts over from a
+# known point. It does NOT delete or regenerate the world.
 #
 # This is a purely local operation; it never contacts the live server. To
-# refresh the baseline from the live world, run world-sync.sh pull.
+# refresh the baseline from the live world, run world-sync.sh pull <world>.
 #
 # A world with no baseline (a local-only world, or one never pulled) cannot be
 # reset. Creating a new world is a separate action: use a new directory name.
@@ -45,7 +45,7 @@ mapfile -t baselines < <(find "$BASELINE_DIR" -maxdepth 1 -name 'baseline-*.tar.
 	-printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-)
 if [[ "${#baselines[@]}" -eq 0 ]]; then
 	echo "ERROR: no baseline found in $BASELINE_DIR." >&2
-	echo "Run: world-sync.sh pull    (captures a pristine baseline on the way down)" >&2
+	echo "Run: world-sync.sh pull <world>    (captures a pristine baseline on the way down)" >&2
 	exit 1
 fi
 BASELINE="${baselines[0]}"

@@ -1494,14 +1494,6 @@ Deprecate first, delete later:
 No structural blocker: `CourseBlockBreakGuard` exempts operators by permission level and
 only mentions `preparecourse` in a javadoc comment, and no test references the command.
 
-## world-sync.sh is single-server
-
-`world-sync.sh` hardcodes the live identity: `CONTAINER=birdie-biome-server`,
-`VOLUME_NAME=birdie-biome-data`, and `REMOTE_DATA=/mnt/minecraft-golf-data`. `--name`
-changes only the apcode API server name. A second live world (its own Droplet and Volume)
-would need those parameterised or a per-server profile. Not needed while there is exactly
-one live world; local-only worlds need none of it.
-
 ---
 
 # Milestone Completion Protocol

@@ -63,32 +63,62 @@ Prerequisites:
 
 ## Commands
 
-```bash
-# Show server state and the local copy.
-world-sync.sh status
+Every command takes a **world name**, and there is no default. A world must be
+registered in the worlds registry (below); an unregistered name is refused.
 
-# Pull the live world down to ~/birdie-world/world (default local dir).
-world-sync.sh pull
+```bash
+# List registered worlds.
+world-sync.sh worlds
+
+# Show server state and the local copy.
+world-sync.sh status birdie-biome-world
+
+# Pull the live world into that world's local directory.
+world-sync.sh pull birdie-biome-world
 
 # Preview exactly which files a course push would send.
-world-sync.sh course-files
+world-sync.sh course-files birdie-biome-world
 
 # Push the local course work back (course-scoped delta; default).
-world-sync.sh push
+world-sync.sh push birdie-biome-world
 
 # Replace the entire live world instead.
-world-sync.sh push --full
+world-sync.sh push birdie-biome-world --full
 
 # Capture the current local world as a baseline (usually done by 'pull').
-world-sync.sh baseline
+world-sync.sh baseline birdie-biome-world
 ```
 
 Useful flags:
 
-| Flag                | Meaning                                                       |
-| ------------------- | ------------------------------------------------------------- |
-| `--local DIR`       | Local working directory (default `~/birdie-world`)            |
-| `--name NAME`       | apcode server name (default `birdie-biome`)                   |
+| Flag            | Meaning                                                        |
+| --------------- | -------------------------------------------------------------- |
+| `--conf FILE`   | Worlds registry (default `../worlds.conf` beside the script)    |
+| `--full`        | Whole-world push instead of the course-scoped delta            |
+| `--no-snapshot` | Skip the pre-push DigitalOcean Volume snapshot                 |
+| `--stop-after`  | Stop the server when the command finishes                      |
+| `--dry-run`     | Preview without stopping the server, snapshotting, or writing  |
+
+## The worlds registry
+
+World names resolve through `worlds.conf` in the apcode-dev repo
+(`apps/birdie-biome-server/worlds.conf`), which maps a name to its local
+directory and, for a live world, to its server:
+
+```ini
+[birdie-biome-world]
+server = birdie-biome
+container = birdie-biome-server
+volume = birdie-biome-data
+remote_data = /mnt/minecraft-golf-data
+```
+
+- `dir` and `baselines` are optional; they default to `$WORLDS_ROOT/<world>` and
+  `<dir>-baselines` (`WORLDS_ROOT` defaults to `$HOME`).
+- A section with **no `server`** is a **local-only world**: `baseline` and
+  `status` work, while `pull` and `push` refuse. That is how a new course project
+  on a fresh seed stays independent of the live server.
+- Adding a second live world means adding a section; nothing else is hardcoded.
 | `--full`            | Replace the whole world (`rsync --delete`) instead of delta   |
 | `--no-snapshot`     | Skip the pre-push DigitalOcean Volume snapshot                |
 | `--stop-after`      | Stop the server when the command finishes                     |
@@ -129,8 +159,8 @@ restores that tarball — it never deletes or regenerates the world.
 - `pull` captures a baseline automatically, after the copy and while the
   container is still stopped, so it is pristine. Retention defaults to the
   newest five.
-- `world-sync.sh baseline` captures the current local copy on demand. Use it
-  only to bootstrap a world pulled before baselines existed; the result is only
+- `world-sync.sh baseline <world>` captures the current local copy on demand. Use
+  it only to bootstrap a world pulled before baselines existed; the result is only
   as good as the local copy at that moment.
 - `scripts/dev-server-reset.sh` stops the dev server and restores the newest
   baseline, discarding local work done since the pull. It is local-only: it
@@ -144,11 +174,11 @@ inside the local world directory is bind-mounted into the dev server as `/data`:
 ~/birdie-biome-world-baselines/    # baseline-<server>-<utc-stamp>.tar.gz (+ .meta)
 ```
 
-Both paths follow `--local` / `WORLD_SYNC_DIR`, so a differently named local
-world (`bogey-biome-world`) gets its own baseline directory with no extra setup.
-`WORLD_SYNC_BASELINE_DIR` and `WORLD_SYNC_BASELINE_KEEP` override the location
-and retention. The reset script reads `MINECRAFT_DATA_DIR` from
-`dev-server/.env`.
+Both paths follow the world's registry entry, so a differently named local
+world (`bogey-biome-world`) gets its own directory and baseline directory just by
+adding a section. `WORLD_SYNC_BASELINE_DIR` and `WORLD_SYNC_BASELINE_KEEP`
+override the location and retention for one invocation. The reset script reads
+`MINECRAFT_DATA_DIR` from `dev-server/.env`.
 
 Reset is the recovery path for a drifted development world. It supersedes the
 legacy M5-era `/golf dev preparecourse` rebuild, which is slated for removal.
@@ -180,9 +210,9 @@ everything players changed on the live server since the pull.
 
 ## Rollback
 
-- **Reset to baseline (fastest):** `world-sync.sh pull` banked the pre-development
-  state; `scripts/dev-server-reset.sh` restores it. This local rollback needs no
-  network and no live downtime.
+- **Reset to baseline (fastest):** `world-sync.sh pull <world>` banked the
+  pre-development state; `scripts/dev-server-reset.sh` restores it. This local
+  rollback needs no network and no live downtime.
 - **DigitalOcean snapshot:** create a new Volume from the pre-push snapshot,
   point `BIRDIE_BIOME_VOLUME_ID` at it, and restart. The old Volume is untouched
   until you delete it.
