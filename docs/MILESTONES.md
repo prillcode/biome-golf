@@ -1466,7 +1466,7 @@ Bedrock visual parity is claimed. See `docs/M10.3-PLAN.md`.
 
 ---
 
-# Backlog — Deferred Cleanup
+# Backlog — Deferred Work
 
 Deferred work that is not assigned to a milestone. Keep it short; delete entries when they ship.
 
@@ -1493,6 +1493,22 @@ Deprecate first, delete later:
 
 No structural blocker: `CourseBlockBreakGuard` exempts operators by permission level and
 only mentions `preparecourse` in a javadoc comment, and no test references the command.
+
+## New-world bootstrap for the local dev server
+
+Starting a world on a fresh seed is a convention, not a command: add a local-only section
+to `worlds.conf` (apcode-dev `minecraft/tools/worlds.conf`), point `dev-server/.env`
+`MINECRAFT_DATA_DIR` at a new directory, and let the server generate from `SEED`. A
+`dev-server-new-world.sh` should wrap that: create/validate the directory, register the
+world, and bank its baseline before any authoring.
+
+## Consume `GET /mc/servers` from the site
+
+`api.apcode.dev` exposes a public, read-only fleet summary (`GET /mc/servers`) with
+lifecycle state and no infrastructure identifiers. `apps/birdie-biome-site` is still a
+placeholder; a server-status widget is its intended consumer once it is scaffolded.
+
+Full handoff for both: `apcode-dev/docs/handoff-world-tooling-next.txt`.
 
 ---
 
