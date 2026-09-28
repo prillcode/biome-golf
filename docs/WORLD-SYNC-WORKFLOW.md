@@ -46,7 +46,7 @@ The transport helper lives with the production control plane (apcode-dev), not i
 this repo:
 
 ```text
-apcode-dev/apps/birdie-biome-server/scripts/world-sync.sh
+apcode-dev/minecraft/tools/world-sync.sh
 ```
 
 It drives the Droplet lifecycle through the apcode API (the same control plane as
@@ -69,6 +69,9 @@ registered in the worlds registry (below); an unregistered name is refused.
 ```bash
 # List registered worlds.
 world-sync.sh worlds
+
+# Validate the registry offline (no token, no network).
+world-sync.sh worlds --check
 
 # Show server state and the local copy.
 world-sync.sh status birdie-biome-world
@@ -93,7 +96,7 @@ Useful flags:
 
 | Flag            | Meaning                                                        |
 | --------------- | -------------------------------------------------------------- |
-| `--conf FILE`   | Worlds registry (default `../worlds.conf` beside the script)    |
+| `--conf FILE`   | Worlds registry (default `worlds.conf` beside the script)      |
 | `--full`        | Whole-world push instead of the course-scoped delta            |
 | `--no-snapshot` | Skip the pre-push DigitalOcean Volume snapshot                 |
 | `--stop-after`  | Stop the server when the command finishes                      |
@@ -102,15 +105,12 @@ Useful flags:
 ## The worlds registry
 
 World names resolve through `worlds.conf` in the apcode-dev repo
-(`apps/birdie-biome-server/worlds.conf`), which maps a name to its local
-directory and, for a live world, to its server:
+(`minecraft/tools/worlds.conf`), which maps a name to its local directory and,
+for a live world, its server:
 
 ```ini
 [birdie-biome-world]
 server = birdie-biome
-container = birdie-biome-server
-volume = birdie-biome-data
-remote_data = /mnt/birdie-biome-data
 ```
 
 - `dir` and `baselines` are optional; they default to `$WORLDS_ROOT/<world>` and
@@ -118,6 +118,11 @@ remote_data = /mnt/birdie-biome-data
 - A section with **no `server`** is a **local-only world**: `baseline` and
   `status` work, while `pull` and `push` refuse. That is how a new course project
   on a fresh seed stays independent of the live server.
+- A live world's container, Volume, and remote world root are read from the
+  control plane (`GET /mc/server-status`), which owns them. Setting the
+  `container`, `volume`, or `remote_data` keys in a section pins them explicitly
+  instead.
+- `world-sync.sh worlds --check` validates the registry offline and is run in CI.
 - Adding a second live world means adding a section; nothing else is hardcoded.
 | `--full`            | Replace the whole world (`rsync --delete`) instead of delta   |
 | `--no-snapshot`     | Skip the pre-push DigitalOcean Volume snapshot                |
