@@ -12,7 +12,9 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.ball.PhysicsConfig;
 import pro.apdev.biomegolf.ball.ShotPhysicsProfile;
+import pro.apdev.biomegolf.club.BallLie;
 import pro.apdev.biomegolf.club.ClubDefinition;
+import pro.apdev.biomegolf.club.LieRules;
 import pro.apdev.biomegolf.club.ShotResolver;
 import pro.apdev.biomegolf.club.ShotType;
 import pro.apdev.biomegolf.entity.GolfBallEntity;
@@ -20,6 +22,7 @@ import pro.apdev.biomegolf.golf.Vec3;
 import pro.apdev.biomegolf.item.GolfItems;
 import pro.apdev.biomegolf.server.ActiveHoleService;
 import pro.apdev.biomegolf.server.ActiveHoleService.ShotPermission;
+import pro.apdev.biomegolf.server.PracticeRangeService;
 import pro.apdev.biomegolf.server.VisitorService;
 import pro.apdev.biomegolf.surface.SurfaceDefinition;
 
@@ -94,8 +97,15 @@ public final class ShotService {
 		// already be client-clamped but must never be trusted raw.
 		double p = ShotResolver.legalPower(power);
 		double a = ShotResolver.legalAccuracy(accuracy);
+
+		// Lie context (M8.12): a Driver away from any tee loses its tee-only flight.
+		BallLie lie = resolveLie(player, ball, level);
+		ShotPhysicsProfile profile = shotType.profile(club);
+		if (LieRules.penalizes(club, lie)) {
+			profile = LieRules.applyTo(profile, lie);
+		}
 		Vec3 velocity = ShotResolver.initialVelocity(club, aimYawDeg, aimPitchDeg, p, a, maxSpeed,
-			shotType.profile(club));
+			profile, LieRules.accuracySpread(lie));
 		if (velocity == null) {
 			return ShotOutcome.AIM_NOT_LEGAL;
 		}
@@ -108,13 +118,41 @@ public final class ShotService {
 		Vec3 shotOrigin = ball.ballState() == null
 				? new Vec3(ball.position().x, ball.position().y, ball.position().z)
 				: ball.ballState().position();
-		ball.launch(velocity, shotType.profile(club));
+		ball.launch(velocity, profile);
 		if (holePermission == ShotPermission.SCORING) {
 			ActiveHoleService.instance().recordAcceptedShot(player, ball, shotOrigin);
 		}
-		MinecraftGolf.LOGGER.info("{} shot via {} power={} acc={} (wind-free) launched v={}",
-				player.getName().getString(), club.id() + "/" + shotType, p, a, velocity);
+		MinecraftGolf.LOGGER.info("{} shot via {} power={} acc={} lie={} (wind-free) launched v={}",
+				player.getName().getString(), club.id() + "/" + shotType, p, a, lie, velocity);
 		return ShotOutcome.SUCCESS;
+	}
+
+	/**
+	 * Derives the authoritative lie from the ball's resting position against the
+	 * player's active-hole tee and the practice-range tee in the same dimension. An
+	 * unknown context yields {@link BallLie#TEE}, so the deck penalty is never applied
+	 * without a tee reference.
+	 */
+	public static BallLie resolveLie(ServerPlayer player, GolfBallEntity ball, ServerLevel level) {
+		Vec3 position = ballPosition(ball);
+		String dimensionId = level.dimension().identifier().toString();
+		java.util.List<Vec3> anchors = new java.util.ArrayList<>(2);
+		ActiveHoleService.instance().state(player.getUUID())
+			.map(state -> state.hole())
+			.filter(hole -> dimensionId.equals(hole.dimension()))
+			.ifPresent(hole -> anchors.add(hole.tee()));
+		PracticeRangeService.Location practiceTee = PracticeRangeService.instance().tee();
+		if (practiceTee != null && dimensionId.equals(practiceTee.dimension())) {
+			anchors.add(practiceTee.position());
+		}
+		return LieRules.classify(position, anchors);
+	}
+
+	static Vec3 ballPosition(GolfBallEntity ball) {
+		if (ball.ballState() != null) {
+			return ball.ballState().position();
+		}
+		return new Vec3(ball.position().x, ball.position().y, ball.position().z);
 	}
 
 	/**

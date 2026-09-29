@@ -23,6 +23,18 @@ public record ShotPhysicsProfile(
 		this(1.0, 1.0, landingHorizontalRetention, rollingFrictionMultiplier);
 	}
 
+	/**
+	 * Returns a copy with the launch components scaled by the given multipliers,
+	 * leaving landing and rolling behavior intact. Used by lie context (M8.12).
+	 */
+	public ShotPhysicsProfile withLaunchScaled(double horizontal, double vertical) {
+		return new ShotPhysicsProfile(
+			launchHorizontalMultiplier * horizontal,
+			launchVerticalMultiplier * vertical,
+			landingHorizontalRetention,
+			rollingFrictionMultiplier);
+	}
+
 	public ShotPhysicsProfile {
 		if (launchHorizontalMultiplier <= 0.0 || launchVerticalMultiplier <= 0.0) {
 			throw new IllegalArgumentException("launch multipliers must be > 0");

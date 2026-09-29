@@ -36,6 +36,7 @@ import pro.apdev.biomegolf.course.CourseDefinition;
 import pro.apdev.biomegolf.course.CourseScorecard;
 import pro.apdev.biomegolf.course.HoleScore;
 import pro.apdev.biomegolf.course.PlayerCourseState;
+import pro.apdev.biomegolf.club.BallLie;
 import pro.apdev.biomegolf.club.ClubDefinition;
 import pro.apdev.biomegolf.club.GolfClubs;
 import pro.apdev.biomegolf.entity.GolfBallEntities;
@@ -57,6 +58,7 @@ import pro.apdev.biomegolf.net.HoleStateNetworking;
 import pro.apdev.biomegolf.net.HoleStatePayload;
 import pro.apdev.biomegolf.net.RoundScorecardNetworking;
 import pro.apdev.biomegolf.net.RoundScorecardPayload;
+import pro.apdev.biomegolf.net.ShotService;
 import pro.apdev.biomegolf.net.CourseListPayload;
 import pro.apdev.biomegolf.net.LobbyStatePayload;
 import pro.apdev.biomegolf.round.ParticipantStatus;
@@ -1955,8 +1957,10 @@ public final class ActiveHoleService {
 	private void sendPracticeShotProgress(GolfBallEntity ball) {
 		ServerPlayer player = ball.level().getServer().getPlayerList().getPlayer(ball.owner());
 		if (player != null) {
+			BallLie lie = ShotService.resolveLie(player, ball, (ServerLevel) player.level());
 			sendSnapshot(player,
-				HoleStatePayload.noCourse().withShotDistanceBlocks(ball.shotDistanceBlocks()));
+				HoleStatePayload.noCourse().withShotDistanceBlocks(ball.shotDistanceBlocks())
+					.withLie(lie));
 		}
 	}
 

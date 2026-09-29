@@ -22,6 +22,19 @@ class ShotPhysicsProfileTest {
 	}
 
 	@Test
+	void launchScalingAdjustsOnlyLaunchComponents() {
+		ShotPhysicsProfile scaled = ShotPhysicsProfile.CHIP.withLaunchScaled(0.5, 0.25);
+		assertEquals(ShotPhysicsProfile.CHIP.launchHorizontalMultiplier() * 0.5,
+			scaled.launchHorizontalMultiplier(), 1.0E-9);
+		assertEquals(ShotPhysicsProfile.CHIP.launchVerticalMultiplier() * 0.25,
+			scaled.launchVerticalMultiplier(), 1.0E-9);
+		assertEquals(ShotPhysicsProfile.CHIP.landingHorizontalRetention(),
+			scaled.landingHorizontalRetention(), 1.0E-9);
+		assertEquals(ShotPhysicsProfile.CHIP.rollingFrictionMultiplier(),
+			scaled.rollingFrictionMultiplier(), 1.0E-9);
+	}
+
+	@Test
 	void alternateProfilesHaveDistinctLaunchAndRollContracts() {
 		assertTrue(ShotPhysicsProfile.CHIP.launchVerticalMultiplier() < 1.0);
 		assertTrue(ShotPhysicsProfile.STINGER.launchVerticalMultiplier() < 1.0);

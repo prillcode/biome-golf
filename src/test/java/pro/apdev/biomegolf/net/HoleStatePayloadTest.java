@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import pro.apdev.biomegolf.club.BallLie;
 import pro.apdev.biomegolf.golf.Vec3;
 import pro.apdev.biomegolf.hole.GolfScoreTerm;
 import pro.apdev.biomegolf.hole.HoleBoundary;
@@ -29,7 +30,7 @@ class HoleStatePayloadTest {
 	@Test
 	void practiceSnapshot_hasCorrectPhaseAndHoleMetadata() {
 		HoleStatePayload p = HoleStatePayload.practice(PAR_FOUR);
-		assertEquals("minecraft_golf:hole_state_v6", p.type().id().toString());
+		assertEquals("minecraft_golf:hole_state_v7", p.type().id().toString());
 		assertEquals(Phase.PRACTICE, p.phase());
 		assertEquals(1, p.holeNumber());
 		assertEquals(4, p.par());
@@ -225,5 +226,25 @@ class HoleStatePayloadTest {
 		HoleStatePayload p = HoleStatePayload.practice(PAR_FOUR);
 		assertNull(p.completionReason());
 		assertNull(p.scoreTerm());
+	}
+
+	@Test
+	void activeSnapshot_classifiesTeeAndDeckLiesFromBallPosition() {
+		PlayerHoleState state = PlayerHoleState.start(PAR_FOUR);
+		assertEquals(BallLie.TEE,
+			HoleStatePayload.active(state, new Vec3(10.0, 64.0, 10.0)).lie());
+		assertEquals(BallLie.DECK,
+			HoleStatePayload.active(state, new Vec3(50.0, 64.0, 50.0)).lie());
+	}
+
+	@Test
+	void lieIsPreservedAcrossDisplayProjections() {
+		HoleStatePayload deck = HoleStatePayload
+			.active(PlayerHoleState.start(PAR_FOUR), new Vec3(50.0, 64.0, 50.0))
+			.withShotDistanceBlocks(12)
+			.withCourseTotals(3, 4, 12)
+			.withTapInAvailable(false);
+		assertEquals(BallLie.DECK, deck.lie());
+		assertEquals(BallLie.TEE, deck.withLie(BallLie.TEE).lie());
 	}
 }

@@ -29,9 +29,11 @@ import pro.apdev.biomegolf.ball.ShotPhysicsProfile;
  *       launch angle is kept regardless of power, a gentle chip keeps its club's
  *       trajectory shape but travels a shorter distance.</li>
  *   <li>{@code accuracy} (0..1, 0.5 = perfect) produces a lateral left/right
- *       deviation of the aim direction. Miss magnitude |2a−1| (0..1) maps to an
- *       angular fan; the spread is tighter for higher {@code accuracySensitivity}
- *       clubs so precise/accurate clubs are less forgiving to a careless click.</li>
+ *       deviation of the aim direction. The miss magnitude {@code |2a−1|} is remapped
+ *       so any click within {@link SwingMeter#PERFECT_BAND} of centre deviates by
+ *       exactly zero, and a full miss still reaches the full fan; the spread is
+ *       tighter for higher {@code accuracySensitivity} clubs so precise/accurate
+ *       clubs are less forgiving to a careless click.</li>
  * </ul></p>
  */
 public final class ShotResolver {
@@ -68,6 +70,18 @@ public final class ShotResolver {
 	public static Vec3 initialVelocity(
 			ClubDefinition club, double aimYawDegrees, double aimPitchDegrees,
 			double power, double accuracy, double maxSpeed, ShotPhysicsProfile profile) {
+		return initialVelocity(club, aimYawDegrees, aimPitchDegrees, power, accuracy,
+			maxSpeed, profile, 1.0);
+	}
+
+	/**
+	 * Resolves a shot with an extra accuracy-spread multiplier on top of the club's
+	 * own forgiveness (used by lie context; {@code 1.0} is neutral).
+	 */
+	public static Vec3 initialVelocity(
+			ClubDefinition club, double aimYawDegrees, double aimPitchDegrees,
+			double power, double accuracy, double maxSpeed, ShotPhysicsProfile profile,
+			double accuracySpreadMultiplier) {
 		if (aimPitchDegrees > 45.0) {
 			return null;
 		}
@@ -84,11 +98,14 @@ public final class ShotResolver {
 			up *= clampScale;
 		}
 
-		// Lateral angular deviation from the accuracy click. miss magnitude 0..1,
-		// 0 = perfect (2a-1 == 0). Full-miss fan is scaled by club forgiveness:
-		// higher accuracySensitivity (tight clubs like the putter) => tighter fan.
-		double miss = Math.abs(2.0 * accuracy - 1.0);
-		double devDeg = miss * FULL_MISS_FAN_DEG / (1.0 + club.accuracySensitivity());
+		// Lateral angular deviation from the accuracy click. The shared perfect band
+		// (the same value the HUD draws as the green zone) maps to exactly zero
+		// deviation; the remaining spread is remapped so a full miss still reaches the
+		// full fan. Higher accuracySensitivity (tight clubs like the putter) => tighter
+		// fan; a lie may widen it further.
+		double miss = SwingMeter.missMagnitude(accuracy);
+		double spread = accuracySpreadMultiplier > 0.0 ? accuracySpreadMultiplier : 1.0;
+		double devDeg = miss * FULL_MISS_FAN_DEG * spread / (1.0 + club.accuracySensitivity());
 		int side = (accuracy < PERFECT_ACCURACY) ? -1 : 1; // left/right
 		double yaw = Math.toRadians(aimYawDegrees + side * devDeg);
 

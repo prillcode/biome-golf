@@ -65,9 +65,36 @@ class ShotMeterTest {
 		assertTrue(left.x() > 0.0, "accuracy 0.2 should drift left (+X): " + left.x());
 		assertTrue(right.x() < 0.0, "accuracy 0.8 should drift right (-X): " + right.x());
 		// A full miss fans further than a gentle miss.
-		Vec3 nearPerfect = resolve(GolfClubs.DRIVER, 1.0, 0.49);
+		Vec3 nearPerfect = resolve(GolfClubs.DRIVER, 1.0, 0.56);
 		assertTrue(Math.abs(left.x()) > Math.abs(nearPerfect.x()),
 				"full miss fans more than a tiny miss");
+	}
+
+	@Test
+	void perfectBandProducesZeroDeviationForEveryClub() {
+		double band = SwingMeter.PERFECT_BAND;
+		for (ClubDefinition club : GolfClubs.ALL) {
+			assertEquals(0.0, resolve(club, 1.0, 0.5).x(), TOL,
+				club.id() + " centre must be exactly straight");
+			assertEquals(0.0, resolve(club, 1.0, 0.5 - band).x(), TOL,
+				club.id() + " inside band must be straight");
+			assertEquals(0.0, resolve(club, 1.0, 0.5 + band).x(), TOL,
+				club.id() + " inside band must be straight");
+		}
+	}
+
+	@Test
+	void missOutsideBandFansAndFullMissFanIsUnchanged() {
+		double band = SwingMeter.PERFECT_BAND;
+		Vec3 justOutside = resolve(GolfClubs.DRIVER, 1.0, 0.5 + band + 0.02);
+		assertTrue(justOutside.x() < 0.0, "a click outside the band should fan right");
+
+		Vec3 fullMiss = resolve(GolfClubs.DRIVER, 1.0, 0.0);
+		double expectedDeg = ShotResolver.FULL_MISS_FAN_DEG
+			/ (1.0 + GolfClubs.DRIVER.accuracySensitivity());
+		double actualDeg = Math.abs(Math.toDegrees(Math.atan2(fullMiss.x(), fullMiss.z())));
+		assertEquals(expectedDeg, actualDeg, 1e-6,
+			"the band remap must preserve the existing full-miss fan");
 	}
 
 	@Test

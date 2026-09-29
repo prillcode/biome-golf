@@ -4,6 +4,8 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
+import pro.apdev.biomegolf.club.SwingMeter;
+
 /** Lightweight M3 HUD for club, ball distance, meters, and swing state. */
 public final class SwingHud {
 
@@ -73,11 +75,12 @@ public final class SwingHud {
 
 	private static void drawAccuracyBar(GuiGraphicsExtractor graphics, int x, int y, float value) {
 		graphics.fill(x, y, x + BAR_WIDTH, y + BAR_HEIGHT, TRACK);
-		int perfectWidth = 14;
+		// Draw the zone from the same band the resolver treats as zero-deviation.
+		int perfectWidth = (int) Math.round(BAR_WIDTH * 2 * SwingMeter.PERFECT_BAND);
 		int center = x + BAR_WIDTH / 2;
 		graphics.fill(center - perfectWidth / 2, y, center + perfectWidth / 2, y + BAR_HEIGHT, PERFECT);
-		int marker = x + Math.round((BAR_WIDTH - 1) * clamp01(value));
-		graphics.fill(marker - 1, y - 2, marker + 2, y + BAR_HEIGHT + 2, ACCURACY);
+		int markerCenter = x + Math.round(BAR_WIDTH * clamp01(value));
+		graphics.fill(markerCenter - 1, y - 2, markerCenter + 2, y + BAR_HEIGHT + 2, ACCURACY);
 		outline(graphics, x, y, BAR_WIDTH, BAR_HEIGHT, BORDER);
 	}
 

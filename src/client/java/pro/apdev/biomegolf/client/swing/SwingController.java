@@ -14,18 +14,21 @@ import net.minecraft.world.phys.AABB;
 
 import pro.apdev.biomegolf.client.camera.PostShotCamera;
 import pro.apdev.biomegolf.client.DistanceDisplayState;
+import pro.apdev.biomegolf.client.hole.HoleHudState;
+import pro.apdev.biomegolf.club.BallLie;
 import pro.apdev.biomegolf.club.ClubDefinition;
+import pro.apdev.biomegolf.club.LieRules;
 import pro.apdev.biomegolf.club.ShotType;
+import pro.apdev.biomegolf.club.SwingMeter;
 import pro.apdev.biomegolf.entity.GolfBallEntity;
 import pro.apdev.biomegolf.item.GolfItems;
+import pro.apdev.biomegolf.net.HoleStatePayload;
 import pro.apdev.biomegolf.net.ShotRequestPayload;
 
 /** Client-local three-click swing state. The server receives only final intent. */
 public final class SwingController {
 
 	private static final double MAX_STRIKE_DISTANCE_SQ = 6.0 * 6.0;
-	private static final int POWER_HALF_SWEEP_TICKS = 24; // 1.2 seconds, 0 -> 100%
-	private static final int ACCURACY_HALF_SWEEP_TICKS = 15;
 	private static final int SENT_DISPLAY_TICKS = 30;
 	private static final int NOTICE_DISPLAY_TICKS = 40;
 
@@ -104,7 +107,7 @@ public final class SwingController {
 					cancel("Swing cancelled: ball or club changed");
 					return;
 				}
-				lockedPower = meterValue(phaseTicks, POWER_HALF_SWEEP_TICKS);
+				lockedPower = SwingMeter.value(phaseTicks, SwingMeter.POWER_HALF_SWEEP_TICKS);
 				phase = Phase.ACCURACY;
 				phaseTicks = 0;
 			}
@@ -136,7 +139,7 @@ public final class SwingController {
 	}
 
 	private void sendShot(Minecraft client) {
-		lockedAccuracy = meterValue(phaseTicks, ACCURACY_HALF_SWEEP_TICKS);
+		lockedAccuracy = SwingMeter.value(phaseTicks, SwingMeter.ACCURACY_HALF_SWEEP_TICKS);
 		ShotRequestPayload payload = new ShotRequestPayload(
 				targetBall.getId(),
 				client.player.getYRot(),
@@ -196,13 +199,6 @@ public final class SwingController {
 		return GolfItems.clubOf(player.getMainHandItem());
 	}
 
-	private static float meterValue(int ticks, int halfSweepTicks) {
-		int period = halfSweepTicks * 2;
-		int within = Math.floorMod(ticks, period);
-		float rising = (float) within / halfSweepTicks;
-		return rising <= 1.0f ? rising : 2.0f - rising;
-	}
-
 	private void cancel(String message) {
 		resetSwing();
 		showNotice(message);
@@ -252,30 +248,38 @@ public final class SwingController {
 
 	public float power() {
 		return phase == Phase.POWER
-				? meterValue(phaseTicks, POWER_HALF_SWEEP_TICKS)
+				? SwingMeter.value(phaseTicks, SwingMeter.POWER_HALF_SWEEP_TICKS)
 				: lockedPower;
 	}
 
 	public float accuracy() {
 		return phase == Phase.ACCURACY
-				? meterValue(phaseTicks, ACCURACY_HALF_SWEEP_TICKS)
+				? SwingMeter.value(phaseTicks, SwingMeter.ACCURACY_HALF_SWEEP_TICKS)
 				: lockedAccuracy;
 	}
 
 	public String clubName(LocalPlayer player) {
 		ClubDefinition held = heldClub(player);
-		return held == null
-				? ""
-				: String.format(Locale.ROOT, "%s  %.0f°",
-						held.displayName(), held.displayLoftDegrees());
+		if (held == null) {
+			return "";
+		}
+		String label = LieRules.penalizes(held, lie()) ? held.displayName() + " (deck)" : held.displayName();
+		return String.format(Locale.ROOT, "%s  %.0f°", label, held.displayLoftDegrees());
 	}
 
 	public String distanceText(LocalPlayer player) {
 		ClubDefinition held = heldClub(player);
-		return held == null
-				? ""
-				: "~" + DistanceDisplayState.format(held.nominalCarry())
-						+ (held.putting() ? " roll" : "");
+		if (held == null) {
+			return "";
+		}
+		double carry = held.nominalCarry() * LieRules.displayCarryFactor(held, lie());
+		return "~" + DistanceDisplayState.format(carry) + (held.putting() ? " roll" : "");
+	}
+
+	/** Display-safe lie from the last authoritative snapshot; neutral before one arrives. */
+	public BallLie lie() {
+		HoleStatePayload state = HoleHudState.get();
+		return state == null ? BallLie.TEE : state.lie();
 	}
 
 	public String stateText() {
