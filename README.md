@@ -20,7 +20,13 @@ The public-facing mod name is **Biome Golf**. Its mod id remains `minecraft_golf
 Java package is `pro.apdev.biomegolf`. A public server running it **MUST**
 have its own identity, distinct from the mod name, and credit the mod as the source of its
 golf functionality—for example,
-“Golf course building and round play powered by Biome Golf (`minecraft_golf`).” See the
+“Golf course building and round play powered by Biome Golf (`minecraft_golf`).”
+
+The project uses the [Biome Golf Custom License](LICENSE), not the standard MIT License.
+Forks and other derivative works may use and modify the code, but if publicly published
+or distributed they **MUST** use a distinct name and branding and **MUST NOT** present
+themselves as Biome Golf or as official, endorsed, or supported by this project. Factual
+upstream attribution is allowed; see the license for the full terms. See the
 [changelog](CHANGELOG.md) for release history and [release guide](docs/RELEASING.md)
 for publishing details.
 
@@ -87,4 +93,6 @@ Docker server verification, then manual gameplay checks where applicable. See
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+Biome Golf Custom License, Version 1.0 — see [`LICENSE`](LICENSE). This custom license
+permits use, modification, and distribution of the code subject to its attribution and
+name/branding conditions; it is not the standard MIT License.

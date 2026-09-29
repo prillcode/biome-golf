@@ -1,21 +1,45 @@
-MIT License
+Biome Golf Custom License, Version 1.0
 
 Copyright (c) 2026 prillcode
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Definitions
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+"Software" means the source code and other materials in this repository that are
+identified as being provided under this License.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+"Derivative Work" means a work based on or incorporating all or part of the Software,
+including a modified version or fork.
+
+"Biome Golf Name" means the name "Biome Golf" and any name, mark, logo, or branding
+that is confusingly similar to it.
+
+2. Copyright License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the
+Software, to use, reproduce, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software and Derivative Works, subject to the conditions in this License.
+
+You must include this copyright notice and this License in all copies or substantial
+portions of the Software.
+
+3. Name and Branding Restriction
+
+If you publish, distribute, or publicly offer a Derivative Work, you MUST give it a
+name and branding distinct from the Biome Golf Name. You MUST NOT use the Biome Golf
+Name as, or as part of, the Derivative Work's name, title, mod display name, project or
+listing name, logo, or other branding. You MUST NOT suggest that a Derivative Work is
+official, endorsed, or supported by the Biome Golf project.
+
+This restriction does not prohibit accurate, non-promotional factual statements that
+identify Biome Golf as the source of the original Software, such as "A fork of Biome
+Golf" in a credits or attribution section, provided that the Derivative Work itself is
+clearly identified by its own distinct name and the statement does not imply endorsement.
+
+4. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
