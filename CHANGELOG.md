@@ -9,6 +9,27 @@ and uses [Semantic Versioning](https://semver.org/).
 
 Changes made after the latest release will be recorded here.
 
+## [0.8.5] - 2026-09-29
+
+### Added
+
+- **Off-tee Driver discipline.** A Driver hit from anywhere other than a tee box now
+  launches lower and travels shorter — roughly three quarters of a teed drive's distance
+  — with a slightly wider accuracy spread. This closes the "driver off the deck" exploit
+  that let long par 5s be reached with a free full-power fairway bomb. The tee remains the
+  only place the Driver reaches its full carry, and the swing HUD shows a `(deck)` label
+  with the reduced estimated distance so the shorter shot is never mistaken for a bug.
+  Fairway woods, irons, wedges, and the putter are unchanged. (PRD §12 lie behavior,
+  bounded to tee vs. deck.)
+
+### Fixed
+
+- The three-click accuracy meter can now land exactly in the middle. The meter used an
+  odd half-sweep, so the perfect value `0.5` was never sampled and even a visually
+  perfect click always carried a small left/right deviation. The meter now samples the
+  centre exactly, and any click inside the drawn perfect zone (the same band the shot
+  resolver uses) produces zero deviation. Power timing and off-zone misses are unchanged.
+
 ## [0.8.1] - 2026-09-27
 
 ### Changed
@@ -360,7 +381,8 @@ Changes made after the latest release will be recorded here.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/prillcode/biome-golf/compare/v0.8.1...v0.8.5
 [0.8.1]: https://github.com/prillcode/biome-golf/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/prillcode/biome-golf/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/prillcode/biome-golf/compare/v0.7.0...v0.7.1
