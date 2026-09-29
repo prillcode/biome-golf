@@ -147,6 +147,8 @@ The host operating system should not affect the Fabric server architecture.
 | M8.8 | Distance Display Units | Complete (see docs/M8.8-CLOSEOUT.md) |
 | M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
+| M8.11 | Swing Meter Precision | Implemented in 0.8.5; manual playtest pending (see docs/M8.11-CLOSEOUT.md) |
+| M8.12 | Off-Tee Driver Discipline | Implemented in 0.8.5; manual playtest pending (see docs/M8.12-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
 | M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then play shelved and repurposed as Bedrock visitor mode (2026-09)**; client-light clients watch (`/golf spectator`) or join the world (`/golf spectator leave`) and are invited to Java (see docs/BEDROCK-VISITOR-MODE-PLAN.md). |
@@ -1383,6 +1385,44 @@ Use the final success criteria and full verification ladder in `docs/M8.10-PLAN.
 
 ---
 
+# M8.11 — Swing Meter Precision
+
+## Status
+
+Implemented in 0.8.5. See `docs/M8.11-CLOSEOUT.md`. Small, independently shipped
+bug-fix milestone.
+
+## Goal
+
+Make the three-click accuracy meter's perfect value exactly reachable and make the drawn
+perfect zone agree with the resolver, so a dead-center click produces zero deviation and a
+click inside the green zone flies straight.
+
+## Exit Criteria
+
+Use the final success criteria and full verification ladder in `docs/M8.11-PLAN.md`.
+
+---
+
+# M8.12 — Off-Tee Driver Discipline (Lie-Aware Shot Context)
+
+## Status
+
+Implemented in 0.8.5. See `docs/M8.12-CLOSEOUT.md`. Playtest-gated magnitudes.
+
+## Goal
+
+Introduce a bounded, server-authoritative lie context so a Driver hit from anywhere other
+than a tee box launches lower and travels shorter, closing the driver-off-the-deck par-5
+exploit while leaving the choice legal and leaving the full rough/bunker lie system
+(PRD §12) deferred.
+
+## Exit Criteria
+
+Use the final success criteria and full verification ladder in `docs/M8.12-PLAN.md`.
+
+---
+
 # M9 — Additional Game Modes
 
 ## Status
@@ -1561,3 +1601,10 @@ remaining blockers are feel rather than visuals, so Bedrock is **shelved again**
 Java client is the supported target, development is returning to the Java experience, and the
 remaining client-light/Bedrock code is gated, unsupported, and not pursued further. See
 `docs/M10.3-CLOSEOUT.md`.
+
+**M8.11 (Swing Meter Precision)** and **M8.12 (Off-Tee Driver Discipline)** are implemented
+and shipped in **0.8.5**: the accuracy meter now samples its perfect centre exactly and the
+drawn zone matches the resolver, and a Driver away from a tee launches lower and shorter
+with a `(deck)` HUD label. Automated tests, Loom client, Docker dedicated server, and the
+installed-client deployment all pass; the remaining manual boundary is meter feel and a
+real par-5 tee-vs-deck playtest. See `docs/M8.11-CLOSEOUT.md` and `docs/M8.12-CLOSEOUT.md`.
