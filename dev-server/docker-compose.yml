@@ -21,6 +21,11 @@ services:
       DIFFICULTY: peaceful
       ONLINE_MODE: "true"
       MOTD: "${MINECRAFT_MOTD:-Biome Golf dev server}"
+      # Operators. Parameterised so this shared compose file does not grant ops in
+      # production: an empty value is a MERGE no-op that keeps existing ops.json
+      # entries (verified against mc-image-helper 1.67.2). Dev value lives in the
+      # gitignored dev-server/.env.
+      OPS: "${MINECRAFT_OPS:-}"
       MODRINTH_PROJECTS: "fabric-api:0.160.0+26.2"
       RCON_CMDS_STARTUP: |-
         time set day
