@@ -19,6 +19,14 @@ class VisitorTextTest {
 	}
 
 	@Test
+	void welcomeTellsJavaPlayersToInstallOrUpdateRatherThanClaimingJavaOnly() {
+		List<String> lines = VisitorText.welcome();
+
+		assertTrue(lines.stream().anyMatch(line -> line.contains("install or update")));
+		assertFalse(lines.stream().anyMatch(line -> line.contains("golf is Java-only")));
+	}
+
+	@Test
 	void welcomeDoesNotCarryThePromoAddress() {
 		List<String> lines = VisitorText.welcome();
 

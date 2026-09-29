@@ -82,9 +82,14 @@ public final class VisitorService {
 		return BallCameraService.isClientLight(player);
 	}
 
-	/** Feedback when a visitor tries a golf command. */
+	/**
+	 * Feedback when a visitor tries a golf action. Deliberately covers both a genuine
+	 * vanilla/Bedrock client and a <em>Java client running an older mod version</em>, which
+	 * fails the same {@code !canSend(HoleStatePayload)} check and would otherwise be told,
+	 * misleadingly, to "join on Java".
+	 */
 	public static String playRejection() {
-		return "[golf] golf is Java-only — join on Java to play golf (build and explore freely here)";
+		return "[golf] golf needs the Biome Golf Java mod matching this server's version — install or update it to play (build and explore freely here)";
 	}
 
 	/** Puts a joining visitor into survival/peaceful and sends the one-time welcome. */

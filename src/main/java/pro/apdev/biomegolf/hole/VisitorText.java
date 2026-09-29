@@ -17,7 +17,8 @@ public final class VisitorText {
 	/** One-time welcome shown on join (visitors join in survival/peaceful by default). */
 	public static List<String> welcome() {
 		List<String> lines = new ArrayList<>();
-		lines.add("[golf] Welcome to BirdieBiome! Golf is a Java mod experience; you can build and explore here, but golf itself is on Java.");
+		lines.add("[golf] Welcome to BirdieBiome! Golf needs the Biome Golf mod on this server's "
+			+ "version — Java players, install or update it; vanilla or Bedrock clients can build and explore freely here.");
 		lines.add("[golf] You spawn inside protected golf course bounds — travel off golf course property to break or build.");
 		lines.add("[golf] Watch a round: /golf spectator.");
 		return lines;

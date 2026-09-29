@@ -24,6 +24,10 @@ Changes made after the latest release will be recorded here.
 
 ### Fixed
 
+- Visitor messaging no longer implies a Java player is on Bedrock. A Java client running an
+  older Biome Golf version fails the same client-light check as a vanilla/Bedrock client, so
+  the welcome and the golf-action rejection now say to install or update the mod for the
+  server's version instead of telling the player to "join on Java".
 - The three-click accuracy meter can now land exactly in the middle. The meter used an
   odd half-sweep, so the perfect value `0.5` was never sampled and even a visually
   perfect click always carried a small left/right deviation. The meter now samples the
