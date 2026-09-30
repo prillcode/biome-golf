@@ -10,30 +10,29 @@ and uses [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Added server-owned player modes: `/golf mode golf|world|status` and `/golf mode build`
-  for operators. `/golf mode build` switches to Builder mode and lists editable courses;
-  `/golf builder course <id>` selects one, including perimeter-backed drafts so a new
-  course can be built before finalizing its holes. Golf mode grants Creative-style flight
-  and damage protection while keeping the normal Survival inventory; World mode is
-  ordinary Survival; Builder mode uses an isolated, replenishable palette. Mode choice
-  is remembered across reconnects and supported newcomers default to Golf.
-- Added the operator-editable `config/minecraft_golf/builder_palette.json` allowlist,
-  with `/golf builder palette reload` and `/golf builder restock`. An active Builder may
-  edit only inside their selected course perimeter — including a locked one — and may
-  place only currently-supplied palette items. Builder items cannot be exported: drops
-  are cancelled, container and entity interactions are refused, and anything picked up
-  outside the palette is removed.
+  for operators, plus `/golf builder course <id> | restock | palette reload`. Golf mode
+  grants Creative-style flight and damage protection while keeping the normal Survival
+  inventory; World mode is ordinary Survival. Mode choice is remembered across
+  reconnects and supported newcomers default to Golf.
+- **Builder mode is true Creative for operators** (approved pivot): instant breaking
+  and placing, flight, and the full item catalogue, so course design is as fast as
+  pre-mod creative building with none of the empty-hand or scope juggling. The curated
+  `config/minecraft_golf/builder_palette.json` allowlist fills the inventory as a
+  **palette starter kit** on entry and via `/golf builder restock` — one of each
+  configured block plus the Driver-through-Wedge club set — and `/golf builder palette
+  reload` redefines the kit (unknown, non-placeable, or unsafe items retain the last
+  valid palette). Creative items intentionally carry into World play on a trusted
+  server; visitors never receive Builder and the authored landscape still protects
+  courses, with a locked perimeter denying even the Builder.
 - Expanded the default Builder palette to 30 landscaping blocks (sand, soil, gravel,
   common stone, logs, leaves, saplings, azalea bushes, grass, ferns, and flowers) plus
-  the pale-oak fence/button marker items. The loadout gives one of each item and
-  auto-refills used materials every second, so Builder materials effectively never run
-  out while staying scoped to the selected course and the curated allowlist.
-- Builder mode now carries the Driver through Wedge clubs (the putter is omitted to fit
-  the 36 inventory slots) so you can drop a practice ball and play-test your design as
-  you build, using the full practice-ball Driver flight from any position.
-- While in Builder mode, right-click with an empty hand to instantly erase the clicked
-  block inside your selected course perimeter — no drops, no item export. This restores
-  one-click terrain clearing without Creative; the cup/flag assembly stays
-  command-managed and unbreakable blocks are untouched.
+  the pale-oak fence/button marker items.
+- Builder mode carries the Driver through Wedge clubs (the putter is omitted to fit the
+  36 inventory slots) so you can drop a practice ball and play-test your design as you
+  build, using the full practice-ball Driver flight from any position.
+- The earlier isolated Builder (palette-only inventory, perimeter-scoped edits, item
+  export blocks, one-click erase) is superseded by the Creative Builder above; legacy
+  World-inventory snapshots from that era are restored once and retired.
 
 ### Fixed
 

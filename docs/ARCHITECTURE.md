@@ -1628,15 +1628,21 @@ Player-mode selection is world-scoped and Minecraft-native:
 default: Golf for a supported newcomer
 ```
 
-World-inventory snapshots taken while a player is in Builder mode live at
-`<world>/data/minecraft_golf_builder_inventories/<uuid>.nbt`, so a server stop or
-reconnect never overwrites the saved World loadout with the Builder palette.
+Golf is Survival plus mayfly and invulnerable, sharing the normal inventory; World is
+plain Survival. Builder (operator-only) uses the **Creative game type**, so break/place
+speed, flight, and the item catalogue are native and no custom mutation guard runs for
+Builder edits. The curated builder palette is a server-global Fabric config at
+`config/minecraft_golf/builder_palette.json`: validated as a whole before adoption
+(unknown, non-placeable, or unsafe items retain the last valid palette), it defines the
+Builder **starter kit** — the Driver-through-Wedge club set plus one of each configured
+block — applied on Builder entry/reconnect and via `/golf builder restock`.
 
-The curated Builder material allowlist is a server-global Fabric config at
-`config/minecraft_golf/builder_palette.json`. It is validated as a whole before it
-replaces the active palette; unknown, non-placeable, or unsafe items retain the last
-valid palette. Palette membership grants material access, not arbitrary item
-components.
+Creative item crossover into World play is an explicit, approved operator decision for
+a trusted server (2026-10); the earlier isolation era that snapshotted World
+inventories to `<world>/data/minecraft_golf_builder_inventories/<uuid>.nbt` is retired,
+with legacy snapshots restored once on migration. The authored landscape perimeter
+(M8.10) still protects every course from everyone, including Creative operators when a
+perimeter is locked.
 
 Avoid one giant global configuration object.
 

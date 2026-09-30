@@ -151,7 +151,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.12 | Off-Tee Driver Discipline | Implemented in 0.8.5; manual playtest pending (see docs/M8.12-CLOSEOUT.md) |
 | M8.13 | HUD Visibility and Command Help | Implemented in 0.8.5; client restart/manual acceptance pending (see docs/M8.13-CLOSEOUT.md) |
 | M8.14 | Decked Driver Rollout | Implemented in 0.8.5; manual in-game flight confirmation pending (see docs/M8.14-CLOSEOUT.md) |
-| M8.15 | Golf, World, and Builder Player Modes | Implemented (flight-only Golf, draft/finalized Builder); verification and two-player acceptance pending (see docs/M8.15-PLAN.md) |
+| M8.15 | Golf, World, and Builder Player Modes | Implemented (flight-only Golf; Creative Builder with palette starter kit, approved 2026-10); verification and two-player acceptance pending (see docs/M8.15-PLAN.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
 | M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then play shelved and repurposed as Bedrock visitor mode (2026-09)**; client-light clients watch (`/golf spectator`) or join the world (`/golf spectator leave`) and are invited to Java (see docs/BEDROCK-VISITOR-MODE-PLAN.md). |
@@ -1495,41 +1495,47 @@ and installed-client deployment verification. Manual in-game feel is tracked sep
 
 ## Status
 
-Implemented (flight-only Golf per the resolved product decision). Builder can target a
-perimeter-backed draft or finalized course; only finalized courses are playable. Automated,
-Loom client/server, and Docker checks must be rerun for the draft-support change;
-authenticated two-player/mode-switch acceptance remains pending. See
-`docs/M8.15-PLAN.md` for the full contract.
+Implemented. Golf is flight-only (Survival plus mayfly and invulnerable, normal
+inventory) per the resolved product decision; World is ordinary Survival. Builder is
+**true Creative for operators** (approved pivot 2026-10): instant break/place, flight,
+and the full item catalogue, with the curated palette as an inventory starter kit (one
+of each configured block plus the Driver-through-Wedge club set) applied on entry and
+via `/golf builder restock`. The earlier isolation-based Builder (snapshot/restore,
+perimeter-scoped edits, export blocks, one-click erase) is superseded; legacy World
+snapshots are restored once and retired. `docs/M8.15-PLAN.md` records the full contract.
+Automated and Loom server checks pass; Docker and authenticated two-player/mode-switch
+acceptance remain pending.
 
 ## Goal
 
 Give supported Java players a server-owned Golf mode (flight and damage protection with
-the normal Survival inventory), an explicit World mode (ordinary Survival), and an
-operator-scoped Builder mode with a curated, replenishable material palette — without
-leaking free items or Creative privileges into Survival play.
+the normal Survival inventory), an explicit World mode (ordinary Survival), and a
+fast operator Creative Builder whose curated palette defines the starting inventory —
+while keeping the authored course landscapes protected and visitors gated.
 
 ## Scope
 
-- `/golf mode golf|world|status`, `/golf mode build` (lists editable drafts and finalized
-  courses), and `/golf builder course <courseId>`, with confirmed abandonment of an
-  unfinished attempt before switching.
+- `/golf mode golf|world|status`, `/golf mode build` (lists authored courses as a
+  Builder reference), and `/golf builder course <courseId> | restock | palette reload`,
+  with confirmed abandonment of an unfinished attempt before switching.
 - World-scoped mode persistence (`data/minecraft_golf_player_modes.json`); supported
   newcomers default to Golf and an explicit World choice is remembered.
 - Safe flight exit and reconnect/respawn revalidation.
-- Isolated Builder loadout with durable World-inventory preservation and a per-builder
-  exception to locked landscape protection, scoped to one course/dimension/perimeter.
+- Builder = Creative game type for operators only, with the curated palette as the
+  inventory starter kit: one of each configured block plus the Driver-through-Wedge
+  club set, applied on entry/reconnect and via `/golf builder restock`.
+- Creative items carried out of Builder intentionally remain in World play (approved
+  trusted-server decision); legacy isolation-era World snapshots are restored once then
+  deleted.
 - Practice balls always launch from the full tee profile, so a Builder can measure
   hole lengths from anywhere in a course; the off-tee Driver penalty still applies to
   scored golf balls.
-- `config/minecraft_golf/builder_palette.json` with `/golf builder palette reload` and
-  `/golf builder restock`; invalid replacements retain the last valid palette. The
-  default palette covers 30 landscaping blocks (sand, soil, stone, logs, leaves,
-  saplings, bushes, grass, flowers) with the Driver-through-Wedge club set alongside for
-  mid-build play-testing; one-of-each stacks auto-refill every second, so Builder
-  materials never run out without an unrestricted Creative catalogue.
-- One-click terrain clearing: a Builder's empty-hand right-click erases the clicked
-  block instantly and without drops inside the selected course perimeter, with the cup/
-  flag assembly and unbreakable blocks skipped and containers still denied.
+- `config/minecraft_golf/builder_palette.json` with `/golf builder palette reload`;
+  invalid replacements retain the last valid palette. The default palette covers 30
+  landscaping blocks (sand, soil, stone, logs, leaves, saplings, bushes, grass, flowers)
+  plus the pale-oak fence/button marker items.
+- The authored landscape perimeter (M8.10) still protects every course from everyone;
+  a locked perimeter denies even the Creative Builder. Visitors never receive Builder.
 
 ## Exit Criteria
 

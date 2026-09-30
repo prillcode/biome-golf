@@ -18,7 +18,6 @@ import com.google.gson.JsonParser;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -39,11 +38,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
 
 import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.course.AuthoredCourseStore;
-import pro.apdev.biomegolf.course.CourseLandscape;
 
 /**
  * M8.15: server-owned player modes for supported Java golfers.
@@ -51,14 +48,18 @@ import pro.apdev.biomegolf.course.CourseLandscape;
  * <p>The supported Java experience has three modes over the same Minecraft world:
  * {@link PlayerMode#GOLF} (Survival game type plus Creative-style flight and damage
  * protection, sharing the normal inventory), {@link PlayerMode#WORLD} (ordinary
- * Survival play), and {@link PlayerMode#BUILDER} (operator-scoped flight with an
- * isolated, replenishable palette loadout). Visitors never enter any of them.</p>
+ * Survival play), and {@link PlayerMode#BUILDER} (operator Creative building with a
+ * palette starter kit). Visitors never enter any of them.</p>
  *
  * <p>Mode selection is preserved in {@code <world>/data/minecraft_golf_player_modes.json}.
- * A supported newcomer defaults to Golf. Builder transitions are failure-atomic: the
- * World inventory is snapshotted to {@code <world>/data/minecraft_golf_builder_inventories/}
- * before the palette loadout replaces it, and restored on exit. Leaving flight requires
- * safe footing so flight is never removed midair.</p>
+ * A supported newcomer defaults to Golf. Builder uses the Creative game type for
+ * operators: entering Builder (or reconnecting as Builder) fills the inventory with the
+ * palette starter kit, and leaving Builder returns to Survival keeping whatever the
+ * operator carries — Creative items intentionally carry into World play. Legacy
+ * isolation-era World-inventory snapshots under
+ * {@code <world>/data/minecraft_golf_builder_inventories/} are restored once on the
+ * first new-version join and then deleted. Leaving flight requires safe footing so
+ * flight is never removed midair.</p>
  */
 public final class PlayerModeService {
 
@@ -91,7 +92,6 @@ public final class PlayerModeService {
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> INSTANCE.onServerStopping());
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> INSTANCE.onPlayerJoined(handler.getPlayer()));
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> INSTANCE.onRespawn(newPlayer));
-		ServerTickEvents.END_SERVER_TICK.register(INSTANCE::onServerTick);
 		MinecraftGolf.LOGGER.info("Registered player mode service (world JSON at data/{})", FILE_NAME);
 	}
 
@@ -109,28 +109,17 @@ public final class PlayerModeService {
 		return mode(playerId) == PlayerMode.BUILDER;
 	}
 
-	/** Whether a player may mutate the block at this position through their Builder scope. */
-	public boolean builderAllowsEdit(UUID playerId, String dimension, int x, int y, int z) {
-		if (mode(playerId) != PlayerMode.BUILDER) {
-			return false;
-		}
-		CourseLandscape landscape = builderLandscape(playerId);
-		return landscape != null && landscape.dimension().equals(dimension)
-			&& landscape.contains(x, y, z);
-	}
-
 	/** Human-readable mode summary for {@code /golf mode status}. */
 	public String status(ServerPlayer player) {
 		PlayerMode mode = mode(player.getUUID());
 		StringBuilder message = new StringBuilder("[golf] mode: ").append(mode.displayName());
 		if (mode == PlayerMode.BUILDER) {
+			message.append(" (Creative Builder; palette starter kit");
 			String course = builderCourseId(player.getUUID());
-			if (course == null) {
-				message.append(" (no course selected; /golf builder course <id>)");
-			} else {
-				message.append(" (course ").append(course)
-					.append("; ").append(BuilderPaletteService.instance().describe()).append(")");
+			if (course != null) {
+				message.append("; course ").append(course);
 			}
+			message.append(")");
 		} else if (mode == PlayerMode.GOLF) {
 			message.append(" (flight, no damage; normal Survival items)");
 		}
@@ -181,10 +170,10 @@ public final class PlayerModeService {
 		MinecraftGolf.LOGGER.info("{} selected builder course {}",
 			player.getName().getString(), normalized);
 		return TransitionResult.ok("[golf] builder course set to " + normalized
-			+ "; edits are confined to its landscape perimeter");
+			+ " (reference for status; Creative editing is not scope-limited)");
 	}
 
-	/** Draft or finalized courses with an authored landscape perimeter. */
+	/** Draft or finalized courses, shown as an informational Builder reference. */
 	public List<AuthoredCourseStore.BuilderCourse> buildableCourses() {
 		try {
 			return AuthoredCourseService.instance().store().builderCourses();
@@ -201,10 +190,9 @@ public final class PlayerModeService {
 		if (mode(player.getUUID()) != PlayerMode.BUILDER) {
 			return TransitionResult.fail("[golf] you are not in Builder mode");
 		}
-		boolean changed = refillBuilder(player);
-		return TransitionResult.ok(changed
-			? "[golf] builder palette restocked: " + BuilderPaletteService.instance().describe()
-			: "[golf] builder palette is already full");
+		giveLoadout(player);
+		return TransitionResult.ok("[golf] builder starter kit reset: "
+			+ BuilderPaletteService.instance().describe());
 	}
 
 	/** Best-effort Golf switch used by successful round lifecycle commits; never fails an action. */
@@ -261,17 +249,17 @@ public final class PlayerModeService {
 			return TransitionResult.fail("[golf] land on solid ground before switching to World mode");
 		}
 
-		if (current == PlayerMode.BUILDER && target != PlayerMode.BUILDER) {
-			if (!restoreWorldInventory(player)) {
-				return TransitionResult.fail(
-					"[golf] could not restore your World inventory; staying in Builder mode");
+		if (target == PlayerMode.BUILDER && current != PlayerMode.BUILDER) {
+			// One-time migration from the isolation era: a stored World snapshot
+			// restores the operator's original items instead of stranding them.
+			if (hasSavedInventory(playerId)) {
+				if (!restoreWorldInventory(player)) {
+					return TransitionResult.fail("[golf] could not restore your legacy World inventory; staying in "
+						+ current.displayName() + " mode");
+				}
+			} else {
+				giveLoadout(player);
 			}
-		} else if (target == PlayerMode.BUILDER && current != PlayerMode.BUILDER) {
-			if (!saveWorldInventory(player)) {
-				return TransitionResult.fail("[golf] could not preserve your World inventory; staying in "
-					+ current.displayName() + " mode");
-			}
-			giveLoadout(player);
 		}
 
 		modes.put(playerId, target);
@@ -292,8 +280,9 @@ public final class PlayerModeService {
 			case GOLF -> "[golf] Golf mode: flight and no damage, normal Survival items";
 			case WORLD -> "[golf] World mode: Survival. Build and mine outside protected courses";
 			case BUILDER -> normalizedCourse == null
-				? "[golf] Builder mode enabled; select a course to edit with /golf builder course <id>"
-				: "[golf] Builder mode for " + normalizedCourse + ": palette loadout supplied";
+				? "[golf] Builder (Creative): one-click build; /golf builder course <id> marks a course"
+				: "[golf] Builder (Creative) for " + normalizedCourse
+					+ ": palette starter kit supplied; /golf builder restock resets it";
 		});
 	}
 
@@ -308,16 +297,12 @@ public final class PlayerModeService {
 		return null;
 	}
 
-	/** Builder course requirements: an authored draft or finalized course with a perimeter. */
+	/** Builder course requirements: any authored draft or finalized course (reference only). */
 	private String validateBuilderCourse(String courseId) {
 		try {
 			var store = AuthoredCourseService.instance().store();
 			if (!store.isDraft(courseId) && !store.isFinalized(courseId)) {
 				return "[golf] '" + courseId + "' is not an available draft or finalized course";
-			}
-			if (!store.isBuilderCourse(courseId)) {
-				return "[golf] course '" + courseId
-					+ "' has no landscape perimeter; author one before restricted building";
 			}
 		} catch (IllegalStateException exception) {
 			return "[golf] the authored course store is not available";
@@ -325,21 +310,20 @@ public final class PlayerModeService {
 		return null;
 	}
 
-	private CourseLandscape builderLandscape(UUID playerId) {
-		String course = builderCourses.get(playerId);
-		if (course == null) {
-			return null;
-		}
-		try {
-			return AuthoredCourseService.instance().store().landscape(course).orElse(null);
-		} catch (IllegalStateException exception) {
-			return null;
-		}
-	}
-
 	// ── Mode application ─────────────────────────────────────────────────────
 
 	private void applyMode(ServerPlayer player, PlayerMode mode) {
+		if (mode == PlayerMode.BUILDER) {
+			// True Creative for operators: instant break/place, flight, and the full item
+			// catalogue. Invulnerable keeps damage off like the other flight modes.
+			player.setGameMode(GameType.CREATIVE);
+			Abilities abilities = player.getAbilities();
+			abilities.mayfly = true;
+			abilities.instabuild = true;
+			abilities.invulnerable = true;
+			player.onUpdateAbilities();
+			return;
+		}
 		player.setGameMode(GameType.SURVIVAL);
 		Abilities abilities = player.getAbilities();
 		switch (mode) {
@@ -353,8 +337,7 @@ public final class PlayerModeService {
 				abilities.invulnerable = false;
 			}
 			case BUILDER -> {
-				abilities.mayfly = true;
-				abilities.invulnerable = true;
+				// handled above; the switch only serves the survival-backed modes
 			}
 		}
 		player.onUpdateAbilities();
@@ -418,9 +401,13 @@ public final class PlayerModeService {
 					+ "; your World items were restored and you are in World mode"));
 				return;
 			}
-			// The persisted playerdata inventory is the Builder loadout; replace it
-			// with a fresh palette loadout so the saved World inventory stays intact.
-			giveLoadout(player);
+			// One-time migration: restore any isolation-era World snapshot over the
+			// stale Builder loadout; otherwise apply the fresh palette starter kit.
+			if (hasSavedInventory(playerId)) {
+				restoreWorldInventory(player);
+			} else {
+				giveLoadout(player);
+			}
 			applyMode(player, PlayerMode.BUILDER);
 			return;
 		}
@@ -438,72 +425,7 @@ public final class PlayerModeService {
 		applyMode(player, mode);
 	}
 
-	private void onServerTick(MinecraftServer server) {
-		if (this.server == null || server.getTickCount() % 20 != 0) {
-			return;
-		}
-		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-			if (mode(player.getUUID()) == PlayerMode.BUILDER) {
-				sanitizeBuilder(player);
-				if (refillBuilder(player)) {
-					player.sendSystemMessage(Component.literal(
-						"[golf] builder palette replenished"), false);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Defense-in-depth: removes anything a Builder picked up outside the palette.
-	 * Drop, container, and entity-transfer export paths are separately blocked by
-	 * {@link CourseBlockBreakGuard}, so a leaked item is destroyed here before it can
-	 * leave the Builder's inventory.
-	 */
-	private void sanitizeBuilder(ServerPlayer player) {
-		Inventory inventory = player.getInventory();
-		boolean changed = false;
-		for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-			ItemStack stack = inventory.getItem(slot);
-			if (!stack.isEmpty() && !BuilderPaletteService.instance().isAllowed(stack)) {
-				inventory.setItem(slot, ItemStack.EMPTY);
-				changed = true;
-			}
-		}
-		ItemStack carried = player.containerMenu.getCarried();
-		if (!carried.isEmpty() && !BuilderPaletteService.instance().isAllowed(carried)) {
-			player.containerMenu.setCarried(ItemStack.EMPTY);
-			changed = true;
-		}
-		if (changed) {
-			inventory.setChanged();
-			player.inventoryMenu.broadcastChanges();
-		}
-	}
-
-	/**
-	 * Top-up pass: restores missing/consumed palette items so the Builder always has
-	 * one of each configured material. Returns true when anything was added.
-	 */
-	private boolean refillBuilder(ServerPlayer player) {
-		Inventory inventory = player.getInventory();
-		List<ItemStack> missing = BuilderPaletteService.instance()
-			.restock(inventory.getNonEquipmentItems());
-		boolean changed = false;
-		for (ItemStack stack : missing) {
-			if (!inventory.add(stack)) {
-				player.drop(stack, false);
-			}
-			changed = true;
-		}
-		if (changed) {
-			inventory.setChanged();
-			player.inventoryMenu.broadcastChanges();
-		}
-		return changed;
-	}
-
-
-	// ── Builder inventory persistence ────────────────────────────────────────
+	// ── Legacy Builder inventory snapshot migration ──────────────────────────
 
 	private Path inventoryFile(UUID playerId) {
 		return inventoryDir == null ? null : inventoryDir.resolve(playerId + ".nbt");
@@ -512,25 +434,6 @@ public final class PlayerModeService {
 	private boolean hasSavedInventory(UUID playerId) {
 		Path file = inventoryFile(playerId);
 		return file != null && Files.exists(file);
-	}
-
-	private boolean saveWorldInventory(ServerPlayer player) {
-		Path file = inventoryFile(player.getUUID());
-		if (file == null) {
-			return false;
-		}
-		try {
-			Files.createDirectories(file.getParent());
-			TagValueOutput output = TagValueOutput.createWithContext(
-				ProblemReporter.DISCARDING, server.registryAccess());
-			ContainerHelper.saveAllItems(output, player.getInventory().getNonEquipmentItems());
-			NbtIo.writeCompressed(output.buildResult(), file);
-			return true;
-		} catch (IOException | RuntimeException exception) {
-			MinecraftGolf.LOGGER.error("Failed to save World inventory for {} at {}",
-				player.getName().getString(), file, exception);
-			return false;
-		}
 	}
 
 	private boolean restoreWorldInventory(ServerPlayer player) {
@@ -561,11 +464,10 @@ public final class PlayerModeService {
 		}
 	}
 
+	/** Resets the Builder inventory to the palette starter kit (clubs + one of each block). */
 	private void giveLoadout(ServerPlayer player) {
 		Inventory inventory = player.getInventory();
 		inventory.clearContent();
-		// The palette is capped at one inventory slot per item; a clear cannot export
-		// anything, so unplaceable overflow here is a broken-config fallback, not a leak.
 		for (ItemStack stack : BuilderPaletteService.instance().loadout()) {
 			if (!inventory.add(stack)) {
 				player.drop(stack, false);

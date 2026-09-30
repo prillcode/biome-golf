@@ -625,20 +625,20 @@ Minecraft world. They are a deliberate product decision, not server survival rul
   Survival play.
 - **World** — ordinary Survival/Peaceful world play, including mining and building
   outside protected course landscapes.
-- **Builder** — an operator-scoped construction mode for one draft or finalized course
-  with an authored landscape perimeter: flight plus an isolated, replenishable palette
-  loadout and the Driver-through-Wedge club set for on-course play-testing
-  drawn from `config/minecraft_golf/builder_palette.json`. Placement is
-  server-enforced against the palette and the perimeter; an empty-hand right-click
-  erases the clicked block inside the perimeter without drops, restoring one-click
-  terrain clearing without Creative; the normal World inventory is preserved and
-  restored on exit.
+- **Builder** — the operator's construction mode: true Creative (instant breaking and
+  placing, flight, and the full item catalogue). The curated palette
+  (`config/minecraft_golf/builder_palette.json`) fills the inventory as a starter kit on
+  entry and via `/golf builder restock` — one of each configured block plus the
+  Driver-through-Wedge club set for on-course play-testing. Recorded decision (2026-10):
+  Creative Builder supersedes the earlier isolation-based Builder; items carried out of
+  Builder intentionally stay in World play on a trusted server, and the authored
+  landscape perimeter still protects courses from everyone, with a locked perimeter
+  denying even the Builder.
 
 Visitors remain the existing Survival/Spectator policy and never receive Java
 Golf/Builder abilities. The server-wide default stays Survival with
 `force-gamemode=false`. Peaceful remains a server-wide difficulty, not a per-player
-mode. Cup and flag assembly stays command-managed (`/golf hole cup <n>`), and the
-palette is decorative construction material only.
+mode. Cup and flag assembly stays command-managed (`/golf hole cup <n>`).
 
 ---
 

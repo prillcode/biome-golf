@@ -23,16 +23,19 @@ depend on your round, lobby, ball, or course state.
 | `/golf mode status` | Show your current player mode (Golf, World, or Builder) and the available switches. |
 | `/golf mode golf` | Enter Golf mode: Creative-style flight and damage protection with your normal Survival items. |
 | `/golf mode world` | Switch to ordinary Survival/Peaceful play. An unfinished attempt must be abandoned with `/golf mode world confirm`. |
-| `/golf mode build` | Operator: enter Builder mode. Lists drafts and finalized courses with authored perimeters to edit. |
+| `/golf mode build` | Operator: enter Creative Builder mode. Lists authored courses as a reference to mark. |
 | `/golf mode build <courseId> confirm` | Operator: enter Builder mode and select a course in one step. `confirm` abandons an unfinished attempt first. |
-| `/golf builder course <courseId>` | Operator: select or switch to a draft or finalized course with a landscape perimeter while in Builder mode. |
-| `/golf builder restock` | Operator: immediately restore any missing Builder palette items. The loadout also auto-refills every second while you are in Builder mode, so materials never run out. |
+| `/golf builder course <courseId>` | Operator: mark the course you are designing while in Builder mode (shown in mode status; Creative editing itself is not scope-limited). |
+| `/golf builder restock` | Operator: reset the Builder inventory to the palette starter kit (Driver through Wedge clubs plus one of every configured palette block). |
 | `/golf builder palette reload` | Operator: reload `config/minecraft_golf/builder_palette.json`. Malformed files, unknown items, and unsafe items retain the last valid palette. |
 
-While in Builder mode you carry the Driver through Wedge clubs plus one of every
-configured palette block: drop a practice ball and play-test your design as you build.
-With your hand empty, right-click a block to erase it instantly inside your selected
-course perimeter (no drops, no item export). The cup and flag stay command-managed.
+Builder mode is true Creative for operators: one-click break/place, flight, and the
+full item catalogue. The palette starter kit fills the inventory on entry — Driver
+through Wedge clubs plus one of every configured palette block — so you can drop a
+practice ball and play-test your design as you build (`/golf practice ball`).
+`/golf builder restock` resets the kit and `/golf builder palette reload` redefines it.
+Items you carry out of Builder stay with you in World play; authored landscape
+perimeters still protect courses, and a locked perimeter denies even the Builder.
 | `/golf browse` | Open the in-game course browser. |
 | `/golf round list` | List open Ready Golf lobbies and finalized courses. Lobby entries include a clickable join action. |
 | `/golf visitor status` | Show the visitor welcome configuration, including any Java address or mod link set by an operator. |

@@ -3,29 +3,24 @@ package pro.apdev.biomegolf.server;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.player.BlockEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
 
 import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.block.GolfBlocks;
@@ -93,11 +88,9 @@ public final class CourseBlockBreakGuard {
 		registered = true;
 		PlayerBlockBreakEvents.BEFORE.register(CourseBlockBreakGuard::onBeforeBlockBreak);
 		BlockEvents.USE_ITEM_ON.register(CourseBlockBreakGuard::onUseItemOn);
-		BlockEvents.USE_WITHOUT_ITEM.register(CourseBlockBreakGuard::onUseWithoutItem);
-		UseEntityCallback.EVENT.register(CourseBlockBreakGuard::onUseEntity);
 		ServerEntityEvents.ALLOW_LOAD.register(CourseBlockBreakGuard::onAllowLoad);
 		MinecraftGolf.LOGGER.info(
-			"Registered course protection guard (breaks, placements, containers, entity use, and TNT;"
+			"Registered course protection guard (breaks, placements, and TNT;"
 				+ " tee/cup vicinity radius {} plus landscape perimeters with a {} block TNT blast margin)",
 			CourseProtectionConfig.DEFAULT.vicinityRadius(),
 			CourseProtectionConfig.DEFAULT.tntBlastSafetyMargin());
@@ -107,18 +100,6 @@ public final class CourseBlockBreakGuard {
 	private static boolean onBeforeBlockBreak(Level world, Player player, BlockPos pos,
 			BlockState state, BlockEntity blockEntity) {
 		String dimension = dimension(world);
-		// M8.15: an active Builder may edit only inside their selected course perimeter,
-		// even when they are an operator and the landscape is locked. Everyone else keeps
-		// the existing verdict rules, so one builder never relaxes protection for others.
-		if (PlayerModeService.instance().isBuilder(player.getUUID())) {
-			if (!PlayerModeService.instance().builderAllowsEdit(player.getUUID(), dimension,
-					pos.getX(), pos.getY(), pos.getZ())) {
-				MinecraftGolf.LOGGER.info("[golf] blocked builder {} from breaking outside their course at ({}, {}, {})",
-					player.getName().getString(), pos.getX(), pos.getY(), pos.getZ());
-				return false;
-			}
-			return true;
-		}
 		var zones = INDEX.zones(dimension);
 		var landscapes = INDEX.landscapes(dimension);
 		if (zones.isEmpty() && landscapes.isEmpty()) return true;
@@ -152,30 +133,6 @@ public final class CourseBlockBreakGuard {
 		if (world.isClientSide()) return null;
 		String dimension = dimension(world);
 		boolean operator = isOperator(player);
-
-		// M8.15: an active Builder may place only currently-supplied palette items, and
-		// only inside their selected course perimeter. This is server enforcement, not a
-		// filtered Creative screen.
-		if (PlayerModeService.instance().isBuilder(player.getUUID())) {
-			// A Builder must not open containers, which would be an item export path.
-			if (state.getMenuProvider(world, pos) != null) {
-				MinecraftGolf.LOGGER.info("[golf] blocked builder {} from opening a container at ({}, {}, {})",
-					player.getName().getString(), pos.getX(), pos.getY(), pos.getZ());
-				return InteractionResult.CONSUME;
-			}
-			BlockPos placementPos = pos.relative(hitResult.getDirection());
-			boolean inside = PlayerModeService.instance().builderAllowsEdit(player.getUUID(), dimension,
-					pos.getX(), pos.getY(), pos.getZ())
-				&& PlayerModeService.instance().builderAllowsEdit(player.getUUID(), dimension,
-					placementPos.getX(), placementPos.getY(), placementPos.getZ());
-			if (!inside || !BuilderPaletteService.instance().isAllowed(stack)) {
-				MinecraftGolf.LOGGER.info("[golf] blocked builder {} from placing {} at ({}, {}, {})",
-					player.getName().getString(), stack.getItem(), placementPos.getX(), placementPos.getY(),
-					placementPos.getZ());
-				return InteractionResult.CONSUME;
-			}
-			return null;
-		}
 
 		// TNT blocks/minecarts: use the blast-margin-expanded perimeter so a charge
 		// placed just outside a boundary that could still reach in is denied too.
@@ -222,23 +179,8 @@ public final class CourseBlockBreakGuard {
 		if (loadedFromDisk) {
 			return true;
 		}
-		// M8.15: cancel items dropped by a Builder so palette/non-palette items cannot be
-		// exported into the world for a World player to collect.
-		if (entity instanceof ItemEntity item && item.getOwner() instanceof Player owner
-				&& PlayerModeService.instance().isBuilder(owner.getUUID())) {
-			MinecraftGolf.LOGGER.info("[golf] cancelled an item dropped by builder {}",
-				owner.getName().getString());
-			return false;
-		}
 		if (!(entity instanceof PrimedTnt tnt)) {
 			return true;
-		}
-		// M8.15: builders are never supplied TNT; refuse any charge they prime.
-		if (tnt.getOwner() instanceof Player owner
-				&& PlayerModeService.instance().isBuilder(owner.getUUID())) {
-			MinecraftGolf.LOGGER.info("[golf] cancelled a primed TNT owned by builder {}",
-				owner.getName().getString());
-			return false;
 		}
 		BlockPos pos = entity.blockPosition();
 		ProtectionVerdict verdict = INDEX.tntVerdict(dimension(level),
@@ -253,68 +195,6 @@ public final class CourseBlockBreakGuard {
 		MinecraftGolf.LOGGER.info("[golf] cancelled a primed TNT at ({}, {}, {}) inside a protected course perimeter",
 			pos.getX(), pos.getY(), pos.getZ());
 		return false;
-	}
-
-	/**
-	 * M8.15: a Builder's empty-hand right-click removes the clicked block instantly
-	 * (and without drops) when it is inside their selected course perimeter,
-	 * restoring the one-click terrain clearing of creative course building without
-	 * granting Creative. Containers are denied first so inventory contents are never
-	 * erased, and scope plus structural blocks are enforced server-side.
-	 */
-	private static InteractionResult onUseWithoutItem(BlockState state, Level world, BlockPos pos,
-			Player player, BlockHitResult hitResult) {
-		if (world.isClientSide() || !PlayerModeService.instance().isBuilder(player.getUUID())) {
-			return null;
-		}
-		if (state.getMenuProvider(world, pos) == null
-				&& canBuilderErase(state, world, pos, (ServerPlayer) player)) {
-			eraseBuilderBlock(state, world, pos, (ServerPlayer) player);
-			return InteractionResult.CONSUME;
-		}
-		if (state.getMenuProvider(world, pos) != null) {
-			MinecraftGolf.LOGGER.info("[golf] blocked builder {} from opening a container at ({}, {}, {})",
-				player.getName().getString(), pos.getX(), pos.getY(), pos.getZ());
-			return InteractionResult.CONSUME;
-		}
-		return null;
-	}
-
-	/**
-	 * Builder erase is scoped to the selected course perimeter and skips
-	 * survival-unbreakable blocks (bedrock, barrier) and the command-managed
-	 * cup/flag assembly.
-	 */
-	private static boolean canBuilderErase(BlockState state, Level world, BlockPos pos, ServerPlayer player) {
-		if (!PlayerModeService.instance().builderAllowsEdit(player.getUUID(), dimension(world),
-				pos.getX(), pos.getY(), pos.getZ())) {
-			return false;
-		}
-		if (state.getDestroySpeed(world, pos) < 0.0F) {
-			return false;
-		}
-		Block block = state.getBlock();
-		return block != GolfBlocks.GOLF_CUP && block != GolfBlocks.GOLF_FLAG && block != GolfBlocks.GOLF_FLAG_TOP;
-	}
-
-	/** Server-side no-drop removal with break particles and sound. */
-	private static void eraseBuilderBlock(BlockState state, Level world, BlockPos pos, ServerPlayer player) {
-		MinecraftGolf.LOGGER.info("[golf] builder {} erased {} at ({}, {}, {})",
-			player.getName().getString(), state.getBlock(), pos.getX(), pos.getY(), pos.getZ());
-		world.levelEvent(2001, pos, Block.getId(state));
-		world.playSound(null, pos, state.getSoundType().getBreakSound(), SoundSource.BLOCKS, 1.0F, 0.8F);
-		world.destroyBlock(pos, false);
-	}
-
-	/** M8.15: a Builder must not interact with entities (item frames, storage, animals, trades). */
-	private static InteractionResult onUseEntity(Player player, Level world, InteractionHand hand,
-			Entity entity, EntityHitResult hitResult) {
-		if (world.isClientSide() || !PlayerModeService.instance().isBuilder(player.getUUID())) {
-			return null;
-		}
-		MinecraftGolf.LOGGER.info("[golf] blocked builder {} from interacting with {}",
-			player.getName().getString(), entity.getType());
-		return InteractionResult.CONSUME;
 	}
 
 	private static InteractionResult denyOrPass(ProtectionVerdict verdict, boolean operator,

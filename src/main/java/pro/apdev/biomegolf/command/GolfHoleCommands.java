@@ -608,29 +608,28 @@ public final class GolfHoleCommands {
 		return sendModeResult(context, PlayerModeService.instance().selectBuilderCourse(player, courseId));
 	}
 
-	/** Lists drafts and finalized courses with perimeters, each with a clickable edit command. */
+	/** Lists authored courses as an informational Builder reference, each with a clickable select. */
 	private static void listBuilderCourses(CommandContext<CommandSourceStack> context) {
 		List<AuthoredCourseStore.BuilderCourse> courses = PlayerModeService.instance().buildableCourses();
 		if (courses.isEmpty()) {
 			context.getSource().sendSuccess(() -> Component.literal(
-				"[golf] no draft or finalized course has a landscape perimeter. For a new course: "
-					+ "/golf course create <id>, then /golf course landscape bounds (twice), "
-					+ "then /golf builder course <id>"), false);
+				"[golf] no authored courses yet; /golf course create <id> to start one (the Builder marks "
+					+ "the course for status; Creative editing itself is not scope-limited)"), false);
 			return;
 		}
-		context.getSource().sendSuccess(() -> Component.literal("[golf] courses available to edit:")
+		context.getSource().sendSuccess(() -> Component.literal("[golf] authored courses (Builder reference):")
 			.withStyle(ChatFormatting.GOLD), false);
 		for (AuthoredCourseStore.BuilderCourse course : courses) {
 			String command = "/golf builder course " + course.id();
 			context.getSource().sendSuccess(() -> Component.literal(course.id() + " | " + course.displayName()
 				+ (course.draft() ? " | DRAFT" : " | FINALIZED") + " | ")
-				.append(Component.literal("[Edit]").withStyle(style -> style.withColor(ChatFormatting.GREEN)
+				.append(Component.literal("[Mark]").withStyle(style -> style.withColor(ChatFormatting.GREEN)
 					.withClickEvent(new ClickEvent.RunCommand(command))))
 				.append(Component.literal(" " + command)), false);
 		}
 		context.getSource().sendSuccess(() -> Component.literal(
-			"[golf] new course? /golf course create <id>, then /golf course landscape bounds "
-				+ "at two corners, then /golf builder course <id>"), false);
+			"[golf] reference: /golf builder course <id>; the perimeter (when authored) still "
+				+ "protects courses from everyone else"), false);
 	}
 
 	private static int modeWorld(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
