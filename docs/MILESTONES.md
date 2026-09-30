@@ -1518,6 +1518,9 @@ leaking free items or Creative privileges into Survival play.
 - Safe flight exit and reconnect/respawn revalidation.
 - Isolated Builder loadout with durable World-inventory preservation and a per-builder
   exception to locked landscape protection, scoped to one course/dimension/perimeter.
+- Practice balls always launch from the full tee profile, so a Builder can measure
+  hole lengths from anywhere in a course; the off-tee Driver penalty still applies to
+  scored golf balls.
 - `config/minecraft_golf/builder_palette.json` with `/golf builder palette reload` and
   `/golf builder restock`; invalid replacements retain the last valid palette.
 

@@ -76,6 +76,16 @@ class LieRulesTest {
 	}
 
 	@Test
+	void practiceBallsAlwaysPlayFromTheTeeProfile() {
+		// A builder's explicit practice ball keeps the full Driver flight anywhere.
+		assertEquals(BallLie.TEE, LieRules.forShot(BallLie.DECK, true));
+		assertEquals(BallLie.TEE, LieRules.forShot(BallLie.TEE, true));
+		// Scored golf keeps the resolved lie, including the deck penalty.
+		assertEquals(BallLie.DECK, LieRules.forShot(BallLie.DECK, false));
+		assertEquals(BallLie.TEE, LieRules.forShot(BallLie.TEE, false));
+	}
+
+	@Test
 	void deckWidensAccuracySpreadAndShrinksDisplayedCarry() {
 		assertEquals(LieRules.DECK_ACCURACY_SPREAD, LieRules.accuracySpread(BallLie.DECK), 1e-9);
 		assertEquals(1.0, LieRules.accuracySpread(BallLie.TEE), 1e-9);

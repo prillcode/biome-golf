@@ -131,7 +131,9 @@ public final class ShotService {
 	 * Derives the authoritative lie from the ball's resting position against the
 	 * player's active-hole tee and the practice-range tee in the same dimension. An
 	 * unknown context yields {@link BallLie#TEE}, so the deck penalty is never applied
-	 * without a tee reference.
+	 * without a tee reference. Explicitly marked practice balls always resolve as
+	 * {@link BallLie#TEE}, so a builder testing distances anywhere in a course gets the
+	 * Driver's full flight while scored golf keeps the deck penalty.
 	 */
 	public static BallLie resolveLie(ServerPlayer player, GolfBallEntity ball, ServerLevel level) {
 		Vec3 position = ballPosition(ball);
@@ -145,7 +147,7 @@ public final class ShotService {
 		if (practiceTee != null && dimensionId.equals(practiceTee.dimension())) {
 			anchors.add(practiceTee.position());
 		}
-		return LieRules.classify(position, anchors);
+		return LieRules.forShot(LieRules.classify(position, anchors), ball.isPracticeBall());
 	}
 
 	static Vec3 ballPosition(GolfBallEntity ball) {

@@ -5,7 +5,8 @@ package pro.apdev.biomegolf.club;
  *
  * <p>The first bounded slice of PRD §12 lie behavior: only tee-versus-deck matters
  * today, and only the Driver is tee-optimized, so a {@link #DECK} Driver loses its
- * tee-only flight. The type is Minecraft-free so lie resolution stays unit-testable.</p>
+ * tee-only flight. The type is Minecraft-free so lie resolution stays unit-testable.
+ * Explicit practice balls always play as {@link #TEE} (see {@code LieRules#forShot}).</p>
  */
 public enum BallLie {
 	/** On a tee (authored hole tee or practice tee): full club performance. */

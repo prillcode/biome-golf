@@ -28,6 +28,10 @@ and uses [Semantic Versioning](https://semver.org/).
 - Starting a hole no longer drops a missing club at your feet when your inventory is
   full. The automatic grant now uses the same canonical hotbar placement as
   `/golf clubs equip`, moving non-club occupants aside instead of dropping the clubs.
+- Explicit practice balls always play the full tee profile, so a Driver hit from a
+  practice ball anywhere in a course keeps its full distance. This lets builders
+  measure hole lengths while building; the off-tee deck penalty still applies to
+  scored golf balls hit away from a tee.
 - The vanilla hunger and experience bars are hidden while the server has you in a
   Survival flight mode (Golf or Builder), giving a clean view during a round.
 

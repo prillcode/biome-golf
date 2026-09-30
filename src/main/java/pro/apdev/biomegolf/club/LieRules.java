@@ -18,7 +18,9 @@ import pro.apdev.biomegolf.golf.Vec3;
  * Explicit Stinger behavior remains unchanged.</p>
  *
  * <p>When no tee anchor is known (for example practice with no range tee), the ball
- * is treated as teed so the penalty is never applied without a reference point.</p>
+ * is treated as teed so the penalty is never applied without a reference point.
+ * An explicitly marked practice ball also always plays the tee profile, so a builder
+ * testing distances anywhere in a course gets the Driver's true flight (M8.15).</p>
  */
 public final class LieRules {
 
@@ -91,6 +93,15 @@ public final class LieRules {
 				DECK_STANDARD_LANDING_RETENTION);
 		}
 		return deckProfile;
+	}
+
+	/**
+	 * Effective lie for a shot. An explicitly marked practice ball always plays the
+	 * full tee profile, so a builder testing distances anywhere in a course gets the
+	 * Driver's true flight; scored golf keeps the resolved lie.
+	 */
+	public static BallLie forShot(BallLie resolvedLie, boolean practiceBall) {
+		return practiceBall ? BallLie.TEE : resolvedLie;
 	}
 
 	/** Accuracy fan multiplier for a lie ({@code 1.0} when neutral). */
