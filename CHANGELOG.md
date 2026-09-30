@@ -7,11 +7,7 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Added
-
-- Standard Driver shots from the deck now retain more speed on landing for a modest
-  runner-style rollout. The existing deck distance penalty and selected Stinger behavior
-  are unchanged.
+Changes made after the latest release will be recorded here.
 
 ## [0.8.5] - 2026-09-29
 
@@ -22,6 +18,9 @@ and uses [Semantic Versioning](https://semver.org/).
 - `/golf help` now gives concise player guidance, while `/golf help admin` lists operator
   commands and labels their permission requirement. Both help pages cover the top-level
   command tree.
+- Standard Driver shots from the deck now retain more speed on landing for a modest
+  runner-style rollout. The existing deck distance penalty and selected Stinger behavior
+  are unchanged.
 - **Off-tee Driver discipline.** A Driver hit from anywhere other than a tee box now
   launches lower and travels shorter — roughly three quarters of a teed drive's distance
   — with a slightly wider accuracy spread. This closes the "driver off the deck" exploit

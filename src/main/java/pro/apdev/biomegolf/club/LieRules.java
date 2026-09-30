@@ -13,8 +13,9 @@ import pro.apdev.biomegolf.golf.Vec3;
  * teed Driver, so long par 5s were reachable with a free full-power bomb. A ball at
  * rest inside a tee volume is {@link BallLie#TEE}; anywhere else is
  * {@link BallLie#DECK}, and a decked Driver gets a lower, shorter, slightly less
- * accurate flight. Only the launch profile changes: landing and rolling behavior
- * keep coming from the shot type, so the lie composes with Standard/Stinger/etc.</p>
+ * accurate flight. The Standard deck Driver also gets increased landing retention
+ * for a low runner; its subsequent rolling friction stays on the Standard profile.
+ * Explicit Stinger behavior remains unchanged.</p>
  *
  * <p>When no tee anchor is known (for example practice with no range tee), the ball
  * is treated as teed so the penalty is never applied without a reference point.</p>
@@ -30,6 +31,9 @@ public final class LieRules {
 	/** Decked-Driver launch scaling applied on top of the shot-type launch profile. */
 	public static final double DECK_LAUNCH_HORIZONTAL = 0.90;
 	public static final double DECK_LAUNCH_VERTICAL = 0.75;
+
+	/** Standard deck Driver's runner landing retention; Stinger is 0.60. */
+	public static final double DECK_STANDARD_LANDING_RETENTION = 0.40;
 
 	/** Decked-Driver accuracy fan multiplier (harder, without touching the meter). */
 	public static final double DECK_ACCURACY_SPREAD = 1.5;
@@ -71,13 +75,22 @@ public final class LieRules {
 		return lie == BallLie.DECK && club != null && "driver".equals(club.id());
 	}
 
-	/** Composes the lie onto a shot-type launch profile (unpenalized lies pass through). */
-	public static ShotPhysicsProfile applyTo(ShotPhysicsProfile profile, BallLie lie) {
+	/** Applies the deck Driver penalty to the selected shot profile. */
+	public static ShotPhysicsProfile applyTo(ShotPhysicsProfile profile, BallLie lie, ShotType shotType) {
 		Objects.requireNonNull(profile, "profile");
 		Objects.requireNonNull(lie, "lie");
-		return lie == BallLie.DECK
-			? profile.withLaunchScaled(DECK_LAUNCH_HORIZONTAL, DECK_LAUNCH_VERTICAL)
-			: profile;
+		Objects.requireNonNull(shotType, "shotType");
+		if (lie != BallLie.DECK) return profile;
+
+		ShotPhysicsProfile deckProfile = profile.withLaunchScaled(
+			DECK_LAUNCH_HORIZONTAL, DECK_LAUNCH_VERTICAL);
+		if (shotType == ShotType.STANDARD) {
+			// Give the low Standard flight a runner-style landing without borrowing
+			// Stinger's stronger rolling brake; keep the selected shot-type behavior.
+			deckProfile = deckProfile.withLandingHorizontalRetention(
+				DECK_STANDARD_LANDING_RETENTION);
+		}
+		return deckProfile;
 	}
 
 	/** Accuracy fan multiplier for a lie ({@code 1.0} when neutral). */

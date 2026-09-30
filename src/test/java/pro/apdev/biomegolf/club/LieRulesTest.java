@@ -53,22 +53,26 @@ class LieRulesTest {
 	}
 
 	@Test
-	void deckCompositionLowersLaunchAndKeepsLandingBehavior() {
+	void deckStandardDriverGetsRunnerLandingWithoutChangingRollingFriction() {
 		ShotPhysicsProfile base = ShotType.STANDARD.profile(GolfClubs.DRIVER);
-		ShotPhysicsProfile deck = LieRules.applyTo(base, BallLie.DECK);
+		ShotPhysicsProfile deck = LieRules.applyTo(base, BallLie.DECK, ShotType.STANDARD);
 
 		assertEquals(base.launchHorizontalMultiplier() * LieRules.DECK_LAUNCH_HORIZONTAL,
 			deck.launchHorizontalMultiplier(), 1e-9);
 		assertEquals(base.launchVerticalMultiplier() * LieRules.DECK_LAUNCH_VERTICAL,
 			deck.launchVerticalMultiplier(), 1e-9);
-		assertEquals(base.landingHorizontalRetention(), deck.landingHorizontalRetention(), 1e-9);
+		assertEquals(LieRules.DECK_STANDARD_LANDING_RETENTION, deck.landingHorizontalRetention(), 1e-9);
 		assertEquals(base.rollingFrictionMultiplier(), deck.rollingFrictionMultiplier(), 1e-9);
 	}
 
 	@Test
 	void teeLieLeavesProfileUnchanged() {
 		ShotPhysicsProfile base = ShotType.STANDARD.profile(GolfClubs.DRIVER);
-		assertEquals(base, LieRules.applyTo(base, BallLie.TEE));
+		assertEquals(base, LieRules.applyTo(base, BallLie.TEE, ShotType.STANDARD));
+		ShotPhysicsProfile stinger = ShotType.STINGER.profile(GolfClubs.DRIVER);
+		ShotPhysicsProfile deckStinger = LieRules.applyTo(stinger, BallLie.DECK, ShotType.STINGER);
+		assertEquals(stinger.landingHorizontalRetention(), deckStinger.landingHorizontalRetention(), 1e-9);
+		assertEquals(stinger.rollingFrictionMultiplier(), deckStinger.rollingFrictionMultiplier(), 1e-9);
 	}
 
 	@Test

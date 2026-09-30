@@ -35,6 +35,15 @@ public record ShotPhysicsProfile(
 			rollingFrictionMultiplier);
 	}
 
+	/** Returns a copy with a different horizontal-speed retention on landing. */
+	public ShotPhysicsProfile withLandingHorizontalRetention(double retention) {
+		return new ShotPhysicsProfile(
+			launchHorizontalMultiplier,
+			launchVerticalMultiplier,
+			retention,
+			rollingFrictionMultiplier);
+	}
+
 	public ShotPhysicsProfile {
 		if (launchHorizontalMultiplier <= 0.0 || launchVerticalMultiplier <= 0.0) {
 			throw new IllegalArgumentException("launch multipliers must be > 0");

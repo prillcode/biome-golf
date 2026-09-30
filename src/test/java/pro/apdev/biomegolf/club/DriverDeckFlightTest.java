@@ -14,8 +14,8 @@ import pro.apdev.biomegolf.golf.Vec3;
 import pro.apdev.biomegolf.surface.SurfaceDefinition;
 
 /**
- * M8.12 outcome contract: a Driver from the deck flies materially lower and shorter
- * than the same swing from a tee, without changing any other club.
+ * M8.12/M8.14 outcome contract: a deck Driver flies lower and shorter than a tee shot,
+ * while the Standard deck profile adds rollout without overtaking a Fairway Wood.
  */
 class DriverDeckFlightTest {
 
@@ -50,15 +50,25 @@ class DriverDeckFlightTest {
 	@Test
 	void deckedDriverFliesLowerAndTravelsShorterThanTeed() {
 		ShotPhysicsProfile teed = ShotType.STANDARD.profile(GolfClubs.DRIVER);
-		ShotPhysicsProfile deck = LieRules.applyTo(teed, BallLie.DECK);
+		ShotPhysicsProfile deck = LieRules.applyTo(teed, BallLie.DECK, ShotType.STANDARD);
 
 		double teedRange = range(GolfClubs.DRIVER, teed);
 		double deckRange = range(GolfClubs.DRIVER, deck);
+		ShotPhysicsProfile launchOnly = teed.withLaunchScaled(
+			LieRules.DECK_LAUNCH_HORIZONTAL, LieRules.DECK_LAUNCH_VERTICAL);
+		double launchOnlyRange = range(GolfClubs.DRIVER, launchOnly);
+		double fairwayWoodRange = range(GolfClubs.FAIRWAY_WOOD,
+			ShotType.STANDARD.profile(GolfClubs.FAIRWAY_WOOD));
 
 		assertTrue(deck.launchVerticalMultiplier() < teed.launchVerticalMultiplier(),
 			"decked driver must launch lower");
 		assertTrue(deckRange < teedRange,
 			"decked driver must travel shorter: " + deckRange + " vs " + teedRange);
+		assertTrue(deckRange > launchOnlyRange,
+			"runner landing must add rollout: " + deckRange + " vs " + launchOnlyRange);
+		assertTrue(deckRange < fairwayWoodRange,
+			"deck Driver should remain shorter than a standard Fairway Wood: "
+				+ deckRange + " vs " + fairwayWoodRange);
 
 		double ratio = deckRange / teedRange;
 		// Closes the par-5 exploit (a clear loss) while keeping the shot meaty.
@@ -69,7 +79,7 @@ class DriverDeckFlightTest {
 	@Test
 	void deckedStingerIsLowerThanTeedStinger() {
 		ShotPhysicsProfile teed = ShotType.STINGER.profile(GolfClubs.DRIVER);
-		ShotPhysicsProfile deck = LieRules.applyTo(teed, BallLie.DECK);
+		ShotPhysicsProfile deck = LieRules.applyTo(teed, BallLie.DECK, ShotType.STINGER);
 		assertTrue(deck.launchVerticalMultiplier() < teed.launchVerticalMultiplier());
 	}
 
@@ -81,7 +91,7 @@ class DriverDeckFlightTest {
 			}
 			ShotPhysicsProfile base = ShotType.STANDARD.profile(club);
 			// LieRules.applyTo is only ever used behind penalizes(); confirm base identity.
-			ShotPhysicsProfile afterTee = LieRules.applyTo(base, BallLie.TEE);
+			ShotPhysicsProfile afterTee = LieRules.applyTo(base, BallLie.TEE, ShotType.STANDARD);
 			assertTrue(base.launchVerticalMultiplier() == afterTee.launchVerticalMultiplier());
 		}
 	}
@@ -89,7 +99,7 @@ class DriverDeckFlightTest {
 	@Test
 	void deckedDriverFansWiderForTheSameMiss() {
 		ShotPhysicsProfile teed = ShotType.STANDARD.profile(GolfClubs.DRIVER);
-		ShotPhysicsProfile deck = LieRules.applyTo(teed, BallLie.DECK);
+		ShotPhysicsProfile deck = LieRules.applyTo(teed, BallLie.DECK, ShotType.STANDARD);
 
 		Vec3 teedShot = ShotResolver.initialVelocity(GolfClubs.DRIVER, 0.0, 0.0, 1.0, 0.75,
 			PhysicsConfig.DEFAULT.maxLaunchSpeed(), teed, LieRules.accuracySpread(BallLie.TEE));

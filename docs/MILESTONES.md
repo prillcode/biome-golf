@@ -150,6 +150,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.11 | Swing Meter Precision | Implemented in 0.8.5; manual playtest pending (see docs/M8.11-CLOSEOUT.md) |
 | M8.12 | Off-Tee Driver Discipline | Implemented in 0.8.5; manual playtest pending (see docs/M8.12-CLOSEOUT.md) |
 | M8.13 | HUD Visibility and Command Help | Implemented in 0.8.5; client restart/manual acceptance pending (see docs/M8.13-CLOSEOUT.md) |
+| M8.14 | Decked Driver Rollout | Implemented in 0.8.5; manual in-game flight confirmation pending (see docs/M8.14-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
 | M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then play shelved and repurposed as Bedrock visitor mode (2026-09)**; client-light clients watch (`/golf spectator`) or join the world (`/golf spectator leave`) and are invited to Java (see docs/BEDROCK-VISITOR-MODE-PLAN.md). |
@@ -1458,6 +1459,34 @@ sync/restart/health, both local client deployments, and manual in-game HUD/help 
 
 Both HUDs toggle in unison through H and `/golf hud`, shot attempts reveal them, the two
 help pages cover the command tree, and the documented verification ladder is complete.
+
+---
+
+# M8.14 — Decked Driver Rollout
+
+## Status
+
+Implemented in 0.8.5. Automated flight checks and Docker verification passed; manual
+in-game flight confirmation remains pending. See `docs/M8.14-CLOSEOUT.md`.
+
+## Goal
+
+Give the decked Driver's Standard shot a little runner-style rollout after landing without
+removing its distance penalty or changing explicit Stinger behavior.
+
+## Scope
+
+- Raise landing horizontal retention for decked Standard Driver shots from 0.25 to 0.40.
+- Keep Standard's rolling-friction multiplier, the deck launch/accuracy penalties, and
+  decked Stinger profile unchanged.
+- Verify simulated rollout increases, the decked shot remains shorter than a teed Driver,
+  and it remains shorter than a standard Fairway Wood.
+
+## Exit Criteria
+
+Automated simulation proves the runner adds distance over the former deck profile while
+preserving both distance comparisons, and the exact artifact passes build, Loom, Docker,
+and installed-client deployment verification. Manual in-game feel is tracked separately.
 
 ---
 

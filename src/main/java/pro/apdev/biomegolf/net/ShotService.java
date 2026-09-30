@@ -102,7 +102,7 @@ public final class ShotService {
 		BallLie lie = resolveLie(player, ball, level);
 		ShotPhysicsProfile profile = shotType.profile(club);
 		if (LieRules.penalizes(club, lie)) {
-			profile = LieRules.applyTo(profile, lie);
+			profile = LieRules.applyTo(profile, lie, shotType);
 		}
 		Vec3 velocity = ShotResolver.initialVelocity(club, aimYawDeg, aimPitchDeg, p, a, maxSpeed,
 			profile, LieRules.accuracySpread(lie));
