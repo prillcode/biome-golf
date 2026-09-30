@@ -21,11 +21,14 @@ import pro.apdev.biomegolf.client.hole.NextHolePrompt;
 import pro.apdev.biomegolf.client.hole.RoundScorecardScreen;
 import pro.apdev.biomegolf.client.hole.RoundScorecardState;
 import pro.apdev.biomegolf.client.input.PracticeKeybindings;
+import pro.apdev.biomegolf.client.input.HudVisibility;
 import pro.apdev.biomegolf.client.render.GolfBallEntityRenderer;
 import pro.apdev.biomegolf.client.swing.SwingController;
 import pro.apdev.biomegolf.client.swing.SwingHud;
 import pro.apdev.biomegolf.entity.GolfBallEntities;
 import pro.apdev.biomegolf.net.HoleStatePayload;
+import pro.apdev.biomegolf.net.ToggleHudPayload;
+import net.minecraft.network.chat.Component;
 import pro.apdev.biomegolf.net.RoundScorecardPayload;
 import pro.apdev.biomegolf.net.CourseListPayload;
 import pro.apdev.biomegolf.net.LobbyStatePayload;
@@ -42,6 +45,12 @@ public class MinecraftGolfClient implements ClientModInitializer {
 		PostShotCamera postShotCamera = new PostShotCamera();
 		SwingController swing = new SwingController(postShotCamera);
 		PracticeKeybindings practiceKeys = new PracticeKeybindings(swing);
+		// /golf stays server-owned: a client root shadows sibling commands in Fabric 26.2.
+		ClientPlayNetworking.registerGlobalReceiver(ToggleHudPayload.TYPE, (payload, context) -> {
+			boolean visible = HudVisibility.toggle();
+			context.player().sendOverlayMessage(Component.literal(
+				"[golf] HUDs " + (visible ? "shown" : "hidden")));
+		});
 		NextHolePrompt nextHolePrompt = new NextHolePrompt();
 		ClientTickEvents.END_CLIENT_TICK.register(swing::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(practiceKeys::tick);

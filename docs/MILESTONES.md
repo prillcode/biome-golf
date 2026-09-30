@@ -149,6 +149,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
 | M8.11 | Swing Meter Precision | Implemented in 0.8.5; manual playtest pending (see docs/M8.11-CLOSEOUT.md) |
 | M8.12 | Off-Tee Driver Discipline | Implemented in 0.8.5; manual playtest pending (see docs/M8.12-CLOSEOUT.md) |
+| M8.13 | HUD Visibility and Command Help | Implemented in 0.8.5; client restart/manual acceptance pending (see docs/M8.13-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
 | M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then play shelved and repurposed as Bedrock visitor mode (2026-09)**; client-light clients watch (`/golf spectator`) or join the world (`/golf spectator leave`) and are invited to Java (see docs/BEDROCK-VISITOR-MODE-PLAN.md). |
@@ -1420,6 +1421,43 @@ exploit while leaving the choice legal and leaving the full rough/bunker lie sys
 ## Exit Criteria
 
 Use the final success criteria and full verification ladder in `docs/M8.12-PLAN.md`.
+
+---
+
+# M8.13 — HUD Visibility and Command Help
+
+## Status
+
+Implemented in 0.8.5; automated, Loom, and Docker checks passed. The JARs are staged
+in both local clients, but in-game acceptance remains pending client restart. See
+`docs/M8.13-CLOSEOUT.md`.
+
+## Goal
+
+Let players hide and restore both client HUD panels together, and make `/golf help`
+accurately direct players to the full player and operator command references.
+
+## Scope
+
+- Add the `H` keybind and server `/golf hud` command with clientbound toggle intent to
+  toggle both HUDs. Visibility remains client-only; do not register a shadow client root.
+- Keep visibility session-local and automatically reveal on a club-in-hand right-click
+  swing attempt, including the no-ball feedback path.
+- Keep `/golf help` concise for players and add `/golf help admin`, clearly labelled as
+  operator/gamemaster-only while remaining discoverable by everyone.
+- Add a regression test that every registered top-level `/golf` literal is mentioned on
+  one of the help pages; correct stale command-registration logging.
+- Update the command guide and changelog.
+
+## Verification
+
+Run `./gradlew test`, `./gradlew build`, Loom client and server, Docker dedicated-server
+sync/restart/health, both local client deployments, and manual in-game HUD/help checks.
+
+## Exit Criteria
+
+Both HUDs toggle in unison through H and `/golf hud`, shot attempts reveal them, the two
+help pages cover the command tree, and the documented verification ladder is complete.
 
 ---
 

@@ -7,12 +7,21 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Changes made after the latest release will be recorded here.
+### Added
+
+- Standard Driver shots from the deck now retain more speed on landing for a modest
+  runner-style rollout. The existing deck distance penalty and selected Stinger behavior
+  are unchanged.
 
 ## [0.8.5] - 2026-09-29
 
 ### Added
 
+- Press `H` or use `/golf hud` to hide/show the Swing and Hole HUDs together. A golf
+  swing attempt automatically reveals them; visibility lasts for the current session.
+- `/golf help` now gives concise player guidance, while `/golf help admin` lists operator
+  commands and labels their permission requirement. Both help pages cover the top-level
+  command tree.
 - **Off-tee Driver discipline.** A Driver hit from anywhere other than a tee box now
   launches lower and travels shorter — roughly three quarters of a teed drive's distance
   — with a slightly wider accuracy spread. This closes the "driver off the deck" exploit
@@ -24,6 +33,9 @@ Changes made after the latest release will be recorded here.
 
 ### Fixed
 
+- Removed the client-side `/golf` command root that intercepted B's practice-ball/tap-in
+  commands and other server commands with an "Incorrect argument" error. `/golf hud`
+  now uses the server command tree and a clientbound toggle; HUD visibility stays local.
 - Visitor messaging no longer implies a Java player is on Bedrock. A Java client running an
   older Biome Golf version fails the same client-light check as a vanilla/Bedrock client, so
   the welcome and the golf-action rejection now say to install or update the mod for the

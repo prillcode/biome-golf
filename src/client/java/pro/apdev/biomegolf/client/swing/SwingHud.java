@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import pro.apdev.biomegolf.club.SwingMeter;
+import pro.apdev.biomegolf.client.input.HudVisibility;
 
 /** Lightweight M3 HUD for club, ball distance, meters, and swing state. */
 public final class SwingHud {
@@ -32,6 +33,7 @@ public final class SwingHud {
 	}
 
 	public void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
+		if (!HudVisibility.isVisible()) return;
 		Minecraft client = Minecraft.getInstance();
 		if (client.player == null) {
 			return;

@@ -15,6 +15,7 @@ import net.minecraft.world.phys.AABB;
 import pro.apdev.biomegolf.client.camera.PostShotCamera;
 import pro.apdev.biomegolf.client.DistanceDisplayState;
 import pro.apdev.biomegolf.client.hole.HoleHudState;
+import pro.apdev.biomegolf.client.input.HudVisibility;
 import pro.apdev.biomegolf.club.BallLie;
 import pro.apdev.biomegolf.club.ClubDefinition;
 import pro.apdev.biomegolf.club.LieRules;
@@ -99,6 +100,7 @@ public final class SwingController {
 		if (heldClub == null) {
 			return;
 		}
+		HudVisibility.reveal();
 
 		switch (phase) {
 			case IDLE -> arm(client, heldClub);

@@ -17,7 +17,9 @@ depend on your round, lobby, ball, or course state.
 
 | Command | What it does |
 |---|---|
-| `/golf help` | Print a short command guide. |
+| `/golf help` | Print the short player command guide. |
+| `/golf help admin` | Show operator/gamemaster commands. Visible to everyone; execution still requires the listed permissions. |
+| `/golf hud` | Ask your compatible Biome Golf client to toggle both the Swing and Hole HUDs. No operator permission needed; visibility resets when the game session ends. |
 | `/golf browse` | Open the in-game course browser. |
 | `/golf round list` | List open Ready Golf lobbies and finalized courses. Lobby entries include a clickable join action. |
 | `/golf visitor status` | Show the visitor welcome configuration, including any Java address or mod link set by an operator. |
@@ -79,7 +81,8 @@ Omitted values use full power, the default accuracy value, and Standard.
 | `/golf swing <power> <accuracy> <shotType>` | Also request `standard`, `chip`, `stinger`, or `flop`. The server checks that the held club allows that shot type. |
 
 For example: `/golf swing 0.7 0.5 standard`. Modded Java players can also use the
-in-game swing meter and shot-type controls.
+in-game swing meter and shot-type controls. Press `H` to hide or show both golf HUDs;
+a right-click swing attempt with a golf club automatically reveals them again.
 
 ### Practice
 

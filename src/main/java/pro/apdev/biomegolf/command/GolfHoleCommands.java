@@ -33,6 +33,7 @@ import pro.apdev.biomegolf.club.ShotType;
 import pro.apdev.biomegolf.entity.GolfBallEntity;
 import pro.apdev.biomegolf.golf.Vec3;
 import pro.apdev.biomegolf.net.ShotOutcome;
+import pro.apdev.biomegolf.net.HudVisibilityNetworking;
 import pro.apdev.biomegolf.net.ShotService;
 import pro.apdev.biomegolf.round.RoundLobbyProjection;
 
@@ -55,7 +56,10 @@ public final class GolfHoleCommands {
 	private static void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher,
 			CommandBuildContext registryAccess, CommandSelection environment) {
 			dispatcher.register(Commands.literal("golf")
-			.then(Commands.literal("help").executes(GolfHoleCommands::help))
+			.then(Commands.literal("help")
+				.executes(GolfHoleCommands::help)
+				.then(Commands.literal("admin").executes(GolfHoleCommands::adminHelp)))
+			.then(Commands.literal("hud").executes(GolfHoleCommands::toggleHud))
 			.then(Commands.literal("spectator")
 				.executes(GolfHoleCommands::spectatorView)
 				.then(Commands.literal("leave").executes(GolfHoleCommands::leaveSpectator)))
@@ -121,8 +125,7 @@ public final class GolfHoleCommands {
 						.then(Commands.argument("type", StringArgumentType.word())
 							.executes(GolfHoleCommands::swing)))))
 			.then(Commands.literal("nexthole").executes(GolfHoleCommands::nextHole)));
-		MinecraftGolf.LOGGER.info(
-			"Registered Ready Golf round, hole lifecycle, practice ball, practice clear, Pick Up, swing, and next-hole commands");
+		MinecraftGolf.LOGGER.info("Registered Biome Golf player, round, hole, practice, and visitor commands");
 	}
 
 	private static int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -138,15 +141,24 @@ public final class GolfHoleCommands {
 	}
 
 	private static int help(CommandContext<CommandSourceStack> context) {
-		context.getSource().sendSuccess(() -> Component.literal("[golf] Biome Golf commands:")
-				.withStyle(ChatFormatting.GOLD), false);
-		context.getSource().sendSuccess(() -> Component.literal("Getting started: /golf round list | /golf round join"), false);
-		context.getSource().sendSuccess(() -> Component.literal("Rounds: /golf round create <courseId> | /golf round start | /golf round status | /golf round leave"), false);
-		context.getSource().sendSuccess(() -> Component.literal("Playing: /golf hole status | /golf hole restart | /golf pickup | /golf nexthole"), false);
-		context.getSource().sendSuccess(() -> Component.literal("Swing (no client mod needed): /golf swing [power] [accuracy] [shotType]"), false);
-		context.getSource().sendSuccess(() -> Component.literal("Practice: /golf practice ball | /golf practice tee | /golf practice target list"), false);
-		context.getSource().sendSuccess(() -> Component.literal("Solo: /golf course play [courseId] [hole] | /golf hole start [hole]"), false);
-		context.getSource().sendSuccess(() -> Component.literal("Visitors (Bedrock/vanilla): /golf spectator | /golf spectator leave"), false);
+		for (String line : GolfHelpPages.PLAYER) {
+			context.getSource().sendSuccess(() -> Component.literal(line), false);
+		}
+		return 1;
+	}
+
+	private static int toggleHud(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (!HudVisibilityNetworking.toggle(player)) {
+			return fail(context, "HUD toggle requires an up-to-date Biome Golf client; H also toggles the HUDs");
+		}
+		return 1;
+	}
+
+	private static int adminHelp(CommandContext<CommandSourceStack> context) {
+		for (String line : GolfHelpPages.ADMIN) {
+			context.getSource().sendSuccess(() -> Component.literal(line), false);
+		}
 		return 1;
 	}
 

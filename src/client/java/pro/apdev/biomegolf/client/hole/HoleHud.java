@@ -9,6 +9,7 @@ import pro.apdev.biomegolf.net.LobbyStatePayload;
 import pro.apdev.biomegolf.net.HoleStatePayload.Phase;
 import pro.apdev.biomegolf.client.DistanceDisplayState;
 import pro.apdev.biomegolf.golf.CupDirection;
+import pro.apdev.biomegolf.client.input.HudVisibility;
 
 /** Client-only HUD panel showing authoritative hole progress from server snapshots (S03). */
 public final class HoleHud {
@@ -31,6 +32,7 @@ public final class HoleHud {
 	}
 
 	public static void render(GuiGraphicsExtractor graphics, DeltaTracker ignored) {
+		if (!HudVisibility.isVisible()) return;
 		HoleStatePayload state = HoleHudState.get();
 		if (state == null || (state.phase() == Phase.PRACTICE && state.holeNumber() != 0)) {
 			return;

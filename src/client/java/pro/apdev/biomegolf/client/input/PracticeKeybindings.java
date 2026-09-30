@@ -40,6 +40,8 @@ public final class PracticeKeybindings {
 			"key.minecraft_golf.shot_cycle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, CATEGORY));
 	private final KeyMapping distanceUnits = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.minecraft_golf.distance_units", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, CATEGORY));
+	private final KeyMapping toggleHud = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+			"key.minecraft_golf.toggle_swing_hud", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, CATEGORY));
 	private final SwingController swing;
 
 	public PracticeKeybindings(SwingController swing) {
@@ -58,6 +60,7 @@ public final class PracticeKeybindings {
 			}
 		}
 		while (shotCycle.consumeClick()) swing.cycleShotType(client);
+		while (toggleHud.consumeClick()) HudVisibility.toggle();
 		while (distanceUnits.consumeClick()) {
 			if (client.player != null) {
 				client.player.sendOverlayMessage(

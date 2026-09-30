@@ -19,6 +19,7 @@ import pro.apdev.biomegolf.command.GolfHoleCommands;
 import pro.apdev.biomegolf.entity.GolfBallEntities;
 import pro.apdev.biomegolf.item.GolfItems;
 import pro.apdev.biomegolf.net.HoleStateNetworking;
+import pro.apdev.biomegolf.net.HudVisibilityNetworking;
 import pro.apdev.biomegolf.net.NextHoleNetworking;
 import pro.apdev.biomegolf.net.RoundScorecardNetworking;
 import pro.apdev.biomegolf.net.RoundLobbyNetworking;
@@ -93,6 +94,7 @@ public class MinecraftGolf implements ModInitializer {
 
 		// S03: clientbound hole-state snapshot networking; client receiver registered in MinecraftGolfClient.
 		HoleStateNetworking.register();
+		HudVisibilityNetworking.register();
 		NextHoleNetworking.register();
 		RoundScorecardNetworking.register();
 		RoundLobbyNetworking.register();

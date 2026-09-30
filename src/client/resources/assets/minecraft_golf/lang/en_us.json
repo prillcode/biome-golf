@@ -14,5 +14,6 @@
   "key.minecraft_golf.start_round": "Golf Menu",
   "key.minecraft_golf.leave_round": "Leave Ready Golf Round",
   "key.minecraft_golf.shot_cycle": "Cycle Shot Type",
-  "key.minecraft_golf.distance_units": "Toggle Distance Units"
+  "key.minecraft_golf.distance_units": "Toggle Distance Units",
+  "key.minecraft_golf.toggle_swing_hud": "Toggle Golf HUDs"
 }
