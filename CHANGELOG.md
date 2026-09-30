@@ -7,6 +7,8 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-30
+
 ### Added
 
 - Added server-owned player modes: `/golf mode golf|world|status` and `/golf mode build`
@@ -436,7 +438,8 @@ and uses [Semantic Versioning](https://semver.org/).
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/prillcode/biome-golf/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/prillcode/biome-golf/compare/v0.8.1...v0.8.5
 [0.8.1]: https://github.com/prillcode/biome-golf/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/prillcode/biome-golf/compare/v0.7.1...v0.8.0

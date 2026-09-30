@@ -151,7 +151,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.12 | Off-Tee Driver Discipline | Implemented in 0.8.5; manual playtest pending (see docs/M8.12-CLOSEOUT.md) |
 | M8.13 | HUD Visibility and Command Help | Implemented in 0.8.5; client restart/manual acceptance pending (see docs/M8.13-CLOSEOUT.md) |
 | M8.14 | Decked Driver Rollout | Implemented in 0.8.5; manual in-game flight confirmation pending (see docs/M8.14-CLOSEOUT.md) |
-| M8.15 | Golf, World, and Builder Player Modes | Implemented (flight-only Golf; Creative Builder with palette starter kit, approved 2026-10); verification and two-player acceptance pending (see docs/M8.15-PLAN.md) |
+| M8.15 | Golf, World, and Builder Player Modes | **Complete in 0.9.0.** Flight-only Golf; Creative Builder with palette starter kit (approved 2026-09-30); verified over tests, Loom, Docker, and authenticated in-game play (see docs/M8.15-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
 | M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then play shelved and repurposed as Bedrock visitor mode (2026-09)**; client-light clients watch (`/golf spectator`) or join the world (`/golf spectator leave`) and are invited to Java (see docs/BEDROCK-VISITOR-MODE-PLAN.md). |
@@ -1495,16 +1495,16 @@ and installed-client deployment verification. Manual in-game feel is tracked sep
 
 ## Status
 
-Implemented. Golf is flight-only (Survival plus mayfly and invulnerable, normal
-inventory) per the resolved product decision; World is ordinary Survival. Builder is
-**true Creative for operators** (approved pivot 2026-10): instant break/place, flight,
-and the full item catalogue, with the curated palette as an inventory starter kit (one
-of each configured block plus the Driver-through-Wedge club set) applied on entry and
-via `/golf builder restock`. The earlier isolation-based Builder (snapshot/restore,
-perimeter-scoped edits, export blocks, one-click erase) is superseded; legacy World
-snapshots are restored once and retired. `docs/M8.15-PLAN.md` records the full contract.
-Automated and Loom server checks pass; Docker and authenticated two-player/mode-switch
-acceptance remain pending.
+**Complete — shipped in 0.9.0.** Golf is flight-only (Survival plus mayfly and
+invulnerable, normal inventory) per the resolved product decision; World is ordinary
+Survival. Builder is **true Creative for operators** (approved 2026-09-30): instant
+break/place, flight, and the full item catalogue, with the curated palette as an
+inventory starter kit (one of each configured block plus the Driver-through-Wedge club
+set) applied on entry and via `/golf builder restock`. The earlier isolation-based
+Builder (snapshot/restore, perimeter-scoped edits, export blocks, one-click erase) is
+superseded; legacy World snapshots are restored once and retired. `docs/M8.15-PLAN.md`
+records the full contract; `docs/M8.15-CLOSEOUT.md` records acceptance, including the
+in-game proof from live practice play on the dev server.
 
 ## Goal
 

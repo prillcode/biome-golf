@@ -1638,7 +1638,7 @@ Builder **starter kit** — the Driver-through-Wedge club set plus one of each c
 block — applied on Builder entry/reconnect and via `/golf builder restock`.
 
 Creative item crossover into World play is an explicit, approved operator decision for
-a trusted server (2026-10); the earlier isolation era that snapshotted World
+a trusted server (2026-09-30); the earlier isolation era that snapshotted World
 inventories to `<world>/data/minecraft_golf_builder_inventories/<uuid>.nbt` is retired,
 with legacy snapshots restored once on migration. The authored landscape perimeter
 (M8.10) still protects every course from everyone, including Creative operators when a

@@ -629,7 +629,7 @@ Minecraft world. They are a deliberate product decision, not server survival rul
   placing, flight, and the full item catalogue). The curated palette
   (`config/minecraft_golf/builder_palette.json`) fills the inventory as a starter kit on
   entry and via `/golf builder restock` — one of each configured block plus the
-  Driver-through-Wedge club set for on-course play-testing. Recorded decision (2026-10):
+  Driver-through-Wedge club set for on-course play-testing. Recorded decision (2026-09-30):
   Creative Builder supersedes the earlier isolation-based Builder; items carried out of
   Builder intentionally stay in World play on a trusted server, and the authored
   landscape perimeter still protects courses from everyone, with a locked perimeter
