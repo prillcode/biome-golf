@@ -105,7 +105,7 @@ a right-click swing attempt with a golf club automatically reveals them again.
 | Command | What it does |
 |---|---|
 | `/golf practice ball` | Drop a practice ball. |
-| `/golf practice clear` | Remove only practice balls you own, across dimensions. Your assigned in-play ball and other players' balls are preserved. |
+| `/golf practice clear` | Remove only practice balls you own, across dimensions. Your assigned in-play ball and other players' balls are preserved. Your practice balls also clear automatically when you disconnect, so a course never accumulates another player's left-behind balls. |
 | `/golf practice tee` | Teleport to the configured practice tee, if it is set in your current dimension. |
 | `/golf practice target list` | Show the saved practice tee and targets. |
 

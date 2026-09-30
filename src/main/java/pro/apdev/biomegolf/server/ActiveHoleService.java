@@ -668,8 +668,15 @@ public final class ActiveHoleService {
 	public StartResult clearPracticeBalls(ServerPlayer player) {
 		UUID playerId = player.getUUID();
 		UUID assignedBall = lifecycle.session(playerId).map(PlayerHoleSession::ballUuid).orElse(null);
+		int removed = removePracticeBalls(playerId, assignedBall, player.level().getServer());
+		String message = "[golf] cleared " + removed + " of your practice ball"
+			+ (removed == 1 ? "" : "s");
+		return new StartResult(true, message);
+	}
+
+	private int removePracticeBalls(UUID playerId, UUID assignedBall, MinecraftServer server) {
 		int removed = 0;
-		for (ServerLevel level : player.level().getServer().getAllLevels()) {
+		for (ServerLevel level : server.getAllLevels()) {
 			for (GolfBallEntity ball : level.getEntities(EntityTypeTest.forClass(GolfBallEntity.class),
 				candidate -> PracticeBallCleanup.shouldClear(
 					playerId, candidate.owner(), candidate.isPracticeBall(), assignedBall, candidate.getUUID()))) {
@@ -678,9 +685,7 @@ public final class ActiveHoleService {
 				removed++;
 			}
 		}
-		String message = "[golf] cleared " + removed + " of your practice ball"
-			+ (removed == 1 ? "" : "s");
-		return new StartResult(true, message);
+		return removed;
 	}
 
 	/** Resets the current golf set into hotbar slots 0 through 6. */
@@ -1673,6 +1678,12 @@ public final class ActiveHoleService {
 	 */
 	public void onPlayerDisconnected(ServerPlayer player, MinecraftServer server) {
 		UUID playerId = player.getUUID();
+		UUID assignedBall = lifecycle.session(playerId).map(PlayerHoleSession::ballUuid).orElse(null);
+		int removedPracticeBalls = removePracticeBalls(playerId, assignedBall, server);
+		if (removedPracticeBalls > 0) {
+			MinecraftGolf.LOGGER.info("Cleared {} practice ball(s) owned by {} on disconnect",
+				removedPracticeBalls, player.getName().getString());
+		}
 		ReadyGolfRound round = rounds.findByPlayer(playerId).orElse(null);
 		if (round == null) return;
 		ReadyGolfParticipant participant = round.findParticipant(playerId).orElse(null);
