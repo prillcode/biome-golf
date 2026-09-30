@@ -685,6 +685,19 @@ public final class ActiveHoleService {
 
 	/** Resets the current golf set into hotbar slots 0 through 6. */
 	public StartResult equipClubs(ServerPlayer player) {
+		resetClubSet(player);
+		MinecraftGolf.LOGGER.info("{} reset the golf club set into hotbar slots 0-6 via /golf clubs equip",
+			player.getName().getString());
+		return new StartResult(true, "[golf] reset the full club set into hotbar slots 1-7");
+	}
+
+	/**
+	 * Writes the full canonical club set into hotbar slots 0-6, removes stray clubs
+	 * from higher slots, and moves non-club occupants aside (dropping them only when the
+	 * inventory is genuinely full). Shared by {@code /golf clubs equip} and the automatic
+	 * grant on a hole start, so a full inventory never scatters clubs on the ground.
+	 */
+	private static void resetClubSet(ServerPlayer player) {
 		boolean modded = canResolveCustomItems(player);
 		List<ItemStack> displaced = new ArrayList<>();
 		for (int slot = 0; slot < 7; slot++) {
@@ -708,9 +721,6 @@ public final class ActiveHoleService {
 				player.drop(stack, false);
 			}
 		}
-		MinecraftGolf.LOGGER.info("{} reset the golf club set into hotbar slots 0-6 via /golf clubs equip",
-			player.getName().getString());
-		return new StartResult(true, "[golf] reset the full club set into hotbar slots 1-7");
 	}
 
 	public StartResult restart(ServerPlayer player) {
@@ -1799,20 +1809,25 @@ public final class ActiveHoleService {
 		return false;
 	}
 
+	/**
+	 * Ensures the player carries the full club set, strictly mirroring the
+	 * {@code /golf clubs equip} placement: if any club is missing the canonical set is
+	 * written into hotbar slots 0-6 and non-club occupants are moved aside instead of
+	 * dropped at the player's feet. Existing clubs are never duplicated.
+	 *
+	 * @return how many clubs were missing before the set was restored
+	 */
 	private static int grantMissingClubs(ServerPlayer player) {
-		boolean modded = canResolveCustomItems(player);
-		int granted = 0;
+		int missing = 0;
 		for (ClubDefinition club : GolfClubs.ALL) {
-			if (hasClub(player, club.id())) {
-				continue;
+			if (!hasClub(player, club.id())) {
+				missing++;
 			}
-			ItemStack stack = GolfItems.stackFor(club, modded);
-			if (!player.getInventory().add(stack)) {
-				player.drop(stack, false);
-			}
-			granted++;
 		}
-		return granted;
+		if (missing > 0) {
+			resetClubSet(player);
+		}
+		return missing;
 	}
 
 	private int discardPlayerOwnedBalls(ServerPlayer player, UUID keepBallUuid) {

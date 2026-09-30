@@ -21,6 +21,12 @@ and uses [Semantic Versioning](https://semver.org/).
   are cancelled, container and entity interactions are refused, and anything picked up
   outside the palette is removed.
 
+### Fixed
+
+- Starting a hole no longer drops a missing club at your feet when your inventory is
+  full. The automatic grant now uses the same canonical hotbar placement as
+  `/golf clubs equip`, moving non-club occupants aside instead of dropping the clubs.
+
 ## [0.8.5] - 2026-09-29
 
 ### Added
