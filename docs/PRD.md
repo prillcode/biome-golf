@@ -626,10 +626,13 @@ Minecraft world. They are a deliberate product decision, not server survival rul
 - **World** — ordinary Survival/Peaceful world play, including mining and building
   outside protected course landscapes.
 - **Builder** — an operator-scoped construction mode for one draft or finalized course
-  with an authored landscape perimeter: flight plus an isolated, replenishable palette loadout
+  with an authored landscape perimeter: flight plus an isolated, replenishable palette
+  loadout and the Driver-through-Wedge club set for on-course play-testing
   drawn from `config/minecraft_golf/builder_palette.json`. Placement is
-  server-enforced against the palette and the perimeter; the normal World inventory is
-  preserved and restored on exit.
+  server-enforced against the palette and the perimeter; an empty-hand right-click
+  erases the clicked block inside the perimeter without drops, restoring one-click
+  terrain clearing without Creative; the normal World inventory is preserved and
+  restored on exit.
 
 Visitors remain the existing Survival/Spectator policy and never receive Java
 Golf/Builder abilities. The server-wide default stays Survival with

@@ -28,6 +28,11 @@ depend on your round, lobby, ball, or course state.
 | `/golf builder course <courseId>` | Operator: select or switch to a draft or finalized course with a landscape perimeter while in Builder mode. |
 | `/golf builder restock` | Operator: immediately restore any missing Builder palette items. The loadout also auto-refills every second while you are in Builder mode, so materials never run out. |
 | `/golf builder palette reload` | Operator: reload `config/minecraft_golf/builder_palette.json`. Malformed files, unknown items, and unsafe items retain the last valid palette. |
+
+While in Builder mode you carry the Driver through Wedge clubs plus one of every
+configured palette block: drop a practice ball and play-test your design as you build.
+With your hand empty, right-click a block to erase it instantly inside your selected
+course perimeter (no drops, no item export). The cup and flag stay command-managed.
 | `/golf browse` | Open the in-game course browser. |
 | `/golf round list` | List open Ready Golf lobbies and finalized courses. Lobby entries include a clickable join action. |
 | `/golf visitor status` | Show the visitor welcome configuration, including any Java address or mod link set by an operator. |

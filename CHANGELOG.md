@@ -22,11 +22,18 @@ and uses [Semantic Versioning](https://semver.org/).
   place only currently-supplied palette items. Builder items cannot be exported: drops
   are cancelled, container and entity interactions are refused, and anything picked up
   outside the palette is removed.
-- Expanded the default Builder palette to 36 landscaping blocks (sand, soil, gravel,
+- Expanded the default Builder palette to 30 landscaping blocks (sand, soil, gravel,
   common stone, logs, leaves, saplings, azalea bushes, grass, ferns, and flowers) plus
-  the pale-oak fence/button marker items. The loadout now gives one of each item and
+  the pale-oak fence/button marker items. The loadout gives one of each item and
   auto-refills used materials every second, so Builder materials effectively never run
   out while staying scoped to the selected course and the curated allowlist.
+- Builder mode now carries the Driver through Wedge clubs (the putter is omitted to fit
+  the 36 inventory slots) so you can drop a practice ball and play-test your design as
+  you build, using the full practice-ball Driver flight from any position.
+- While in Builder mode, right-click with an empty hand to instantly erase the clicked
+  block inside your selected course perimeter — no drops, no item export. This restores
+  one-click terrain clearing without Creative; the cup/flag assembly stays
+  command-managed and unbreakable blocks are untouched.
 
 ### Fixed
 

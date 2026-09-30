@@ -8,6 +8,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -19,6 +20,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -254,13 +256,21 @@ public final class CourseBlockBreakGuard {
 	}
 
 	/**
-	 * M8.15: an empty-hand right-click must not open a container for a Builder
-	 * (a chest, barrel, hopper, furnace, ender chest, and similar menu blocks).
+	 * M8.15: a Builder's empty-hand right-click removes the clicked block instantly
+	 * (and without drops) when it is inside their selected course perimeter,
+	 * restoring the one-click terrain clearing of creative course building without
+	 * granting Creative. Containers are denied first so inventory contents are never
+	 * erased, and scope plus structural blocks are enforced server-side.
 	 */
 	private static InteractionResult onUseWithoutItem(BlockState state, Level world, BlockPos pos,
 			Player player, BlockHitResult hitResult) {
 		if (world.isClientSide() || !PlayerModeService.instance().isBuilder(player.getUUID())) {
 			return null;
+		}
+		if (state.getMenuProvider(world, pos) == null
+				&& canBuilderErase(state, world, pos, (ServerPlayer) player)) {
+			eraseBuilderBlock(state, world, pos, (ServerPlayer) player);
+			return InteractionResult.CONSUME;
 		}
 		if (state.getMenuProvider(world, pos) != null) {
 			MinecraftGolf.LOGGER.info("[golf] blocked builder {} from opening a container at ({}, {}, {})",
@@ -268,6 +278,32 @@ public final class CourseBlockBreakGuard {
 			return InteractionResult.CONSUME;
 		}
 		return null;
+	}
+
+	/**
+	 * Builder erase is scoped to the selected course perimeter and skips
+	 * survival-unbreakable blocks (bedrock, barrier) and the command-managed
+	 * cup/flag assembly.
+	 */
+	private static boolean canBuilderErase(BlockState state, Level world, BlockPos pos, ServerPlayer player) {
+		if (!PlayerModeService.instance().builderAllowsEdit(player.getUUID(), dimension(world),
+				pos.getX(), pos.getY(), pos.getZ())) {
+			return false;
+		}
+		if (state.getDestroySpeed(world, pos) < 0.0F) {
+			return false;
+		}
+		Block block = state.getBlock();
+		return block != GolfBlocks.GOLF_CUP && block != GolfBlocks.GOLF_FLAG && block != GolfBlocks.GOLF_FLAG_TOP;
+	}
+
+	/** Server-side no-drop removal with break particles and sound. */
+	private static void eraseBuilderBlock(BlockState state, Level world, BlockPos pos, ServerPlayer player) {
+		MinecraftGolf.LOGGER.info("[golf] builder {} erased {} at ({}, {}, {})",
+			player.getName().getString(), state.getBlock(), pos.getX(), pos.getY(), pos.getZ());
+		world.levelEvent(2001, pos, Block.getId(state));
+		world.playSound(null, pos, state.getSoundType().getBreakSound(), SoundSource.BLOCKS, 1.0F, 0.8F);
+		world.destroyBlock(pos, false);
 	}
 
 	/** M8.15: a Builder must not interact with entities (item frames, storage, animals, trades). */

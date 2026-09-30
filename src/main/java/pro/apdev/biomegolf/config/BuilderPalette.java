@@ -20,12 +20,13 @@ import java.util.regex.Pattern;
 public record BuilderPalette(int schemaVersion, List<String> items) {
 
 	public static final int CURRENT_SCHEMA = 1;
-	// One inventory slot per palette item (36 is the vanilla main-inventory slot
-	// count), so a one-of-each loadout always fits and stacks are replenished
-	// to one item as they are used — Builder materials never run out or overflow.
-	public static final int MAX_ITEMS = 36;
+	// 30 palette slots + the 6-golf-club Builder set (Driver through Wedge, no
+	// putter) fit the 36 vanilla main-inventory slots, so the one-of-each loadout
+	// always fits and stacks are replenished to one item as they are used —
+	// Builder materials never run out or overflow.
+	public static final int MAX_ITEMS = 30;
 
-	/** Default course-building palette of 36 landscaping and marker blocks. */
+	/** Default course-building palette of 30 landscaping and marker blocks. */
 	public static final List<String> DEFAULT_ITEMS = List.of(
 		// Course markers and decorative details.
 		"minecraft:lime_wool",
@@ -40,7 +41,6 @@ public record BuilderPalette(int schemaVersion, List<String> items) {
 		"minecraft:coarse_dirt",
 		"minecraft:podzol",
 		"minecraft:sand",
-		"minecraft:red_sand",
 		"minecraft:gravel",
 		// Common natural stone.
 		"minecraft:stone",
@@ -56,17 +56,12 @@ public record BuilderPalette(int schemaVersion, List<String> items) {
 		"minecraft:oak_leaves",
 		"minecraft:pale_oak_leaves",
 		"minecraft:oak_sapling",
-		"minecraft:pale_oak_sapling",
 		"minecraft:azalea",
-		"minecraft:flowering_azalea",
 		// Ground cover and flowers.
 		"minecraft:short_grass",
 		"minecraft:fern",
-		"minecraft:dead_bush",
 		"minecraft:dandelion",
 		"minecraft:poppy",
-		"minecraft:blue_orchid",
-		"minecraft:allium",
 		"minecraft:oxeye_daisy");
 
 	private static final Pattern ITEM_ID = Pattern.compile("[a-z0-9_.-]+:[a-z0-9_./-]+");

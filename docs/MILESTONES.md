@@ -1523,9 +1523,13 @@ leaking free items or Creative privileges into Survival play.
   scored golf balls.
 - `config/minecraft_golf/builder_palette.json` with `/golf builder palette reload` and
   `/golf builder restock`; invalid replacements retain the last valid palette. The
-  default palette covers landscaping blocks (sand, soil, stone, logs, leaves, saplings,
-  bushes, grass, flowers) and one-of-each stacks auto-refill every second, so Builder
+  default palette covers 30 landscaping blocks (sand, soil, stone, logs, leaves,
+  saplings, bushes, grass, flowers) with the Driver-through-Wedge club set alongside for
+  mid-build play-testing; one-of-each stacks auto-refill every second, so Builder
   materials never run out without an unrestricted Creative catalogue.
+- One-click terrain clearing: a Builder's empty-hand right-click erases the clicked
+  block instantly and without drops inside the selected course perimeter, with the cup/
+  flag assembly and unbreakable blocks skipped and containers still denied.
 
 ## Exit Criteria
 

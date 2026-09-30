@@ -25,7 +25,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
 import pro.apdev.biomegolf.MinecraftGolf;
+import pro.apdev.biomegolf.club.ClubDefinition;
+import pro.apdev.biomegolf.club.GolfClubs;
 import pro.apdev.biomegolf.config.BuilderPalette;
+import pro.apdev.biomegolf.item.GolfClubItem;
+import pro.apdev.biomegolf.item.GolfItems;
 
 /**
  * M8.15: server-side owner of the curated Course Builder material palette.
@@ -82,12 +86,24 @@ public final class BuilderPaletteService {
 	}
 
 	public boolean isAllowed(Item item) {
-		return items.contains(item);
+		return items.contains(item) || item instanceof GolfClubItem;
 	}
 
-	/** Builds a fresh per-builder loadout of one-of-each stacks; suppliers never share ItemStack instances. */
+	/** The Builder's play-test club set: everything except the putter. */
+	private static final List<ClubDefinition> BUILDER_CLUBS = GolfClubs.ALL.stream()
+		.filter(club -> club != GolfClubs.PUTTER)
+		.toList();
+
+	/**
+	 * Builds a fresh per-builder loadout: the play-test club set first (hotbar 0-5),
+	 * then one-of-each palette stacks. Suppliers never share ItemStack instances, and
+	 * 30 palette items + 6 clubs exactly fill the 36-slot main inventory.
+	 */
 	public List<ItemStack> loadout() {
-		List<ItemStack> stacks = new ArrayList<>(items.size());
+		List<ItemStack> stacks = new ArrayList<>(items.size() + BUILDER_CLUBS.size());
+		for (ClubDefinition club : BUILDER_CLUBS) {
+			stacks.add(GolfItems.customStack(club));
+		}
 		for (Item item : items) {
 			stacks.add(new ItemStack(item, LOADOUT_COUNT));
 		}
