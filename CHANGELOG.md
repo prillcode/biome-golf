@@ -17,7 +17,9 @@ and uses [Semantic Versioning](https://semver.org/).
 - Added the operator-editable `config/minecraft_golf/builder_palette.json` allowlist,
   with `/golf builder palette reload` and `/golf builder restock`. An active Builder may
   edit only inside their selected course perimeter — including a locked one — and may
-  place only currently-supplied palette items.
+  place only currently-supplied palette items. Builder items cannot be exported: drops
+  are cancelled, container and entity interactions are refused, and anything picked up
+  outside the palette is removed.
 
 ## [0.8.5] - 2026-09-29
 

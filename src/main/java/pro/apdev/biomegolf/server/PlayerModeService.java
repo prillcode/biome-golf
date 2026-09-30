@@ -381,7 +381,12 @@ public final class PlayerModeService {
 		}
 	}
 
-	/** Removes anything a Builder is not currently supplied, closing pickup/container leaks within a second. */
+	/**
+	 * Defense-in-depth: removes anything a Builder picked up outside the palette.
+	 * Drop, container, and entity-transfer export paths are separately blocked by
+	 * {@link CourseBlockBreakGuard}, so a leaked item is destroyed here before it can
+	 * leave the Builder's inventory.
+	 */
 	private void sanitizeBuilder(ServerPlayer player) {
 		Inventory inventory = player.getInventory();
 		boolean changed = false;
