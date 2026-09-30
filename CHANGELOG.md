@@ -22,6 +22,11 @@ and uses [Semantic Versioning](https://semver.org/).
   place only currently-supplied palette items. Builder items cannot be exported: drops
   are cancelled, container and entity interactions are refused, and anything picked up
   outside the palette is removed.
+- Expanded the default Builder palette to 36 landscaping blocks (sand, soil, gravel,
+  common stone, logs, leaves, saplings, azalea bushes, grass, ferns, and flowers) plus
+  the pale-oak fence/button marker items. The loadout now gives one of each item and
+  auto-refills used materials every second, so Builder materials effectively never run
+  out while staying scoped to the selected course and the curated allowlist.
 
 ### Fixed
 

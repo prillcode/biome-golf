@@ -193,7 +193,7 @@ public final class PlayerModeService {
 		}
 	}
 
-	/** Re-fills an active Builder's palette loadout; other modes are a no-op error. */
+	/** Refills an active Builder's palette now; other modes are a no-op error. */
 	public TransitionResult restockBuilder(ServerPlayer player) {
 		if (VisitorService.isVisitor(player)) {
 			return TransitionResult.fail("[golf] builder mode is for supported Java clients");
@@ -201,9 +201,10 @@ public final class PlayerModeService {
 		if (mode(player.getUUID()) != PlayerMode.BUILDER) {
 			return TransitionResult.fail("[golf] you are not in Builder mode");
 		}
-		giveLoadout(player);
-		return TransitionResult.ok("[golf] builder palette restocked: "
-			+ BuilderPaletteService.instance().describe());
+		boolean changed = refillBuilder(player);
+		return TransitionResult.ok(changed
+			? "[golf] builder palette restocked: " + BuilderPaletteService.instance().describe()
+			: "[golf] builder palette is already full");
 	}
 
 	/** Best-effort Golf switch used by successful round lifecycle commits; never fails an action. */
@@ -444,6 +445,10 @@ public final class PlayerModeService {
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			if (mode(player.getUUID()) == PlayerMode.BUILDER) {
 				sanitizeBuilder(player);
+				if (refillBuilder(player)) {
+					player.sendSystemMessage(Component.literal(
+						"[golf] builder palette replenished"), false);
+				}
 			}
 		}
 	}
@@ -474,6 +479,29 @@ public final class PlayerModeService {
 			player.inventoryMenu.broadcastChanges();
 		}
 	}
+
+	/**
+	 * Top-up pass: restores missing/consumed palette items so the Builder always has
+	 * one of each configured material. Returns true when anything was added.
+	 */
+	private boolean refillBuilder(ServerPlayer player) {
+		Inventory inventory = player.getInventory();
+		List<ItemStack> missing = BuilderPaletteService.instance()
+			.restock(inventory.getNonEquipmentItems());
+		boolean changed = false;
+		for (ItemStack stack : missing) {
+			if (!inventory.add(stack)) {
+				player.drop(stack, false);
+			}
+			changed = true;
+		}
+		if (changed) {
+			inventory.setChanged();
+			player.inventoryMenu.broadcastChanges();
+		}
+		return changed;
+	}
+
 
 	// ── Builder inventory persistence ────────────────────────────────────────
 
@@ -536,6 +564,8 @@ public final class PlayerModeService {
 	private void giveLoadout(ServerPlayer player) {
 		Inventory inventory = player.getInventory();
 		inventory.clearContent();
+		// The palette is capped at one inventory slot per item; a clear cannot export
+		// anything, so unplaceable overflow here is a broken-config fallback, not a leak.
 		for (ItemStack stack : BuilderPaletteService.instance().loadout()) {
 			if (!inventory.add(stack)) {
 				player.drop(stack, false);

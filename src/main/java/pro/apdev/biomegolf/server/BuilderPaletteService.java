@@ -42,7 +42,8 @@ public final class BuilderPaletteService {
 
 	private static final String DIRECTORY = "minecraft_golf";
 	private static final String FILE_NAME = "builder_palette.json";
-	private static final int LOADOUT_COUNT = 64;
+	/** One item per palette slot; inventory replenishes consumed items to this depth. */
+	private static final int LOADOUT_COUNT = 1;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final BuilderPaletteService INSTANCE = new BuilderPaletteService();
@@ -84,13 +85,43 @@ public final class BuilderPaletteService {
 		return items.contains(item);
 	}
 
-	/** Builds a fresh per-builder loadout of full stacks; suppliers never share ItemStack instances. */
+	/** Builds a fresh per-builder loadout of one-of-each stacks; suppliers never share ItemStack instances. */
 	public List<ItemStack> loadout() {
 		List<ItemStack> stacks = new ArrayList<>(items.size());
 		for (Item item : items) {
 			stacks.add(new ItemStack(item, LOADOUT_COUNT));
 		}
 		return stacks;
+	}
+
+	/**
+	 * Replenishes a Builder's placed-once items toward a full loadout. Every palette
+	 * stack already in the inventory is topped back up to one, and missing palette
+	 * items are re-added; removed or non-palette items are never re-added, so a
+	 * palette reload takes effect within a second.
+	 *
+	 * @param inventory the Builder's non-equipment inventory (the same list
+	 *                  {@code giveLoadout} fills)
+	 * @return the new stacks that could not be placed (never empty in a normal
+	 *         Builder inventory, which has room for one of each palette item)
+	 */
+	public List<ItemStack> restock(java.util.List<ItemStack> inventory) {
+		List<ItemStack> missing = new ArrayList<>(items.size());
+		java.util.Map<Item, ItemStack> existing = new java.util.HashMap<>(items.size());
+		for (ItemStack stack : inventory) {
+			if (!stack.isEmpty() && items.contains(stack.getItem())) {
+				if (stack.getCount() < LOADOUT_COUNT) {
+					stack.setCount(LOADOUT_COUNT);
+				}
+				existing.put(stack.getItem(), stack);
+			}
+		}
+		for (Item item : items) {
+			if (!existing.containsKey(item)) {
+				missing.add(new ItemStack(item, LOADOUT_COUNT));
+			}
+		}
+		return missing;
 	}
 
 	/** Human-readable summary for {@code /golf mode status} and command feedback. */

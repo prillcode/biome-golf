@@ -26,7 +26,7 @@ depend on your round, lobby, ball, or course state.
 | `/golf mode build` | Operator: enter Builder mode. Lists drafts and finalized courses with authored perimeters to edit. |
 | `/golf mode build <courseId> confirm` | Operator: enter Builder mode and select a course in one step. `confirm` abandons an unfinished attempt first. |
 | `/golf builder course <courseId>` | Operator: select or switch to a draft or finalized course with a landscape perimeter while in Builder mode. |
-| `/golf builder restock` | Operator: re-fill the active Builder palette loadout. |
+| `/golf builder restock` | Operator: immediately restore any missing Builder palette items. The loadout also auto-refills every second while you are in Builder mode, so materials never run out. |
 | `/golf builder palette reload` | Operator: reload `config/minecraft_golf/builder_palette.json`. Malformed files, unknown items, and unsafe items retain the last valid palette. |
 | `/golf browse` | Open the in-game course browser. |
 | `/golf round list` | List open Ready Golf lobbies and finalized courses. Lobby entries include a clickable join action. |

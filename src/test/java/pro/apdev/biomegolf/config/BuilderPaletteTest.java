@@ -1,6 +1,7 @@
 package pro.apdev.biomegolf.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,15 +14,24 @@ import org.junit.jupiter.api.Test;
 class BuilderPaletteTest {
 
 	@Test
-	void defaultsAreValidAndContainTheAgreedMaterials() {
+	void defaultsAreValidAndCoverLandscaping() {
 		BuilderPalette palette = BuilderPalette.defaults();
 		assertEquals(BuilderPalette.CURRENT_SCHEMA, palette.schemaVersion());
 		assertTrue(palette.items().contains("minecraft:lime_wool"));
 		assertTrue(palette.items().contains("minecraft:green_wool"));
 		assertTrue(palette.items().contains("minecraft:moss_carpet"));
-		assertTrue(palette.items().contains("minecraft:birch_fence"));
-		assertTrue(palette.items().contains("minecraft:stone_button"));
-		assertTrue(palette.items().contains("minecraft:oak_button"));
+		// The agreed pale fence/button are pale oak, not birch.
+		assertTrue(palette.items().contains("minecraft:pale_oak_fence"));
+		assertTrue(palette.items().contains("minecraft:pale_oak_button"));
+		assertFalse(palette.items().contains("minecraft:birch_fence"));
+		assertFalse(palette.items().contains("minecraft:oak_button"));
+		// Landscape essentials requested for course building.
+		assertTrue(palette.items().contains("minecraft:sand"));
+		assertTrue(palette.items().contains("minecraft:stone"));
+		assertTrue(palette.items().contains("minecraft:oak_leaves"));
+		assertTrue(palette.items().contains("minecraft:oxeye_daisy"));
+		// One slot per item so a one-of-each loadout always fits.
+		assertEquals(BuilderPalette.MAX_ITEMS, palette.items().size());
 	}
 
 	@Test

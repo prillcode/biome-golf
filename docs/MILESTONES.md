@@ -1522,7 +1522,10 @@ leaking free items or Creative privileges into Survival play.
   hole lengths from anywhere in a course; the off-tee Driver penalty still applies to
   scored golf balls.
 - `config/minecraft_golf/builder_palette.json` with `/golf builder palette reload` and
-  `/golf builder restock`; invalid replacements retain the last valid palette.
+  `/golf builder restock`; invalid replacements retain the last valid palette. The
+  default palette covers landscaping blocks (sand, soil, stone, logs, leaves, saplings,
+  bushes, grass, flowers) and one-of-each stacks auto-refill every second, so Builder
+  materials never run out without an unrestricted Creative catalogue.
 
 ## Exit Criteria
 
