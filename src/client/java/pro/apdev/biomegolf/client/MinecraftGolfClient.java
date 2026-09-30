@@ -23,6 +23,7 @@ import pro.apdev.biomegolf.client.hole.RoundScorecardState;
 import pro.apdev.biomegolf.client.input.PracticeKeybindings;
 import pro.apdev.biomegolf.client.input.HudVisibility;
 import pro.apdev.biomegolf.client.render.GolfBallEntityRenderer;
+import pro.apdev.biomegolf.client.render.GolfStatusBars;
 import pro.apdev.biomegolf.client.swing.SwingController;
 import pro.apdev.biomegolf.client.swing.SwingHud;
 import pro.apdev.biomegolf.entity.GolfBallEntities;
@@ -41,6 +42,9 @@ public class MinecraftGolfClient implements ClientModInitializer {
 		// Minecraft 26.2 uses the render-state submit pipeline. Registration stays
 		// client-only; Fabric's transitive access widener exposes this vanilla API.
 		EntityRenderers.register(GolfBallEntities.GOLF_BALL, GolfBallEntityRenderer::new);
+
+		// M8.15: hide the Survival hunger/XP bars while the server has us in Golf/Builder flight.
+		GolfStatusBars.register();
 
 		PostShotCamera postShotCamera = new PostShotCamera();
 		SwingController swing = new SwingController(postShotCamera);
