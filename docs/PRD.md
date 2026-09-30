@@ -625,8 +625,8 @@ Minecraft world. They are a deliberate product decision, not server survival rul
   Survival play.
 - **World** — ordinary Survival/Peaceful world play, including mining and building
   outside protected course landscapes.
-- **Builder** — an operator-scoped construction mode for one finalized course with an
-  authored landscape perimeter: flight plus an isolated, replenishable palette loadout
+- **Builder** — an operator-scoped construction mode for one draft or finalized course
+  with an authored landscape perimeter: flight plus an isolated, replenishable palette loadout
   drawn from `config/minecraft_golf/builder_palette.json`. Placement is
   server-enforced against the palette and the perimeter; the normal World inventory is
   preserved and restored on exit.

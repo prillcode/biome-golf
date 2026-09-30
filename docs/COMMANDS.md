@@ -23,9 +23,9 @@ depend on your round, lobby, ball, or course state.
 | `/golf mode status` | Show your current player mode (Golf, World, or Builder) and the available switches. |
 | `/golf mode golf` | Enter Golf mode: Creative-style flight and damage protection with your normal Survival items. |
 | `/golf mode world` | Switch to ordinary Survival/Peaceful play. An unfinished attempt must be abandoned with `/golf mode world confirm`. |
-| `/golf mode build` | Operator: enter Builder mode. Prints the finalized courses with an authored perimeter to edit. |
+| `/golf mode build` | Operator: enter Builder mode. Lists drafts and finalized courses with authored perimeters to edit. |
 | `/golf mode build <courseId> confirm` | Operator: enter Builder mode and select a course in one step. `confirm` abandons an unfinished attempt first. |
-| `/golf builder course <courseId>` | Operator: select or switch the course to edit while in Builder mode. |
+| `/golf builder course <courseId>` | Operator: select or switch to a draft or finalized course with a landscape perimeter while in Builder mode. |
 | `/golf builder restock` | Operator: re-fill the active Builder palette loadout. |
 | `/golf builder palette reload` | Operator: reload `config/minecraft_golf/builder_palette.json`. Malformed files, unknown items, and unsafe items retain the last valid palette. |
 | `/golf browse` | Open the in-game course browser. |
@@ -170,7 +170,12 @@ normal play.
 ## Course builder commands
 
 Course authoring commands require gamemaster permission. They define golf metadata on
-existing Minecraft terrain; they do not generate or terraform a course.
+existing Minecraft terrain; they do not generate or terraform a course. To build a new
+course, run `/golf course create <id>`, stand at two opposite perimeter corners and run
+`/golf course landscape bounds` at each, then enter `/golf mode build` and select it
+with `/golf builder course <id>`. Drafts with a perimeter are buildable before any
+hole is defined; only finalized courses can be played. Hole metadata can be authored
+in the draft with `/golf course edit <id>` and the hole commands below.
 
 ### Create, clone, and select courses
 

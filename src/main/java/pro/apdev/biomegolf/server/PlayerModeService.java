@@ -3,7 +3,6 @@ package pro.apdev.biomegolf.server;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,6 @@ import net.minecraft.world.level.storage.TagValueOutput;
 
 import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.course.AuthoredCourseStore;
-import pro.apdev.biomegolf.course.CourseDefinition;
 import pro.apdev.biomegolf.course.CourseLandscape;
 
 /**
@@ -186,20 +184,13 @@ public final class PlayerModeService {
 			+ "; edits are confined to its landscape perimeter");
 	}
 
-	/** Finalized courses with an authored landscape perimeter that a Builder may select. */
-	public List<CourseOption> buildableCourses() {
-		List<CourseOption> options = new ArrayList<>();
+	/** Draft or finalized courses with an authored landscape perimeter. */
+	public List<AuthoredCourseStore.BuilderCourse> buildableCourses() {
 		try {
-			var store = AuthoredCourseService.instance().store();
-			for (CourseDefinition course : store.finalizedCourses()) {
-				if (store.landscape(course.id()).isPresent()) {
-					options.add(new CourseOption(course.id(), course.displayName()));
-				}
-			}
+			return AuthoredCourseService.instance().store().builderCourses();
 		} catch (IllegalStateException exception) {
 			return List.of();
 		}
-		return options;
 	}
 
 	/** Re-fills an active Builder's palette loadout; other modes are a no-op error. */
@@ -316,14 +307,14 @@ public final class PlayerModeService {
 		return null;
 	}
 
-	/** Builder course requirements: finalized and with an authored landscape perimeter. */
+	/** Builder course requirements: an authored draft or finalized course with a perimeter. */
 	private String validateBuilderCourse(String courseId) {
 		try {
 			var store = AuthoredCourseService.instance().store();
-			if (!store.isFinalized(courseId)) {
-				return "[golf] '" + courseId + "' is not an available finalized course";
+			if (!store.isDraft(courseId) && !store.isFinalized(courseId)) {
+				return "[golf] '" + courseId + "' is not an available draft or finalized course";
 			}
-			if (store.landscape(courseId).isEmpty()) {
+			if (!store.isBuilderCourse(courseId)) {
 				return "[golf] course '" + courseId
 					+ "' has no landscape perimeter; author one before restricted building";
 			}
@@ -631,8 +622,6 @@ public final class PlayerModeService {
 		}
 	}
 
-	public record CourseOption(String id, String displayName) {
-	}
 
 	public record TransitionResult(boolean success, String message) {
 		public static TransitionResult ok(String message) {

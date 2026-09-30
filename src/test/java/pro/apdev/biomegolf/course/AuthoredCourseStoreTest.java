@@ -284,6 +284,36 @@ class AuthoredCourseStoreTest {
 	}
 
 	@Test
+	void builderCanSelectOnlyCoursesWithPerimetersIncludingIncompleteDrafts() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("draft", "Draft Course", DIMENSION);
+		store.createCourse("bare", "Bare Draft", DIMENSION);
+		store.createCourse("final", "Playable Course", DIMENSION);
+		completeHole(store, "final", 1, 4);
+		store.finalize("final");
+		store.setLandscape(landscape("draft", true));
+		store.setLandscape(landscape("final", true));
+
+		assertTrue(store.isBuilderCourse("DRAFT"));
+		assertTrue(store.isBuilderCourse("final"));
+		assertFalse(store.isBuilderCourse("bare"));
+		assertFalse(store.isBuilderCourse("missing"));
+		assertEquals(java.util.List.of(
+			new AuthoredCourseStore.BuilderCourse("draft", "Draft Course", true),
+			new AuthoredCourseStore.BuilderCourse("final", "Playable Course", false)),
+			store.builderCourses());
+		assertThrows(IllegalArgumentException.class, () -> store.finalizedCourse("draft"));
+
+		store.clearLandscape("draft");
+		assertFalse(store.isBuilderCourse("draft"));
+		assertEquals(1, store.builderCourses().size());
+		store.setLandscape(landscape("draft", false));
+		store.removeCourse("draft");
+		assertFalse(store.isBuilderCourse("draft"));
+		assertEquals(1, store.builderCourses().size());
+	}
+
+	@Test
 	void landscapeRequiresAnExistingCourseInTheSameDimension() {
 		AuthoredCourseStore store = new AuthoredCourseStore();
 		store.createCourse("links", "Links", DIMENSION);

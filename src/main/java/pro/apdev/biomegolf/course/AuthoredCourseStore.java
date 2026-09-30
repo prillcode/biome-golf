@@ -259,6 +259,31 @@ public final class AuthoredCourseStore {
 		return List.copyOf(finalized.values());
 	}
 
+	/** Whether an authored draft or finalized course has a landscape perimeter for Builder edits. */
+	public boolean isBuilderCourse(String courseId) {
+		String id = normalizeId(courseId);
+		return (drafts.containsKey(id) || finalized.containsKey(id)) && landscapes.containsKey(id);
+	}
+
+	/** Drafts and finalized courses with a landscape perimeter are eligible for Builder edits. */
+	public List<BuilderCourse> builderCourses() {
+		List<BuilderCourse> result = new ArrayList<>();
+		for (CourseDraft draft : drafts.values()) {
+			if (isBuilderCourse(draft.id)) {
+				result.add(new BuilderCourse(draft.id, draft.displayName, true));
+			}
+		}
+		for (CourseDefinition course : finalized.values()) {
+			if (isBuilderCourse(course.id())) {
+				result.add(new BuilderCourse(course.id(), course.displayName(), false));
+			}
+		}
+		return List.copyOf(result);
+	}
+
+	public record BuilderCourse(String id, String displayName, boolean draft) {
+	}
+
 	/** Selects a finalized course as this world's persistent default. */
 	public void setDefaultCourse(String courseId) {
 		String id = normalizeId(courseId);

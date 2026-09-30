@@ -11,7 +11,8 @@ and uses [Semantic Versioning](https://semver.org/).
 
 - Added server-owned player modes: `/golf mode golf|world|status` and `/golf mode build`
   for operators. `/golf mode build` switches to Builder mode and lists editable courses;
-  `/golf builder course <id>` selects one. Golf mode grants Creative-style flight
+  `/golf builder course <id>` selects one, including perimeter-backed drafts so a new
+  course can be built before finalizing its holes. Golf mode grants Creative-style flight
   and damage protection while keeping the normal Survival inventory; World mode is
   ordinary Survival; Builder mode uses an isolated, replenishable palette. Mode choice
   is remembered across reconnects and supported newcomers default to Golf.

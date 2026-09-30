@@ -26,6 +26,7 @@ import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.server.ActiveHoleService;
 import pro.apdev.biomegolf.server.ActiveHoleService.StartResult;
 import pro.apdev.biomegolf.server.BuilderPaletteService;
+import pro.apdev.biomegolf.course.AuthoredCourseStore;
 import pro.apdev.biomegolf.server.PlayerModeService;
 import pro.apdev.biomegolf.server.PracticeRangeService;
 import pro.apdev.biomegolf.server.PracticeRangeService.Location;
@@ -607,24 +608,29 @@ public final class GolfHoleCommands {
 		return sendModeResult(context, PlayerModeService.instance().selectBuilderCourse(player, courseId));
 	}
 
-	/** Lists finalized courses that have an authored perimeter, each with a clickable edit command. */
+	/** Lists drafts and finalized courses with perimeters, each with a clickable edit command. */
 	private static void listBuilderCourses(CommandContext<CommandSourceStack> context) {
-		List<PlayerModeService.CourseOption> courses = PlayerModeService.instance().buildableCourses();
+		List<AuthoredCourseStore.BuilderCourse> courses = PlayerModeService.instance().buildableCourses();
 		if (courses.isEmpty()) {
 			context.getSource().sendSuccess(() -> Component.literal(
-				"[golf] no finalized course has an authored landscape perimeter to edit"), false);
+				"[golf] no draft or finalized course has a landscape perimeter. For a new course: "
+					+ "/golf course create <id>, then /golf course landscape bounds (twice), "
+					+ "then /golf builder course <id>"), false);
 			return;
 		}
 		context.getSource().sendSuccess(() -> Component.literal("[golf] courses available to edit:")
 			.withStyle(ChatFormatting.GOLD), false);
-		for (PlayerModeService.CourseOption course : courses) {
+		for (AuthoredCourseStore.BuilderCourse course : courses) {
 			String command = "/golf builder course " + course.id();
 			context.getSource().sendSuccess(() -> Component.literal(course.id() + " | " + course.displayName()
-				+ " | ")
+				+ (course.draft() ? " | DRAFT" : " | FINALIZED") + " | ")
 				.append(Component.literal("[Edit]").withStyle(style -> style.withColor(ChatFormatting.GREEN)
 					.withClickEvent(new ClickEvent.RunCommand(command))))
 				.append(Component.literal(" " + command)), false);
 		}
+		context.getSource().sendSuccess(() -> Component.literal(
+			"[golf] new course? /golf course create <id>, then /golf course landscape bounds "
+				+ "at two corners, then /golf builder course <id>"), false);
 	}
 
 	private static int modeWorld(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
