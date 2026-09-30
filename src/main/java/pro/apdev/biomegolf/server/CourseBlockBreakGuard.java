@@ -99,8 +99,21 @@ public final class CourseBlockBreakGuard {
 	/** Fabric BEFORE handler: returns true to allow the break, false to cancel it. */
 	private static boolean onBeforeBlockBreak(Level world, Player player, BlockPos pos,
 			BlockState state, BlockEntity blockEntity) {
-		var zones = INDEX.zones(dimension(world));
-		var landscapes = INDEX.landscapes(dimension(world));
+		String dimension = dimension(world);
+		// M8.15: an active Builder may edit only inside their selected course perimeter,
+		// even when they are an operator and the landscape is locked. Everyone else keeps
+		// the existing verdict rules, so one builder never relaxes protection for others.
+		if (PlayerModeService.instance().isBuilder(player.getUUID())) {
+			if (!PlayerModeService.instance().builderAllowsEdit(player.getUUID(), dimension,
+					pos.getX(), pos.getY(), pos.getZ())) {
+				MinecraftGolf.LOGGER.info("[golf] blocked builder {} from breaking outside their course at ({}, {}, {})",
+					player.getName().getString(), pos.getX(), pos.getY(), pos.getZ());
+				return false;
+			}
+			return true;
+		}
+		var zones = INDEX.zones(dimension);
+		var landscapes = INDEX.landscapes(dimension);
 		if (zones.isEmpty() && landscapes.isEmpty()) return true;
 		boolean cupBlock = state.getBlock() == GolfBlocks.GOLF_CUP;
 		if (!CourseProtection.mayBreak(zones, landscapes, pos.getX(), pos.getY(), pos.getZ(),
@@ -132,6 +145,24 @@ public final class CourseBlockBreakGuard {
 		if (world.isClientSide()) return null;
 		String dimension = dimension(world);
 		boolean operator = isOperator(player);
+
+		// M8.15: an active Builder may place only currently-supplied palette items, and
+		// only inside their selected course perimeter. This is server enforcement, not a
+		// filtered Creative screen.
+		if (PlayerModeService.instance().isBuilder(player.getUUID())) {
+			BlockPos placementPos = pos.relative(hitResult.getDirection());
+			boolean inside = PlayerModeService.instance().builderAllowsEdit(player.getUUID(), dimension,
+					pos.getX(), pos.getY(), pos.getZ())
+				&& PlayerModeService.instance().builderAllowsEdit(player.getUUID(), dimension,
+					placementPos.getX(), placementPos.getY(), placementPos.getZ());
+			if (!inside || !BuilderPaletteService.instance().isAllowed(stack)) {
+				MinecraftGolf.LOGGER.info("[golf] blocked builder {} from placing {} at ({}, {}, {})",
+					player.getName().getString(), stack.getItem(), placementPos.getX(), placementPos.getY(),
+					placementPos.getZ());
+				return InteractionResult.CONSUME;
+			}
+			return null;
+		}
 
 		// TNT blocks/minecarts: use the blast-margin-expanded perimeter so a charge
 		// placed just outside a boundary that could still reach in is denied too.
@@ -177,6 +208,13 @@ public final class CourseBlockBreakGuard {
 			boolean loadedFromDisk) {
 		if (loadedFromDisk || !(entity instanceof PrimedTnt tnt)) {
 			return true;
+		}
+		// M8.15: builders are never supplied TNT; refuse any charge they prime.
+		if (tnt.getOwner() instanceof Player owner
+				&& PlayerModeService.instance().isBuilder(owner.getUUID())) {
+			MinecraftGolf.LOGGER.info("[golf] cancelled a primed TNT owned by builder {}",
+				owner.getName().getString());
+			return false;
 		}
 		BlockPos pos = entity.blockPosition();
 		ProtectionVerdict verdict = INDEX.tntVerdict(dimension(level),

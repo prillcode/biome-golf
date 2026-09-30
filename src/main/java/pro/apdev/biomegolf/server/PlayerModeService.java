@@ -1,0 +1,562 @@
+package pro.apdev.biomegolf.server;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.entity.player.Abilities;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+
+import pro.apdev.biomegolf.MinecraftGolf;
+import pro.apdev.biomegolf.course.AuthoredCourseStore;
+import pro.apdev.biomegolf.course.CourseLandscape;
+
+/**
+ * M8.15: server-owned player modes for supported Java golfers.
+ *
+ * <p>The supported Java experience has three modes over the same Minecraft world:
+ * {@link PlayerMode#GOLF} (Survival game type plus Creative-style flight and damage
+ * protection, sharing the normal inventory), {@link PlayerMode#WORLD} (ordinary
+ * Survival play), and {@link PlayerMode#BUILDER} (operator-scoped flight with an
+ * isolated, replenishable palette loadout). Visitors never enter any of them.</p>
+ *
+ * <p>Mode selection is preserved in {@code <world>/data/minecraft_golf_player_modes.json}.
+ * A supported newcomer defaults to Golf. Builder transitions are failure-atomic: the
+ * World inventory is snapshotted to {@code <world>/data/minecraft_golf_builder_inventories/}
+ * before the palette loadout replaces it, and restored on exit. Leaving flight requires
+ * safe footing so flight is never removed midair.</p>
+ */
+public final class PlayerModeService {
+
+	private static final String FILE_NAME = "minecraft_golf_player_modes.json";
+	private static final String INVENTORY_DIR = "minecraft_golf_builder_inventories";
+	private static final String SCHEMA_KEY = "schemaVersion";
+	private static final int SCHEMA_VERSION = 1;
+	private static final int LANDING_SCAN_BLOCKS = 96;
+
+	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+	private static final PlayerModeService INSTANCE = new PlayerModeService();
+
+	private final Map<UUID, PlayerMode> modes = new HashMap<>();
+	private final Map<UUID, String> builderCourses = new HashMap<>();
+
+	private MinecraftServer server;
+	private Path savePath;
+	private Path inventoryDir;
+	private boolean dirty;
+
+	private PlayerModeService() {
+	}
+
+	public static PlayerModeService instance() {
+		return INSTANCE;
+	}
+
+	public static void register() {
+		ServerLifecycleEvents.SERVER_STARTED.register(server -> INSTANCE.onServerStarted(server));
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> INSTANCE.onServerStopping());
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> INSTANCE.onPlayerJoined(handler.getPlayer()));
+		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> INSTANCE.onRespawn(newPlayer));
+		ServerTickEvents.END_SERVER_TICK.register(INSTANCE::onServerTick);
+		MinecraftGolf.LOGGER.info("Registered player mode service (world JSON at data/{})", FILE_NAME);
+	}
+
+	// ── Queries ──────────────────────────────────────────────────────────────
+
+	public PlayerMode mode(UUID playerId) {
+		return modes.getOrDefault(playerId, PlayerMode.GOLF);
+	}
+
+	public String builderCourseId(UUID playerId) {
+		return builderCourses.get(playerId);
+	}
+
+	public boolean isBuilder(UUID playerId) {
+		return mode(playerId) == PlayerMode.BUILDER;
+	}
+
+	/** Whether a player may mutate the block at this position through their Builder scope. */
+	public boolean builderAllowsEdit(UUID playerId, String dimension, int x, int y, int z) {
+		if (mode(playerId) != PlayerMode.BUILDER) {
+			return false;
+		}
+		CourseLandscape landscape = builderLandscape(playerId);
+		return landscape != null && landscape.dimension().equals(dimension)
+			&& landscape.contains(x, y, z);
+	}
+
+	/** Human-readable mode summary for {@code /golf mode status}. */
+	public String status(ServerPlayer player) {
+		PlayerMode mode = mode(player.getUUID());
+		StringBuilder message = new StringBuilder("[golf] mode: ").append(mode.displayName());
+		if (mode == PlayerMode.BUILDER) {
+			String course = builderCourseId(player.getUUID());
+			message.append(" (course ").append(course == null ? "unset" : course)
+				.append("; ").append(BuilderPaletteService.instance().describe()).append(")");
+		} else if (mode == PlayerMode.GOLF) {
+			message.append(" (flight, no damage; normal Survival items)");
+		}
+		message.append(" | switch with /golf mode golf|world");
+		if (canBuild(player)) {
+			message.append("|build <courseId>");
+		}
+		return message.toString();
+	}
+
+	/** Whether the player currently holds the operator permission required to build. */
+	public boolean canBuild(ServerPlayer player) {
+		return Commands.LEVEL_GAMEMASTERS.check(player.permissions())
+			&& !BuilderPaletteService.instance().isEmpty();
+	}
+
+	// ── Transitions ──────────────────────────────────────────────────────────
+
+	public TransitionResult setGolf(ServerPlayer player) {
+		return transition(player, PlayerMode.GOLF, null);
+	}
+
+	public TransitionResult setWorld(ServerPlayer player) {
+		return transition(player, PlayerMode.WORLD, null);
+	}
+
+	public TransitionResult enterBuilder(ServerPlayer player, String courseId) {
+		return transition(player, PlayerMode.BUILDER, courseId);
+	}
+
+	/** Re-fills an active Builder's palette loadout; other modes are a no-op error. */
+	public TransitionResult restockBuilder(ServerPlayer player) {
+		if (VisitorService.isVisitor(player)) {
+			return TransitionResult.fail("[golf] builder mode is for supported Java clients");
+		}
+		if (mode(player.getUUID()) != PlayerMode.BUILDER) {
+			return TransitionResult.fail("[golf] you are not in Builder mode");
+		}
+		giveLoadout(player);
+		return TransitionResult.ok("[golf] builder palette restocked: "
+			+ BuilderPaletteService.instance().describe());
+	}
+
+	/** Best-effort Golf switch used by successful round lifecycle commits; never fails an action. */
+	public void enterGolfBestEffort(ServerPlayer player) {
+		if (VisitorService.isVisitor(player) || mode(player.getUUID()) == PlayerMode.GOLF) {
+			applyMode(player, PlayerMode.GOLF);
+			return;
+		}
+		TransitionResult result = transition(player, PlayerMode.GOLF, null);
+		if (!result.success()) {
+			MinecraftGolf.LOGGER.warn("Could not switch {} to Golf mode: {}",
+				player.getName().getString(), result.message());
+		}
+	}
+
+	private TransitionResult transition(ServerPlayer player, PlayerMode target, String builderCourse) {
+		if (VisitorService.isVisitor(player)) {
+			return TransitionResult.fail("[golf] golf modes are for supported Java clients");
+		}
+		UUID playerId = player.getUUID();
+		PlayerMode current = mode(playerId);
+		String normalizedCourse = null;
+		if (target == PlayerMode.BUILDER) {
+			normalizedCourse = AuthoredCourseStore.normalizeId(Objects.requireNonNull(builderCourse, "courseId"));
+			String error = validateBuilderCourse(player, normalizedCourse);
+			if (error != null) {
+				return TransitionResult.fail(error);
+			}
+		}
+		boolean sameCourse = target == PlayerMode.BUILDER
+			&& Objects.equals(builderCourses.get(playerId), normalizedCourse);
+		if (target == current && (target != PlayerMode.BUILDER || sameCourse)) {
+			applyMode(player, current);
+			return TransitionResult.ok("[golf] already in " + current.displayName() + " mode");
+		}
+
+		// Check safe footing before any mutation so a failed switch leaves state unchanged.
+		if (target == PlayerMode.WORLD && current != PlayerMode.WORLD && !ensureSafeFooting(player)) {
+			return TransitionResult.fail("[golf] land on solid ground before switching to World mode");
+		}
+
+		if (current == PlayerMode.BUILDER && target != PlayerMode.BUILDER) {
+			if (!restoreWorldInventory(player)) {
+				return TransitionResult.fail(
+					"[golf] could not restore your World inventory; staying in Builder mode");
+			}
+		} else if (target == PlayerMode.BUILDER && current != PlayerMode.BUILDER) {
+			if (!saveWorldInventory(player)) {
+				return TransitionResult.fail("[golf] could not preserve your World inventory; staying in "
+					+ current.displayName() + " mode");
+			}
+			giveLoadout(player);
+		}
+
+		modes.put(playerId, target);
+		if (target == PlayerMode.BUILDER) {
+			builderCourses.put(playerId, normalizedCourse);
+		} else {
+			builderCourses.remove(playerId);
+		}
+		dirty = true;
+		applyMode(player, target);
+		save();
+		MinecraftGolf.LOGGER.info("{} switched to {} mode", player.getName().getString(), target.displayName());
+		return TransitionResult.ok(switch (target) {
+			case GOLF -> "[golf] Golf mode: flight and no damage, normal Survival items";
+			case WORLD -> "[golf] World mode: Survival. Build and mine outside protected courses";
+			case BUILDER -> "[golf] Builder mode for " + normalizedCourse + ": palette loadout supplied";
+		});
+	}
+
+	private String validateBuilderCourse(ServerPlayer player, String courseId) {
+		if (!Commands.LEVEL_GAMEMASTERS.check(player.permissions())) {
+			return "[golf] Builder mode requires operator/gamemaster permission";
+		}
+		if (BuilderPaletteService.instance().isEmpty()) {
+			return "[golf] the builder palette is empty; add items to config/minecraft_golf/builder_palette.json";
+		}
+		try {
+			var store = AuthoredCourseService.instance().store();
+			if (!store.isFinalized(courseId)) {
+				return "[golf] '" + courseId + "' is not an available finalized course";
+			}
+			if (store.landscape(courseId).isEmpty()) {
+				return "[golf] course '" + courseId
+					+ "' has no landscape perimeter; author one before restricted building";
+			}
+		} catch (IllegalStateException exception) {
+			return "[golf] the authored course store is not available";
+		}
+		return null;
+	}
+
+	private CourseLandscape builderLandscape(UUID playerId) {
+		String course = builderCourses.get(playerId);
+		if (course == null) {
+			return null;
+		}
+		try {
+			return AuthoredCourseService.instance().store().landscape(course).orElse(null);
+		} catch (IllegalStateException exception) {
+			return null;
+		}
+	}
+
+	// ── Mode application ─────────────────────────────────────────────────────
+
+	private void applyMode(ServerPlayer player, PlayerMode mode) {
+		player.setGameMode(GameType.SURVIVAL);
+		Abilities abilities = player.getAbilities();
+		switch (mode) {
+			case GOLF -> {
+				abilities.mayfly = true;
+				abilities.invulnerable = true;
+			}
+			case WORLD -> {
+				abilities.mayfly = false;
+				abilities.flying = false;
+				abilities.invulnerable = false;
+			}
+			case BUILDER -> {
+				abilities.mayfly = true;
+				abilities.invulnerable = true;
+			}
+		}
+		player.onUpdateAbilities();
+	}
+
+	/**
+	 * When removing flight, puts an airborne flyer on the nearest solid footing
+	 * directly below instead of dropping them midair. Returns false (leaving state
+	 * unchanged) when no safe column is found, for example over the void.
+	 */
+	private boolean ensureSafeFooting(ServerPlayer player) {
+		Abilities abilities = player.getAbilities();
+		if (!abilities.flying || player.onGround()) {
+			return true;
+		}
+		ServerLevel level = (ServerLevel) player.level();
+		BlockPos start = player.blockPosition();
+		for (int y = start.getY() - 1; y >= level.getMinY() + 1; y--) {
+			BlockPos feet = new BlockPos(start.getX(), y, start.getZ());
+			if (!level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), Direction.UP)) continue;
+			if (!level.getBlockState(feet).isAir()) continue;
+			if (!level.getBlockState(feet.above()).isAir()) continue;
+			if (!level.getFluidState(feet).isEmpty()) continue;
+			player.teleportTo(level, feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5,
+				Set.of(), player.getYRot(), player.getXRot(), true);
+			player.setDeltaMovement(0, 0, 0);
+			player.resetFallDistance();
+			abilities.flying = false;
+			player.onUpdateAbilities();
+			return true;
+		}
+		return false;
+	}
+
+	// ── Lifecycle ────────────────────────────────────────────────────────────
+
+	private void onPlayerJoined(ServerPlayer player) {
+		if (VisitorService.isVisitor(player)) {
+			return;
+		}
+		UUID playerId = player.getUUID();
+		PlayerMode saved = modes.getOrDefault(playerId, PlayerMode.GOLF);
+		if (saved == PlayerMode.BUILDER) {
+			String error = validateBuilderCourse(player, builderCourses.get(playerId));
+			if (error != null) {
+				MinecraftGolf.LOGGER.warn("Demoting {} from Builder mode on join: {}",
+					player.getName().getString(), error);
+				if (hasSavedInventory(playerId)) {
+					restoreWorldInventory(player);
+				}
+				builderCourses.remove(playerId);
+				modes.put(playerId, PlayerMode.WORLD);
+				dirty = true;
+				save();
+				applyMode(player, PlayerMode.WORLD);
+				player.sendSystemMessage(Component.literal("[golf] " + error
+					+ "; your World items were restored and you are in World mode"));
+				return;
+			}
+			// The persisted playerdata inventory is the Builder loadout; replace it
+			// with a fresh palette loadout so the saved World inventory stays intact.
+			giveLoadout(player);
+			applyMode(player, PlayerMode.BUILDER);
+			return;
+		}
+		applyMode(player, saved);
+	}
+
+	private void onRespawn(ServerPlayer player) {
+		if (VisitorService.isVisitor(player)) {
+			return;
+		}
+		PlayerMode mode = mode(player.getUUID());
+		if (mode == PlayerMode.BUILDER) {
+			giveLoadout(player);
+		}
+		applyMode(player, mode);
+	}
+
+	private void onServerTick(MinecraftServer server) {
+		if (this.server == null || server.getTickCount() % 20 != 0) {
+			return;
+		}
+		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+			if (mode(player.getUUID()) == PlayerMode.BUILDER) {
+				sanitizeBuilder(player);
+			}
+		}
+	}
+
+	/** Removes anything a Builder is not currently supplied, closing pickup/container leaks within a second. */
+	private void sanitizeBuilder(ServerPlayer player) {
+		Inventory inventory = player.getInventory();
+		boolean changed = false;
+		for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+			ItemStack stack = inventory.getItem(slot);
+			if (!stack.isEmpty() && !BuilderPaletteService.instance().isAllowed(stack)) {
+				inventory.setItem(slot, ItemStack.EMPTY);
+				changed = true;
+			}
+		}
+		ItemStack carried = player.containerMenu.getCarried();
+		if (!carried.isEmpty() && !BuilderPaletteService.instance().isAllowed(carried)) {
+			player.containerMenu.setCarried(ItemStack.EMPTY);
+			changed = true;
+		}
+		if (changed) {
+			inventory.setChanged();
+			player.inventoryMenu.broadcastChanges();
+		}
+	}
+
+	// ── Builder inventory persistence ────────────────────────────────────────
+
+	private Path inventoryFile(UUID playerId) {
+		return inventoryDir == null ? null : inventoryDir.resolve(playerId + ".nbt");
+	}
+
+	private boolean hasSavedInventory(UUID playerId) {
+		Path file = inventoryFile(playerId);
+		return file != null && Files.exists(file);
+	}
+
+	private boolean saveWorldInventory(ServerPlayer player) {
+		Path file = inventoryFile(player.getUUID());
+		if (file == null) {
+			return false;
+		}
+		try {
+			Files.createDirectories(file.getParent());
+			TagValueOutput output = TagValueOutput.createWithContext(
+				ProblemReporter.DISCARDING, server.registryAccess());
+			ContainerHelper.saveAllItems(output, player.getInventory().getNonEquipmentItems());
+			NbtIo.writeCompressed(output.buildResult(), file);
+			return true;
+		} catch (IOException | RuntimeException exception) {
+			MinecraftGolf.LOGGER.error("Failed to save World inventory for {} at {}",
+				player.getName().getString(), file, exception);
+			return false;
+		}
+	}
+
+	private boolean restoreWorldInventory(ServerPlayer player) {
+		Path file = inventoryFile(player.getUUID());
+		if (file == null || !Files.exists(file)) {
+			MinecraftGolf.LOGGER.error("No saved World inventory for {}", player.getName().getString());
+			return false;
+		}
+		try {
+			CompoundTag tag = NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap());
+			var input = TagValueInput.create(ProblemReporter.DISCARDING, server.registryAccess(), tag);
+			Inventory inventory = player.getInventory();
+			NonNullList<ItemStack> restored = NonNullList.withSize(
+				inventory.getNonEquipmentItems().size(), ItemStack.EMPTY);
+			ContainerHelper.loadAllItems(input, restored);
+			NonNullList<ItemStack> target = inventory.getNonEquipmentItems();
+			for (int slot = 0; slot < target.size(); slot++) {
+				target.set(slot, restored.get(slot));
+			}
+			inventory.setChanged();
+			player.inventoryMenu.broadcastChanges();
+			Files.deleteIfExists(file);
+			return true;
+		} catch (IOException | RuntimeException exception) {
+			MinecraftGolf.LOGGER.error("Failed to restore World inventory for {} from {}",
+				player.getName().getString(), file, exception);
+			return false;
+		}
+	}
+
+	private void giveLoadout(ServerPlayer player) {
+		Inventory inventory = player.getInventory();
+		inventory.clearContent();
+		for (ItemStack stack : BuilderPaletteService.instance().loadout()) {
+			if (!inventory.add(stack)) {
+				player.drop(stack, false);
+			}
+		}
+		inventory.setChanged();
+		player.inventoryMenu.broadcastChanges();
+	}
+
+	// ── Server persistence ───────────────────────────────────────────────────
+
+	private void onServerStarted(MinecraftServer server) {
+		this.server = server;
+		Path root = server.getWorldPath(LevelResource.ROOT);
+		savePath = root.resolve("data").resolve(FILE_NAME);
+		inventoryDir = root.resolve("data").resolve(INVENTORY_DIR);
+		load();
+	}
+
+	private void onServerStopping() {
+		save();
+		modes.clear();
+		builderCourses.clear();
+		server = null;
+		savePath = null;
+		inventoryDir = null;
+		dirty = false;
+	}
+
+	private void load() {
+		modes.clear();
+		builderCourses.clear();
+		if (savePath == null || !Files.exists(savePath)) {
+			return;
+		}
+		try {
+			JsonObject root = JsonParser.parseReader(Files.newBufferedReader(savePath)).getAsJsonObject();
+			JsonObject players = root.has("players") && root.get("players").isJsonObject()
+				? root.getAsJsonObject("players") : new JsonObject();
+			for (Map.Entry<String, JsonElement> entry : players.entrySet()) {
+				if (!entry.getValue().isJsonObject()) {
+					continue;
+				}
+				try {
+					UUID playerId = UUID.fromString(entry.getKey());
+					JsonObject json = entry.getValue().getAsJsonObject();
+					PlayerMode mode = PlayerMode.valueOf(json.get("mode").getAsString());
+					modes.put(playerId, mode);
+					if (mode == PlayerMode.BUILDER && json.has("builderCourse")) {
+						builderCourses.put(playerId, json.get("builderCourse").getAsString());
+					}
+				} catch (RuntimeException ignored) {
+					MinecraftGolf.LOGGER.warn("Ignoring invalid player mode entry '{}' in {}", entry.getKey(), savePath);
+				}
+			}
+		} catch (IOException | RuntimeException exception) {
+			MinecraftGolf.LOGGER.error("Failed to load player modes from {}; starting with defaults", savePath, exception);
+		}
+	}
+
+	private void save() {
+		if (savePath == null || !dirty) {
+			return;
+		}
+		try {
+			Files.createDirectories(savePath.getParent());
+			JsonObject root = new JsonObject();
+			root.addProperty(SCHEMA_KEY, SCHEMA_VERSION);
+			JsonObject players = new JsonObject();
+			for (Map.Entry<UUID, PlayerMode> entry : modes.entrySet()) {
+				JsonObject json = new JsonObject();
+				json.addProperty("mode", entry.getValue().name());
+				String builderCourse = builderCourses.get(entry.getKey());
+				if (entry.getValue() == PlayerMode.BUILDER && builderCourse != null) {
+					json.addProperty("builderCourse", builderCourse);
+				}
+				players.add(entry.getKey().toString(), json);
+			}
+			root.add("players", players);
+			Files.writeString(savePath, GSON.toJson(root));
+			dirty = false;
+		} catch (IOException exception) {
+			MinecraftGolf.LOGGER.error("Failed to save player modes to {}", savePath, exception);
+		}
+	}
+
+	public record TransitionResult(boolean success, String message) {
+		public static TransitionResult ok(String message) {
+			return new TransitionResult(true, message);
+		}
+
+		public static TransitionResult fail(String message) {
+			return new TransitionResult(false, message);
+		}
+	}
+}

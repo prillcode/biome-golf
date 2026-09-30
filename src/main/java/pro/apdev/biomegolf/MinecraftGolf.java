@@ -28,7 +28,9 @@ import pro.apdev.biomegolf.net.ShotNetworking;
 import pro.apdev.biomegolf.server.ActiveHoleService;
 import pro.apdev.biomegolf.server.AuthoredCourseService;
 import pro.apdev.biomegolf.server.BallCameraService;
+import pro.apdev.biomegolf.server.BuilderPaletteService;
 import pro.apdev.biomegolf.server.HeldShotService;
+import pro.apdev.biomegolf.server.PlayerModeService;
 import pro.apdev.biomegolf.server.PracticeRangeService;
 import pro.apdev.biomegolf.server.VisitorService;
 import pro.apdev.biomegolf.server.CourseBlockBreakGuard;
@@ -83,6 +85,8 @@ public class MinecraftGolf implements ModInitializer {
 		AuthoredCourseService.register();
 		PracticeRangeService.register();
 		VisitorService.register();
+		BuilderPaletteService.register();
+		PlayerModeService.register();
 		ActiveHoleService.register();
 		GolfCourseCommands.register();
 

@@ -12,7 +12,8 @@ class GolfHelpPagesTest {
 
 	private static final List<String> TOP_LEVEL_GOLF_LITERALS = List.of(
 		"help", "spectator", "visitor", "round", "browse", "hole", "clubs", "practice",
-		"pickup", "tapin", "swing", "nexthole", "course", "spawn", "launch", "inspect", "dev", "hud");
+		"pickup", "tapin", "swing", "nexthole", "course", "spawn", "launch", "inspect", "dev", "hud",
+		"mode", "builder");
 
 	@Test
 	void everyTopLevelGolfLiteralAppearsInPlayerOrAdminHelp() {

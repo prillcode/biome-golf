@@ -1619,6 +1619,25 @@ par
 boundary
 ```
 
+## Player modes and builder palette (M8.15)
+
+Player-mode selection is world-scoped and Minecraft-native:
+
+```text
+<world>/data/minecraft_golf_player_modes.json      mode per player UUID
+default: Golf for a supported newcomer
+```
+
+World-inventory snapshots taken while a player is in Builder mode live at
+`<world>/data/minecraft_golf_builder_inventories/<uuid>.nbt`, so a server stop or
+reconnect never overwrites the saved World loadout with the Builder palette.
+
+The curated Builder material allowlist is a server-global Fabric config at
+`config/minecraft_golf/builder_palette.json`. It is validated as a whole before it
+replaces the active palette; unknown, non-placeable, or unsafe items retain the last
+valid palette. Palette membership grants material access, not arbitrary item
+components.
+
 Avoid one giant global configuration object.
 
 ---

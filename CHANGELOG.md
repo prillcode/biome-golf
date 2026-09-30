@@ -7,7 +7,17 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Changes made after the latest release will be recorded here.
+### Added
+
+- Added server-owned player modes: `/golf mode golf|world|status` and
+  `/golf mode build <courseId>` for operators. Golf mode grants Creative-style flight
+  and damage protection while keeping the normal Survival inventory; World mode is
+  ordinary Survival; Builder mode uses an isolated, replenishable palette. Mode choice
+  is remembered across reconnects and supported newcomers default to Golf.
+- Added the operator-editable `config/minecraft_golf/builder_palette.json` allowlist,
+  with `/golf builder palette reload` and `/golf builder restock`. An active Builder may
+  edit only inside their selected course perimeter — including a locked one — and may
+  place only currently-supplied palette items.
 
 ## [0.8.5] - 2026-09-29
 

@@ -613,6 +613,30 @@ This configuration system is **not required for MVP**.
 
 Golf balls should not allow other golfers to intentionally disrupt a shot simply by standing in the ball's path.
 
+### Player Modes (V1, M8.15)
+
+The supported Java client has three server-owned player modes over the same
+Minecraft world. They are a deliberate product decision, not server survival rules:
+
+- **Golf** — the default for a supported newcomer. Survival game type plus
+  Creative-style flight and damage protection, sharing the normal Survival
+  inventory. This is deliberately **flight-only, not literal Creative**: it does not
+  grant `instabuild` or a Creative item catalogue, so it cannot leak free items into
+  Survival play.
+- **World** — ordinary Survival/Peaceful world play, including mining and building
+  outside protected course landscapes.
+- **Builder** — an operator-scoped construction mode for one finalized course with an
+  authored landscape perimeter: flight plus an isolated, replenishable palette loadout
+  drawn from `config/minecraft_golf/builder_palette.json`. Placement is
+  server-enforced against the palette and the perimeter; the normal World inventory is
+  preserved and restored on exit.
+
+Visitors remain the existing Survival/Spectator policy and never receive Java
+Golf/Builder abilities. The server-wide default stays Survival with
+`force-gamemode=false`. Peaceful remains a server-wide difficulty, not a per-player
+mode. Cup and flag assembly stays command-managed (`/golf hole cup <n>`), and the
+palette is decorative construction material only.
+
 ---
 
 ## 28. Wind

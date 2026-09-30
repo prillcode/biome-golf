@@ -151,6 +151,7 @@ The host operating system should not affect the Fabric server architecture.
 | M8.12 | Off-Tee Driver Discipline | Implemented in 0.8.5; manual playtest pending (see docs/M8.12-CLOSEOUT.md) |
 | M8.13 | HUD Visibility and Command Help | Implemented in 0.8.5; client restart/manual acceptance pending (see docs/M8.13-CLOSEOUT.md) |
 | M8.14 | Decked Driver Rollout | Implemented in 0.8.5; manual in-game flight confirmation pending (see docs/M8.14-CLOSEOUT.md) |
+| M8.15 | Golf, World, and Builder Player Modes | Implemented (flight-only Golf); automated checks pass, Loom/Docker and two-player verification pending (see docs/M8.15-PLAN.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
 | M10.3 | Tier 1 Cross-Play (Java-Safe) | **Tier 1 implemented, then play shelved and repurposed as Bedrock visitor mode (2026-09)**; client-light clients watch (`/golf spectator`) or join the world (`/golf spectator leave`) and are invited to Java (see docs/BEDROCK-VISITOR-MODE-PLAN.md). |
@@ -1487,6 +1488,42 @@ removing its distance penalty or changing explicit Stinger behavior.
 Automated simulation proves the runner adds distance over the former deck profile while
 preserving both distance comparisons, and the exact artifact passes build, Loom, Docker,
 and installed-client deployment verification. Manual in-game feel is tracked separately.
+
+---
+
+# M8.15 — Golf, World, and Builder Player Modes
+
+## Status
+
+Implemented (flight-only Golf per the resolved product decision). Automated tests and
+build pass; Loom client/server, Docker health, and authenticated two-player/mode-switch
+verification remain pending. See `docs/M8.15-PLAN.md` for the full contract.
+
+## Goal
+
+Give supported Java players a server-owned Golf mode (flight and damage protection with
+the normal Survival inventory), an explicit World mode (ordinary Survival), and an
+operator-scoped Builder mode with a curated, replenishable material palette — without
+leaking free items or Creative privileges into Survival play.
+
+## Scope
+
+- `/golf mode golf|world|status` and `/golf mode build <courseId>`, with confirmed
+  abandonment of an unfinished attempt before switching.
+- World-scoped mode persistence (`data/minecraft_golf_player_modes.json`); supported
+  newcomers default to Golf and an explicit World choice is remembered.
+- Safe flight exit and reconnect/respawn revalidation.
+- Isolated Builder loadout with durable World-inventory preservation and a per-builder
+  exception to locked landscape protection, scoped to one course/dimension/perimeter.
+- `config/minecraft_golf/builder_palette.json` with `/golf builder palette reload` and
+  `/golf builder restock`; invalid replacements retain the last valid palette.
+
+## Exit Criteria
+
+Mode transitions are failure-atomic; solo and every Ready Golf participant receive Golf
+through commands and GUI paths; Builder items cannot leak into World play; palette
+reloads never erase terrain; visitors stay gated; and the documented verification ladder
+(including authenticated two-player checks) passes.
 
 ---
 

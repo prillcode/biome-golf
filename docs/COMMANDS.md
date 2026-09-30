@@ -20,6 +20,12 @@ depend on your round, lobby, ball, or course state.
 | `/golf help` | Print the short player command guide. |
 | `/golf help admin` | Show operator/gamemaster commands. Visible to everyone; execution still requires the listed permissions. |
 | `/golf hud` | Ask your compatible Biome Golf client to toggle both the Swing and Hole HUDs. No operator permission needed; visibility resets when the game session ends. |
+| `/golf mode status` | Show your current player mode (Golf, World, or Builder) and the available switches. |
+| `/golf mode golf` | Enter Golf mode: Creative-style flight and damage protection with your normal Survival items. |
+| `/golf mode world` | Switch to ordinary Survival/Peaceful play. An unfinished attempt must be abandoned with `/golf mode world confirm`. |
+| `/golf mode build <courseId> confirm` | Operator: enter Builder mode for a finalized course with an authored landscape perimeter, using the curated palette loadout. |
+| `/golf builder restock` | Operator: re-fill the active Builder palette loadout. |
+| `/golf builder palette reload` | Operator: reload `config/minecraft_golf/builder_palette.json`. Malformed files, unknown items, and unsafe items retain the last valid palette. |
 | `/golf browse` | Open the in-game course browser. |
 | `/golf round list` | List open Ready Golf lobbies and finalized courses. Lobby entries include a clickable join action. |
 | `/golf visitor status` | Show the visitor welcome configuration, including any Java address or mod link set by an operator. |

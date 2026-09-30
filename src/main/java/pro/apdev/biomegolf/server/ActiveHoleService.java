@@ -206,6 +206,21 @@ public final class ActiveHoleService {
 			|| lifecycle.hasAnySession();
 	}
 
+	/** Whether this player currently has an active solo attempt or Ready Golf membership. */
+	public boolean hasAttempt(ServerPlayer player) {
+		return rounds.findByPlayer(player.getUUID()).isPresent()
+			|| soloCourseStates.containsKey(player.getUUID())
+			|| lifecycle.session(player.getUUID()).isPresent();
+	}
+
+	/** Abandons this player's attempt for an explicit mode switch, cleaning up their ball and round slot. */
+	public void abandonForModeSwitch(ServerPlayer player) {
+		if (!hasAttempt(player)) {
+			return;
+		}
+		leaveRound(player);
+	}
+
 	/** The currently configured hole, or {@code null} before any initialization. */
 	public HoleDefinition configuredHoleOrNull() {
 		return hole;
@@ -231,6 +246,7 @@ public final class ActiveHoleService {
 		MinecraftGolf.LOGGER.info("{} created Ready Golf lobby {}",
 			creator.getName().getString(), created.roundId());
 		broadcastLobbyState(creator.level().getServer());
+		PlayerModeService.instance().enterGolfBestEffort(creator);
 		return new StartResult(true, "[golf] Ready Golf lobby created (" + created.roundId()
 			+ "); other golfers may use /golf round join " + created.roundId());
 	}
@@ -254,6 +270,7 @@ public final class ActiveHoleService {
 			return reject(creator, "round browser", "[golf] " + exception.getMessage());
 		}
 		broadcastLobbyState(creator.level().getServer());
+		PlayerModeService.instance().enterGolfBestEffort(creator);
 		return new StartResult(true, "[golf] Ready Golf lobby created for " + selected.displayName()
 			+ " (" + created.roundId() + "); join with /golf round join " + created.roundId());
 	}
@@ -286,6 +303,7 @@ public final class ActiveHoleService {
 		MinecraftGolf.LOGGER.info("{} joined Ready Golf lobby {}",
 			player.getName().getString(), joined.roundId());
 		broadcastLobbyState(player.level().getServer());
+		PlayerModeService.instance().enterGolfBestEffort(player);
 		return new StartResult(true, "[golf] joined Ready Golf lobby ("
 			+ joined.participants().size() + "/" + ReadyGolfRound.MAX_PARTICIPANTS + ")");
 	}
@@ -989,6 +1007,7 @@ public final class ActiveHoleService {
 			? ""
 			: " | cleared " + clearedPlayerBalls + " previous player ball(s)";
 		String equipment = grantedClubs == 0 ? "" : " | granted " + grantedClubs + " missing clubs";
+		PlayerModeService.instance().enterGolfBestEffort(player);
 		return new StartResult(true, "[golf] Hole " + definition.number() + " — Par "
 			+ definition.par() + " | Double Par + 2 limit " + definition.strokeLimit()
 			+ cleanup + equipment);
@@ -1496,6 +1515,7 @@ public final class ActiveHoleService {
 
 	private void commitRoundStart(List<PreparedAttempt> prepared, HoleDefinition definition) {
 		for (PreparedAttempt attempt : prepared) {
+			PlayerModeService.instance().enterGolfBestEffort(attempt.player());
 			lifecycle.start(attempt.player().getUUID(), definition, attempt.ball().getUUID());
 			discardPlayerOwnedBalls(attempt.player(), attempt.ball().getUUID());
 			teleportToTransition(attempt.player(), definition);

@@ -24,6 +24,8 @@ import java.util.UUID;
 import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.server.ActiveHoleService;
 import pro.apdev.biomegolf.server.ActiveHoleService.StartResult;
+import pro.apdev.biomegolf.server.BuilderPaletteService;
+import pro.apdev.biomegolf.server.PlayerModeService;
 import pro.apdev.biomegolf.server.PracticeRangeService;
 import pro.apdev.biomegolf.server.PracticeRangeService.Location;
 import pro.apdev.biomegolf.server.VisitorService;
@@ -60,6 +62,27 @@ public final class GolfHoleCommands {
 				.executes(GolfHoleCommands::help)
 				.then(Commands.literal("admin").executes(GolfHoleCommands::adminHelp)))
 			.then(Commands.literal("hud").executes(GolfHoleCommands::toggleHud))
+			.then(Commands.literal("mode")
+				.executes(GolfHoleCommands::modeStatus)
+				.then(Commands.literal("golf").executes(GolfHoleCommands::modeGolf))
+				.then(Commands.literal("world")
+					.executes(GolfHoleCommands::modeWorld)
+					.then(Commands.literal("confirm").executes(GolfHoleCommands::modeWorldConfirm)))
+				.then(Commands.literal("status").executes(GolfHoleCommands::modeStatus))
+				.then(Commands.literal("build")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.then(Commands.argument("courseId", StringArgumentType.word())
+						.executes(GolfHoleCommands::modeBuild)
+						.then(Commands.literal("confirm")
+							.executes(GolfHoleCommands::modeBuildConfirm)))))
+			.then(Commands.literal("builder")
+				.then(Commands.literal("restock")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.executes(GolfHoleCommands::builderRestock))
+				.then(Commands.literal("palette")
+					.then(Commands.literal("reload")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(GolfHoleCommands::builderPaletteReload))))
 			.then(Commands.literal("spectator")
 				.executes(GolfHoleCommands::spectatorView)
 				.then(Commands.literal("leave").executes(GolfHoleCommands::leaveSpectator)))
@@ -514,6 +537,80 @@ public final class GolfHoleCommands {
 	}
 
 	private static int sendResult(CommandContext<CommandSourceStack> context, StartResult result) {
+		if (!result.success()) {
+			context.getSource().sendFailure(Component.literal(result.message()));
+			return 0;
+		}
+		context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
+		return 1;
+	}
+
+	private static int modeStatus(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		context.getSource().sendSuccess(
+			() -> Component.literal(PlayerModeService.instance().status(player)), false);
+		return 1;
+	}
+
+	private static int modeGolf(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		return sendModeResult(context, PlayerModeService.instance().setGolf(player));
+	}
+
+	private static int modeWorld(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		if (ActiveHoleService.instance().hasAttempt(player)) {
+			return fail(context, "you have an unfinished golf attempt; run /golf mode world confirm to abandon it and switch to World mode");
+		}
+		return sendModeResult(context, PlayerModeService.instance().setWorld(player));
+	}
+
+	private static int modeWorldConfirm(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		ActiveHoleService.instance().abandonForModeSwitch(player);
+		return sendModeResult(context, PlayerModeService.instance().setWorld(player));
+	}
+
+	private static int modeBuild(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		if (ActiveHoleService.instance().hasAttempt(player)) {
+			return fail(context, "you have an unfinished golf attempt; run /golf round leave first or /golf mode build <courseId> confirm");
+		}
+		String courseId = StringArgumentType.getString(context, "courseId");
+		return sendModeResult(context, PlayerModeService.instance().enterBuilder(player, courseId));
+	}
+
+	private static int modeBuildConfirm(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		ActiveHoleService.instance().abandonForModeSwitch(player);
+		String courseId = StringArgumentType.getString(context, "courseId");
+		return sendModeResult(context, PlayerModeService.instance().enterBuilder(player, courseId));
+	}
+
+	private static int builderRestock(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		return sendModeResult(context, PlayerModeService.instance().restockBuilder(player));
+	}
+
+	private static int builderPaletteReload(CommandContext<CommandSourceStack> context) {
+		BuilderPaletteService.ReloadResult result = BuilderPaletteService.instance().reload();
+		if (!result.success()) {
+			context.getSource().sendFailure(Component.literal("[golf] " + result.message()));
+			return 0;
+		}
+		context.getSource().sendSuccess(() -> Component.literal("[golf] " + result.message()), true);
+		return 1;
+	}
+
+	private static int sendModeResult(CommandContext<CommandSourceStack> context,
+			PlayerModeService.TransitionResult result) {
 		if (!result.success()) {
 			context.getSource().sendFailure(Component.literal(result.message()));
 			return 0;
