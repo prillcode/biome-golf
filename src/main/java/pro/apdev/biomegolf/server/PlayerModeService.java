@@ -3,6 +3,7 @@ package pro.apdev.biomegolf.server;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 
 import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.course.AuthoredCourseStore;
+import pro.apdev.biomegolf.course.CourseDefinition;
 import pro.apdev.biomegolf.course.CourseLandscape;
 
 /**
@@ -125,14 +127,18 @@ public final class PlayerModeService {
 		StringBuilder message = new StringBuilder("[golf] mode: ").append(mode.displayName());
 		if (mode == PlayerMode.BUILDER) {
 			String course = builderCourseId(player.getUUID());
-			message.append(" (course ").append(course == null ? "unset" : course)
-				.append("; ").append(BuilderPaletteService.instance().describe()).append(")");
+			if (course == null) {
+				message.append(" (no course selected; /golf builder course <id>)");
+			} else {
+				message.append(" (course ").append(course)
+					.append("; ").append(BuilderPaletteService.instance().describe()).append(")");
+			}
 		} else if (mode == PlayerMode.GOLF) {
 			message.append(" (flight, no damage; normal Survival items)");
 		}
 		message.append(" | switch with /golf mode golf|world");
 		if (canBuild(player)) {
-			message.append("|build <courseId>");
+			message.append("|build");
 		}
 		return message.toString();
 	}
@@ -154,7 +160,46 @@ public final class PlayerModeService {
 	}
 
 	public TransitionResult enterBuilder(ServerPlayer player, String courseId) {
-		return transition(player, PlayerMode.BUILDER, courseId);
+		String normalized = courseId == null ? null : AuthoredCourseStore.normalizeId(courseId);
+		return transition(player, PlayerMode.BUILDER, normalized);
+	}
+
+	/** Selects or switches the course a Builder may edit; requires active Builder mode. */
+	public TransitionResult selectBuilderCourse(ServerPlayer player, String courseId) {
+		if (VisitorService.isVisitor(player)) {
+			return TransitionResult.fail("[golf] Builder mode is for supported Java clients");
+		}
+		if (mode(player.getUUID()) != PlayerMode.BUILDER) {
+			return TransitionResult.fail("[golf] enter Builder mode first with /golf mode build");
+		}
+		String normalized = AuthoredCourseStore.normalizeId(courseId);
+		String error = validateBuilderCourse(normalized);
+		if (error != null) {
+			return TransitionResult.fail(error);
+		}
+		builderCourses.put(player.getUUID(), normalized);
+		dirty = true;
+		save();
+		MinecraftGolf.LOGGER.info("{} selected builder course {}",
+			player.getName().getString(), normalized);
+		return TransitionResult.ok("[golf] builder course set to " + normalized
+			+ "; edits are confined to its landscape perimeter");
+	}
+
+	/** Finalized courses with an authored landscape perimeter that a Builder may select. */
+	public List<CourseOption> buildableCourses() {
+		List<CourseOption> options = new ArrayList<>();
+		try {
+			var store = AuthoredCourseService.instance().store();
+			for (CourseDefinition course : store.finalizedCourses()) {
+				if (store.landscape(course.id()).isPresent()) {
+					options.add(new CourseOption(course.id(), course.displayName()));
+				}
+			}
+		} catch (IllegalStateException exception) {
+			return List.of();
+		}
+		return options;
 	}
 
 	/** Re-fills an active Builder's palette loadout; other modes are a no-op error. */
@@ -191,17 +236,32 @@ public final class PlayerModeService {
 		PlayerMode current = mode(playerId);
 		String normalizedCourse = null;
 		if (target == PlayerMode.BUILDER) {
-			normalizedCourse = AuthoredCourseStore.normalizeId(Objects.requireNonNull(builderCourse, "courseId"));
-			String error = validateBuilderCourse(player, normalizedCourse);
-			if (error != null) {
-				return TransitionResult.fail(error);
+			String entryError = validateBuilderEntry(player);
+			if (entryError != null) {
+				return TransitionResult.fail(entryError);
+			}
+			normalizedCourse = builderCourse == null ? null : AuthoredCourseStore.normalizeId(builderCourse);
+			if (normalizedCourse != null) {
+				String courseError = validateBuilderCourse(normalizedCourse);
+				if (courseError != null) {
+					return TransitionResult.fail(courseError);
+				}
 			}
 		}
-		boolean sameCourse = target == PlayerMode.BUILDER
-			&& Objects.equals(builderCourses.get(playerId), normalizedCourse);
-		if (target == current && (target != PlayerMode.BUILDER || sameCourse)) {
-			applyMode(player, current);
-			return TransitionResult.ok("[golf] already in " + current.displayName() + " mode");
+
+		if (target == current) {
+			if (target != PlayerMode.BUILDER) {
+				applyMode(player, current);
+				return TransitionResult.ok("[golf] already in " + current.displayName() + " mode");
+			}
+			// Builder entry is idempotent: a selected course is kept unless a different one is given.
+			String existing = builderCourses.get(playerId);
+			if (normalizedCourse == null || Objects.equals(existing, normalizedCourse)) {
+				applyMode(player, current);
+				return TransitionResult.ok(existing == null
+					? "[golf] already in Builder mode; select a course with /golf builder course <id>"
+					: "[golf] already in Builder mode for " + existing);
+			}
 		}
 
 		// Check safe footing before any mutation so a failed switch leaves state unchanged.
@@ -224,7 +284,11 @@ public final class PlayerModeService {
 
 		modes.put(playerId, target);
 		if (target == PlayerMode.BUILDER) {
-			builderCourses.put(playerId, normalizedCourse);
+			if (normalizedCourse != null) {
+				builderCourses.put(playerId, normalizedCourse);
+			} else {
+				builderCourses.remove(playerId);
+			}
 		} else {
 			builderCourses.remove(playerId);
 		}
@@ -235,17 +299,25 @@ public final class PlayerModeService {
 		return TransitionResult.ok(switch (target) {
 			case GOLF -> "[golf] Golf mode: flight and no damage, normal Survival items";
 			case WORLD -> "[golf] World mode: Survival. Build and mine outside protected courses";
-			case BUILDER -> "[golf] Builder mode for " + normalizedCourse + ": palette loadout supplied";
+			case BUILDER -> normalizedCourse == null
+				? "[golf] Builder mode enabled; select a course to edit with /golf builder course <id>"
+				: "[golf] Builder mode for " + normalizedCourse + ": palette loadout supplied";
 		});
 	}
 
-	private String validateBuilderCourse(ServerPlayer player, String courseId) {
+	/** Builder entry requirements: gamemaster plus a non-empty palette. */
+	private String validateBuilderEntry(ServerPlayer player) {
 		if (!Commands.LEVEL_GAMEMASTERS.check(player.permissions())) {
 			return "[golf] Builder mode requires operator/gamemaster permission";
 		}
 		if (BuilderPaletteService.instance().isEmpty()) {
 			return "[golf] the builder palette is empty; add items to config/minecraft_golf/builder_palette.json";
 		}
+		return null;
+	}
+
+	/** Builder course requirements: finalized and with an authored landscape perimeter. */
+	private String validateBuilderCourse(String courseId) {
 		try {
 			var store = AuthoredCourseService.instance().store();
 			if (!store.isFinalized(courseId)) {
@@ -334,7 +406,11 @@ public final class PlayerModeService {
 		UUID playerId = player.getUUID();
 		PlayerMode saved = modes.getOrDefault(playerId, PlayerMode.GOLF);
 		if (saved == PlayerMode.BUILDER) {
-			String error = validateBuilderCourse(player, builderCourses.get(playerId));
+			String error = validateBuilderEntry(player);
+			String builderCourse = builderCourses.get(playerId);
+			if (error == null && builderCourse != null) {
+				error = validateBuilderCourse(builderCourse);
+			}
 			if (error != null) {
 				MinecraftGolf.LOGGER.warn("Demoting {} from Builder mode on join: {}",
 					player.getName().getString(), error);
@@ -553,6 +629,9 @@ public final class PlayerModeService {
 		} catch (IOException exception) {
 			MinecraftGolf.LOGGER.error("Failed to save player modes to {}", savePath, exception);
 		}
+	}
+
+	public record CourseOption(String id, String displayName) {
 	}
 
 	public record TransitionResult(boolean success, String message) {

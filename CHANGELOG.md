@@ -9,8 +9,9 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Added server-owned player modes: `/golf mode golf|world|status` and
-  `/golf mode build <courseId>` for operators. Golf mode grants Creative-style flight
+- Added server-owned player modes: `/golf mode golf|world|status` and `/golf mode build`
+  for operators. `/golf mode build` switches to Builder mode and lists editable courses;
+  `/golf builder course <id>` selects one. Golf mode grants Creative-style flight
   and damage protection while keeping the normal Survival inventory; World mode is
   ordinary Survival; Builder mode uses an isolated, replenishable palette. Mode choice
   is remembered across reconnects and supported newcomers default to Golf.
@@ -26,6 +27,8 @@ and uses [Semantic Versioning](https://semver.org/).
 - Starting a hole no longer drops a missing club at your feet when your inventory is
   full. The automatic grant now uses the same canonical hotbar placement as
   `/golf clubs equip`, moving non-club occupants aside instead of dropping the clubs.
+- The vanilla hunger and experience bars are hidden while the server has you in a
+  Survival flight mode (Golf or Builder), giving a clean view during a round.
 
 ## [0.8.5] - 2026-09-29
 

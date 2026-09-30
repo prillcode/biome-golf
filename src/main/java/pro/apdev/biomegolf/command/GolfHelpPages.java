@@ -23,7 +23,7 @@ public final class GolfHelpPages {
 		"Course defaults/landscape: /golf course default set|status|clear; /golf course landscape bounds|status|lock|unlock|clear",
 		"Hole authoring: /golf hole tee|cup|par|bounds <number> (current draft)",
 		"Practice setup: /golf practice tee set; /golf practice target set|clear <1-8>",
-		"Modes/builder: /golf mode build <courseId>; /golf builder restock | palette reload",
+		"Modes/builder: /golf mode build [<courseId>]; /golf builder course <id> | restock | palette reload",
 		"Visitor setup: /golf visitor address|link <value>; /golf visitor spawn set|clear",
 		"Diagnostics/dev: /golf spawn [x y z] | /golf launch <forward> <up> [id] | /golf inspect [id] | /golf dev preparehole|preparecourse|testhole",
 		"Full syntax and usage: docs/COMMANDS.md");

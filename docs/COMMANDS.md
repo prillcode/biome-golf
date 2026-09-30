@@ -23,7 +23,9 @@ depend on your round, lobby, ball, or course state.
 | `/golf mode status` | Show your current player mode (Golf, World, or Builder) and the available switches. |
 | `/golf mode golf` | Enter Golf mode: Creative-style flight and damage protection with your normal Survival items. |
 | `/golf mode world` | Switch to ordinary Survival/Peaceful play. An unfinished attempt must be abandoned with `/golf mode world confirm`. |
-| `/golf mode build <courseId> confirm` | Operator: enter Builder mode for a finalized course with an authored landscape perimeter, using the curated palette loadout. |
+| `/golf mode build` | Operator: enter Builder mode. Prints the finalized courses with an authored perimeter to edit. |
+| `/golf mode build <courseId> confirm` | Operator: enter Builder mode and select a course in one step. `confirm` abandons an unfinished attempt first. |
+| `/golf builder course <courseId>` | Operator: select or switch the course to edit while in Builder mode. |
 | `/golf builder restock` | Operator: re-fill the active Builder palette loadout. |
 | `/golf builder palette reload` | Operator: reload `config/minecraft_golf/builder_palette.json`. Malformed files, unknown items, and unsafe items retain the last valid palette. |
 | `/golf browse` | Open the in-game course browser. |

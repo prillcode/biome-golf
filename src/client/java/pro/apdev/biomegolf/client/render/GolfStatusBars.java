@@ -7,10 +7,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.Identifier;
 
 /**
- * M8.15 client presentation: hide the vanilla hunger and experience bars while the server
- * has the player in a Survival flight mode (Golf or Builder). Flight-only Golf keeps the
- * normal Survival inventory, so the client still draws the Survival status bars; they are
- * noise during a round and the player is damage-protected.
+ * M8.15 client presentation: hide the vanilla survival status bars (hearts, hunger,
+ * and experience) while the server has the player in a Survival flight mode (Golf or
+ * Builder). Flight-only Golf keeps the normal Survival inventory, so the client still
+ * draws the Survival status bars; they are noise during a round and the player is
+ * damage-protected.
  *
  * <p>No custom Mixin: this uses Fabric's HUD element registry to wrap the vanilla
  * elements. Detection is ability-based — the Biome Golf mode service is the only reason a
@@ -22,6 +23,7 @@ public final class GolfStatusBars {
 	}
 
 	public static void register() {
+		hideWhileFlying(VanillaHudElements.HEALTH_BAR);
 		hideWhileFlying(VanillaHudElements.FOOD_BAR);
 		hideWhileFlying(VanillaHudElements.INFO_BAR);
 		hideWhileFlying(VanillaHudElements.EXPERIENCE_LEVEL);

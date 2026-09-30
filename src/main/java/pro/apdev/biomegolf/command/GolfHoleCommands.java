@@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
 
+import java.util.List;
 import java.util.UUID;
 
 import pro.apdev.biomegolf.MinecraftGolf;
@@ -71,11 +72,17 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("status").executes(GolfHoleCommands::modeStatus))
 				.then(Commands.literal("build")
 					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.executes(GolfHoleCommands::modeBuildEntry)
+					.then(Commands.literal("confirm").executes(GolfHoleCommands::modeBuildEntryConfirm))
 					.then(Commands.argument("courseId", StringArgumentType.word())
 						.executes(GolfHoleCommands::modeBuild)
 						.then(Commands.literal("confirm")
 							.executes(GolfHoleCommands::modeBuildConfirm)))))
 			.then(Commands.literal("builder")
+				.then(Commands.literal("course")
+					.executes(GolfHoleCommands::builderCourseList)
+					.then(Commands.argument("courseId", StringArgumentType.word())
+						.executes(GolfHoleCommands::builderCourseSelect)))
 				.then(Commands.literal("restock")
 					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.executes(GolfHoleCommands::builderRestock))
@@ -557,6 +564,67 @@ public final class GolfHoleCommands {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		if (visitorBlocked(context, player)) return 0;
 		return sendModeResult(context, PlayerModeService.instance().setGolf(player));
+	}
+
+	private static int modeBuildEntry(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		if (ActiveHoleService.instance().hasAttempt(player)) {
+			return fail(context, "you have an unfinished golf attempt; run /golf mode build confirm to abandon it and switch");
+		}
+		return enterBuilderAndList(context, player);
+	}
+
+	private static int modeBuildEntryConfirm(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		ActiveHoleService.instance().abandonForModeSwitch(player);
+		return enterBuilderAndList(context, player);
+	}
+
+	private static int enterBuilderAndList(CommandContext<CommandSourceStack> context, ServerPlayer player) {
+		PlayerModeService.TransitionResult result = PlayerModeService.instance().enterBuilder(player, null);
+		if (!result.success()) {
+			context.getSource().sendFailure(Component.literal(result.message()));
+			return 0;
+		}
+		context.getSource().sendSuccess(() -> Component.literal(result.message()), false);
+		listBuilderCourses(context);
+		return 1;
+	}
+
+	private static int builderCourseList(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		listBuilderCourses(context);
+		return 1;
+	}
+
+	private static int builderCourseSelect(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		ServerPlayer player = context.getSource().getPlayerOrException();
+		if (visitorBlocked(context, player)) return 0;
+		String courseId = StringArgumentType.getString(context, "courseId");
+		return sendModeResult(context, PlayerModeService.instance().selectBuilderCourse(player, courseId));
+	}
+
+	/** Lists finalized courses that have an authored perimeter, each with a clickable edit command. */
+	private static void listBuilderCourses(CommandContext<CommandSourceStack> context) {
+		List<PlayerModeService.CourseOption> courses = PlayerModeService.instance().buildableCourses();
+		if (courses.isEmpty()) {
+			context.getSource().sendSuccess(() -> Component.literal(
+				"[golf] no finalized course has an authored landscape perimeter to edit"), false);
+			return;
+		}
+		context.getSource().sendSuccess(() -> Component.literal("[golf] courses available to edit:")
+			.withStyle(ChatFormatting.GOLD), false);
+		for (PlayerModeService.CourseOption course : courses) {
+			String command = "/golf builder course " + course.id();
+			context.getSource().sendSuccess(() -> Component.literal(course.id() + " | " + course.displayName()
+				+ " | ")
+				.append(Component.literal("[Edit]").withStyle(style -> style.withColor(ChatFormatting.GREEN)
+					.withClickEvent(new ClickEvent.RunCommand(command))))
+				.append(Component.literal(" " + command)), false);
+		}
 	}
 
 	private static int modeWorld(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
