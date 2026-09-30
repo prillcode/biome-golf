@@ -3,7 +3,7 @@
 Releases are driven by git tags. Pushing a `v*` tag triggers
 `.github/workflows/release.yml`, which verifies the tag matches `gradle.properties`,
 runs the full build (including tests), publishes the mod to
-[Modrinth](https://modrinth.com/mod/biome-golf), and attaches the JAR to an internal
+[Modrinth](https://modrinth.com/mod/biomegolf), and attaches the JAR to an internal
 GitHub Release. Player-facing distribution is Modrinth.
 
 ## Cut a release
@@ -61,7 +61,7 @@ promote local world edits.
 ## Modrinth
 
 Each release publishes the remapped mod JAR to
-[Modrinth](https://modrinth.com/mod/biome-golf) with the
+[Modrinth](https://modrinth.com/mod/biomegolf) with the
 [Minotaur](https://github.com/modrinth/minotaur) Gradle plugin (`./gradlew modrinth`,
 configured at the bottom of `build.gradle`). The version, loader (`fabric`), game
 version (`26.2`), required `fabric-api` dependency, and changelog (the matching

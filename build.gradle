@@ -162,14 +162,14 @@ def wrapManifestLine(String content) {
 // ---------------------------------------------------------------------------
 // Modrinth publishing
 //
-// `./gradlew modrinth` uploads the remapped JAR to https://modrinth.com/mod/biome-golf.
+// `./gradlew modrinth` uploads the remapped JAR to https://modrinth.com/mod/biomegolf.
 // CI runs this on tag releases; it requires the MODRINTH_TOKEN environment variable (a
 // personal access token with VERSION_CREATE scope, stored as a repository secret).
 // ---------------------------------------------------------------------------
 afterEvaluate {
 	modrinth {
 		token = System.getenv('MODRINTH_TOKEN')
-		projectId = 'biome-golf'
+		projectId = 'biomegolf'
 		versionNumber = project.version.toString()
 		versionName = "Biome Golf ${project.version}"
 		versionType = 'release'
