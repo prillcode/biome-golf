@@ -5,7 +5,15 @@ All notable changes to Biome Golf are documented in this file.
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.9.1] - 2026-10-02
+
+### Added
+
+- Added the Builder-mode `/golf clear` bulk-clearing tool for operators: clear a
+  bounded corridor of a named block group (`trees`, `logs`, `leaves`, `ground`,
+  `grass`, or configurable via `config/minecraft_golf/clear_items.json`) ahead of the player, with
+  per-session depth, width, and signed height defaults. Tee/cup vicinities and locked
+  course landscapes are preserved.
 
 ### Removed
 
@@ -445,6 +453,7 @@ world-sync baseline/reset workflow.
 - Additional game modes and other M9 scope.
 
 [Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.9.0...HEAD
+[0.9.1]: https://github.com/prillcode/biome-golf/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/prillcode/biome-golf/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/prillcode/biome-golf/compare/v0.8.1...v0.8.5
 [0.8.1]: https://github.com/prillcode/biome-golf/compare/v0.8.0...v0.8.1

@@ -1633,6 +1633,16 @@ Bedrock visual parity is claimed. See `docs/M10.3-PLAN.md`.
 
 Deferred work that is not assigned to a milestone. Keep it short; delete entries when they ship.
 
+## Builder bulk-clear command — complete
+
+Shipped in 0.9.1: operator-only `/golf clear <group> [depth] [width]` with session
+`depth|width|height`, `item`, `status`, `reset`, and `reload` subcommands, targeting
+JSON-configured groups (`config/minecraft_golf/clear_items.json`) with built-ins
+`trees`, `logs`, `leaves`, `ground`, and `grass`. Depth starts one block ahead on the
+nearest cardinal axis; negative heights clear down to feet level, so a trench has no
+rim. Tee/cup vicinities and locked course landscapes are preserved; execution is
+rejected during active golf play. Full syntax in `docs/COMMANDS.md`.
+
 ## New-world bootstrap for the local dev server — complete
 
 `scripts/dev-server-new-world.sh <world-name> <seed>` registers and generates a fresh
