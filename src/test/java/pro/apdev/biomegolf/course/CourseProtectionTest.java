@@ -10,15 +10,16 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import pro.apdev.biomegolf.dev.M5DevelopmentCourse;
+import pro.apdev.biomegolf.golf.Vec3;
 import pro.apdev.biomegolf.hole.HoleBoundary;
+import pro.apdev.biomegolf.hole.HoleDefinition;
 
 class CourseProtectionTest {
 
 	@Test
 	void buildsTeeAndCupZonesForEveryHole() {
 		List<ProtectedZone> zones =
-			CourseProtection.zonesFor(M5DevelopmentCourse.definition(), CourseProtectionConfig.DEFAULT);
+			CourseProtection.zonesFor(fixtureCourse(), CourseProtectionConfig.DEFAULT);
 
 		assertEquals(6, zones.size());
 		for (int holeNumber = 1; holeNumber <= 3; holeNumber++) {
@@ -29,8 +30,8 @@ class CourseProtectionTest {
 	}
 
 	@Test
-	void protectsEveryM5TeeCupAndGreenUnderCupVicinity() {
-		CourseDefinition course = M5DevelopmentCourse.definition();
+	void protectsEveryTeeCupAndGreenUnderCupVicinity() {
+		CourseDefinition course = fixtureCourse();
 		List<ProtectedZone> zones =
 			CourseProtection.zonesFor(course, CourseProtectionConfig.DEFAULT);
 
@@ -39,33 +40,33 @@ class CourseProtectionTest {
 			assertTrue(CourseProtection.isProtected(zones, course.hole(hole).tee()));
 			assertTrue(CourseProtection.isProtected(zones, course.hole(hole).cup()));
 		}
-		// Greens are protected via cup vicinity (recorded S1 decision): the farthest
-		// Hole 3 green block and every Hole 1 tee-box pad block.
-		assertTrue(CourseProtection.isProtected(zones, -204, 70, 436));
-		assertTrue(CourseProtection.isProtected(zones, -209, 70, 431));
-		assertTrue(CourseProtection.isProtected(zones, -209, 74, 497));
+		// Greens are protected via cup vicinity (recorded S1 decision): a block near
+		// the far side of Hole 1's cup and a tee-box pad block near its tee.
+		assertTrue(CourseProtection.isProtected(zones, 34, 64, 0));
+		assertTrue(CourseProtection.isProtected(zones, 7, 64, 2));
 	}
 
 	@Test
-	void leavesTerrainAndPracticeRangeBreakable() {
+	void leavesOrdinaryTerrainBreakable() {
 		List<ProtectedZone> zones =
-			CourseProtection.zonesFor(M5DevelopmentCourse.definition(), CourseProtectionConfig.DEFAULT);
+			CourseProtection.zonesFor(fixtureCourse(), CourseProtectionConfig.DEFAULT);
 
-		// Practice range and ordinary fairway positions are outside every zone.
-		assertFalse(CourseProtection.isProtected(zones, -160, 63, -150));
-		assertFalse(CourseProtection.isProtected(zones, -246, 62, -202));
-		assertFalse(CourseProtection.isProtected(zones, -300, 70, 470));
+		// Ordinary terrain far from a course, and ground between a hole's tee and
+		// cup that sits outside the zone cylinders, are outside every zone.
+		assertFalse(CourseProtection.isProtected(zones, -400, 64, -400));
+		assertFalse(CourseProtection.isProtected(zones, 300, 63, 300));
+		assertFalse(CourseProtection.isProtected(zones, 14, 64, 14));
 	}
 
 	@Test
 	void singleHoleZonesProtectOnlyThatHole() {
 		List<ProtectedZone> zones =
-			CourseProtection.zonesFor(M5DevelopmentCourse.definition().hole(2), CourseProtectionConfig.DEFAULT);
+			CourseProtection.zonesFor(fixtureCourse().hole(2), CourseProtectionConfig.DEFAULT);
 
 		assertEquals(2, zones.size());
-		assertTrue(CourseProtection.isProtected(zones, -322, 71, 405));
-		assertTrue(CourseProtection.isProtected(zones, -369, 70, 413));
-		assertFalse(CourseProtection.isProtected(zones, -207, 71, 426));
+		assertTrue(CourseProtection.isProtected(zones, 75, 64, 0));
+		assertTrue(CourseProtection.isProtected(zones, 55, 64, 0));
+		assertFalse(CourseProtection.isProtected(zones, 25, 64, 0));
 	}
 
 	@Test
@@ -178,6 +179,29 @@ class CourseProtectionTest {
 
 		assertThrows(IllegalArgumentException.class,
 			() -> CourseProtection.resolveForTnt(List.of(), unlocked, -1.0, 0, 64, 0));
+	}
+
+	private static CourseDefinition fixtureCourse() {
+		return new CourseDefinition(
+			"minecraft_golf:fixture_course",
+			"Fixture Course",
+			"minecraft:overworld",
+			new GeneratedLayoutIdentity("minecraft_golf:fixture_layout", 1),
+			List.of(
+				hole("minecraft_golf:fixture_hole_1", 1, 4, 5.5, 25.5),
+				hole("minecraft_golf:fixture_hole_2", 2, 3, 55.5, 75.5),
+				hole("minecraft_golf:fixture_hole_3", 3, 5, 105.5, 125.5)));
+	}
+
+	/** One straight hole along +X on a shared line; the cup sits 20 blocks short of the next tee. */
+	private static HoleDefinition hole(String id, int number, int par, double teeX, double cupX) {
+		return new HoleDefinition(id, number, "minecraft:overworld",
+			new Vec3(teeX, 64.25, 0.5), new Vec3(cupX, 64.25, 0.5), par,
+			volume((int) teeX - 20, 48, -16, (int) cupX + 20, 96, 16));
+	}
+
+	private static HoleBoundary volume(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+		return new HoleBoundary(new Vec3(minX, minY, minZ), new Vec3(maxX, maxY, maxZ));
 	}
 
 	private static List<ProtectedZone> teeZones() {

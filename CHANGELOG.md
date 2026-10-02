@@ -7,6 +7,12 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+
+- Removed the obsolete `/golf dev preparecourse` and `/golf dev testhole` M5
+development commands and their dev-only campus generator, superseded by the
+world-sync baseline/reset workflow.
+
 ## [0.9.0] - 2026-09-30
 
 ### Added

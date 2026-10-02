@@ -147,10 +147,10 @@ The host operating system should not affect the Fabric server architecture.
 | M8.8 | Distance Display Units | Complete (see docs/M8.8-CLOSEOUT.md) |
 | M8.9 | Practice Range | Complete (see docs/M8.9-CLOSEOUT.md) |
 | M8.10 | Course Landscape Protection | Complete (see docs/M8.10-CLOSEOUT.md) |
-| M8.11 | Swing Meter Precision | Implemented in 0.8.5; manual playtest pending (see docs/M8.11-CLOSEOUT.md) |
-| M8.12 | Off-Tee Driver Discipline | Implemented in 0.8.5; manual playtest pending (see docs/M8.12-CLOSEOUT.md) |
-| M8.13 | HUD Visibility and Command Help | Implemented in 0.8.5; client restart/manual acceptance pending (see docs/M8.13-CLOSEOUT.md) |
-| M8.14 | Decked Driver Rollout | Implemented in 0.8.5; manual in-game flight confirmation pending (see docs/M8.14-CLOSEOUT.md) |
+| M8.11 | Swing Meter Precision | Complete; manual playtest confirmed by user (see docs/M8.11-CLOSEOUT.md) |
+| M8.12 | Off-Tee Driver Discipline | Complete; manual playtest confirmed by user (see docs/M8.12-CLOSEOUT.md) |
+| M8.13 | HUD Visibility and Command Help | Complete; manual acceptance confirmed by user (see docs/M8.13-CLOSEOUT.md) |
+| M8.14 | Decked Driver Rollout | Complete; manual flight confirmation by user (see docs/M8.14-CLOSEOUT.md) |
 | M8.15 | Golf, World, and Builder Player Modes | **Complete in 0.9.0.** Flight-only Golf; Creative Builder with palette starter kit (approved 2026-09-30); verified over tests, Loom, Docker, and authenticated in-game play (see docs/M8.15-CLOSEOUT.md) |
 | M9 | Additional Game Modes | Deferred |
 | M10 | Client-Light / Bedrock Compatibility | **SHELVED (re-shelved 2026-09)**; Java experience prioritized; client-light code gated/unsupported (see docs/M10-PLAN.md) |
@@ -1120,7 +1120,7 @@ Determine whether the MVP is genuinely fun and stable enough to justify V1 devel
   boxes, greens, and the cup/flag must be protected. Candidate fix: a server-side
   block-break guard keyed to course metadata (tee/green/cup plus a configurable
   vicinity radius) via Fabric's block-break cancel event — avoid a full
-  world-guard framework. Recovery today is `/golf dev preparecourse` (idempotent).
+  world-guard framework. At the time, recovery used `/golf dev preparecourse` (now removed).
 - **Advance UX.** The post-hole flow already offers a clickable chat
   "[Go to next tee]" action plus `/golf nexthole`, but playtesters want either a
   no-text-input prompt (e.g. a HUD button) or full auto-advance once all golfers
@@ -1392,8 +1392,8 @@ Use the final success criteria and full verification ladder in `docs/M8.10-PLAN.
 
 ## Status
 
-Implemented in 0.8.5. See `docs/M8.11-CLOSEOUT.md`. Small, independently shipped
-bug-fix milestone.
+Complete; shipped in 0.8.5 and manual playtest confirmed by user. See
+`docs/M8.11-CLOSEOUT.md`.
 
 ## Goal
 
@@ -1411,7 +1411,8 @@ Use the final success criteria and full verification ladder in `docs/M8.11-PLAN.
 
 ## Status
 
-Implemented in 0.8.5. See `docs/M8.12-CLOSEOUT.md`. Playtest-gated magnitudes.
+Complete; shipped in 0.8.5 and manual playtest confirmed by user. See
+`docs/M8.12-CLOSEOUT.md`.
 
 ## Goal
 
@@ -1430,9 +1431,8 @@ Use the final success criteria and full verification ladder in `docs/M8.12-PLAN.
 
 ## Status
 
-Implemented in 0.8.5; automated, Loom, and Docker checks passed. The JARs are staged
-in both local clients, but in-game acceptance remains pending client restart. See
-`docs/M8.13-CLOSEOUT.md`.
+Complete; shipped in 0.8.5 with automated, Loom, and Docker checks passed.
+In-game acceptance confirmed by user. See `docs/M8.13-CLOSEOUT.md`.
 
 ## Goal
 
@@ -1467,8 +1467,8 @@ help pages cover the command tree, and the documented verification ladder is com
 
 ## Status
 
-Implemented in 0.8.5. Automated flight checks and Docker verification passed; manual
-in-game flight confirmation remains pending. See `docs/M8.14-CLOSEOUT.md`.
+Complete; shipped in 0.8.5. Automated flight checks and Docker verification passed;
+manual in-game flight confirmation by user. See `docs/M8.14-CLOSEOUT.md`.
 
 ## Goal
 
@@ -1633,30 +1633,6 @@ Bedrock visual parity is claimed. See `docs/M10.3-PLAN.md`.
 
 Deferred work that is not assigned to a milestone. Keep it short; delete entries when they ship.
 
-## Deprecate `/golf dev preparecourse`
-
-`/golf dev preparecourse` is M5-era development scaffolding: it rebuilds the fixed
-`minecraft_golf:m5_ocean_campus` v11 layout inside the seed-specific envelope
-`X[-640..448] Y[32..192] Z[-256..640]`. It predates authored courses and world sync, and
-the current workflow no longer starts from a generated campus:
-
-- The known-good starting state for a local world is now its **baseline**, captured by
-  `world-sync.sh pull` and restored by `dev-server-reset.sh`. That supersedes
-  `preparecourse` as the recovery path — exact, offline, and with no 574k-block replan.
-- Course work happens on the live world pulled into the dev server, not on a generated
-  practice campus.
-
-Deprecate first, delete later:
-
-1. Mark the command deprecated in `docs/COMMANDS.md`.
-2. Delete the command, the M5 layout generator, and the dev-only code paths that exist
-   to serve it.
-3. Prune the stale references across `docs/M5-*.md`, `docs/M6-*.md`, `docs/M7-*.md`, and
-   the M5 anchor in this file.
-
-No structural blocker: `CourseBlockBreakGuard` exempts operators by permission level and
-only mentions `preparecourse` in a javadoc comment, and no test references the command.
-
 ## New-world bootstrap for the local dev server — complete
 
 `scripts/dev-server-new-world.sh <world-name> <seed>` registers and generates a fresh
@@ -1729,5 +1705,5 @@ remaining client-light/Bedrock code is gated, unsupported, and not pursued furth
 and shipped in **0.8.5**: the accuracy meter now samples its perfect centre exactly and the
 drawn zone matches the resolver, and a Driver away from a tee launches lower and shorter
 with a `(deck)` HUD label. Automated tests, Loom client, Docker dedicated server, and the
-installed-client deployment all pass; the remaining manual boundary is meter feel and a
-real par-5 tee-vs-deck playtest. See `docs/M8.11-CLOSEOUT.md` and `docs/M8.12-CLOSEOUT.md`.
+installed-client deployment all pass; manual playtests were subsequently confirmed
+by the user. See `docs/M8.11-CLOSEOUT.md` and `docs/M8.12-CLOSEOUT.md`.

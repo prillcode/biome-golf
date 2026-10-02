@@ -49,8 +49,7 @@ import pro.apdev.biomegolf.hole.HoleDefinition;
  *       perimeter (M8.10 S3).</li>
  * </ul>
  *
- * <p>The cup/flag block is always non-operator protected. Operators (the same
- * gamemaster permission gate as {@code /golf dev preparecourse}) are exempt
+ * <p>The cup/flag block is always non-operator protected. Operators are exempt
  * under {@link ProtectionVerdict#DENY_NON_OP}, but a locked landscape perimeter
  * ({@link ProtectionVerdict#DENY_ALL}) denies every player so the lock removes
  * the operator exemption. Everything outside the protected regions stays fully

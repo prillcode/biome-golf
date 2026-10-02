@@ -172,8 +172,6 @@ normal play.
 | `/golf inspect` | Inspect the nearest golf ball. |
 | `/golf inspect <id>` | Inspect a golf ball by entity ID. |
 | `/golf dev preparehole` | Prepare the configured development hole. |
-| `/golf dev preparecourse` | Generate the development course layout in its approved development world. |
-| `/golf dev testhole <1-3>` | Select one of the generated development test holes. |
 
 ## Course builder commands
 

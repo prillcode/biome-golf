@@ -25,7 +25,7 @@ public final class GolfHelpPages {
 		"Practice setup: /golf practice tee set; /golf practice target set|clear <1-8>",
 		"Modes/builder: /golf mode build [<courseId>]; /golf builder course <id> | restock | palette reload",
 		"Visitor setup: /golf visitor address|link <value>; /golf visitor spawn set|clear",
-		"Diagnostics/dev: /golf spawn [x y z] | /golf launch <forward> <up> [id] | /golf inspect [id] | /golf dev preparehole|preparecourse|testhole",
+		"Diagnostics/dev: /golf spawn [x y z] | /golf launch <forward> <up> [id] | /golf inspect [id] | /golf dev preparehole",
 		"Full syntax and usage: docs/COMMANDS.md");
 
 	private GolfHelpPages() {

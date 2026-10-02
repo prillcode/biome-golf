@@ -105,7 +105,7 @@ public class MinecraftGolf implements ModInitializer {
 		GolfMenuNetworking.register();
 
 		// M7 S1: stop creative-mode destruction of the authored course (tee/cup vicinity
-		// guard); operator/dev-exempt so /golf dev preparecourse recovery still works.
+		// guard); operator/dev-exempt except within locked landscape perimeters.
 		CourseBlockBreakGuard.register();
 
 		// S5: reconnect a suspended golfer and send the authoritative snapshot on join.

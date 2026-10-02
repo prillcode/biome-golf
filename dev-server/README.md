@@ -27,7 +27,7 @@ Biome Golf uses both Loom and Docker because they prove different things.
 Recommended hybrid workflow:
 
 1. Run `./gradlew test` and `./gradlew build` for every relevant change.
-2. Use `./gradlew runClient` with a cheats-enabled **Singleplayer** world using seed `-1928790872702396508` for rapid client-facing checks. Run `/golf dev preparecourse` once to prepare or restore the M5 campus.
+2. Use `./gradlew runClient` with a cheats-enabled **Singleplayer** world for rapid client-facing checks. (The historical M5 ocean-campus seed and its generator commands were removed; see the M5 section below.)
 3. Use Docker for dedicated-server integration and final gameplay acceptance after syncing the JAR.
 
 > **Authentication:** the Docker server intentionally uses `online-mode=true`. Loom's `runClient` development identity cannot authenticate to it and reports `Failed to login: Invalid session`. Connect with an authenticated Java Edition client containing matching Fabric Loader, Fabric API, and Biome Golf versions. Do not weaken the tracked Docker server's authentication for Loom testing.
@@ -142,29 +142,26 @@ exactly the live world; `dev-server-reset.sh` returns to that pulled state.
 
 ## Prepared practice area
 
-### M5 three-hole campus
+### M5 three-hole campus (legacy)
 
-The scored M5 course and separate practice range use layout
-`minecraft_golf:m5_ocean_campus` v11 on seed `-1928790872702396508`. Preparation
-is explicit, seed-gated, two-phase, and bounded by the overall envelope
-`X[-640..448]`, `Y[32..192]`, `Z[-256..640]`; only the authored subregions in
-`docs/M5-PLAN.md` are eligible for mutation.
+The scored M5 course and separate practice range were generated from layout
+`minecraft_golf:m5_ocean_campus` v11 on seed `-1928790872702396508`. Its
+generator commands (`/golf dev preparecourse`, `/golf dev testhole`) were removed
+once the world-sync baseline/reset workflow became the known-good recovery path;
+use `dev-server-reset.sh` to restore the world instead of regenerating a campus.
+
+The finalized authored `m5` course still plays normally on a matching world:
 
 ```text
-/golf dev preparecourse
 /golf course select m5
 /golf hole start
 /golf nexthole
 ```
 
-Prepare the layout, explicitly select the finalized authored `m5` course, and start
-Hole 1 normally. After a server restart, repeat the course-selection command; the
-active course is runtime-only. Use the clickable completion action or `/golf nexthole`
-after non-final holes. The final hole automatically finalizes and prints the
-scorecard. `/golf dev testhole <1|2|3>` is an
-operator-only isolated-hole tool and does not exercise sequencing or the final
-scorecard. Repeating `preparecourse` after the vegetation cleanup has settled must
-report zero changed blocks.
+Select the course and start Hole 1. After a server restart, repeat the
+course-selection command; the active course is runtime-only. Use the clickable
+completion action or `/golf nexthole` after non-final holes; the final hole
+automatically finalizes and prints the scorecard.
 
 ### M4.5 legacy practice hole
 
