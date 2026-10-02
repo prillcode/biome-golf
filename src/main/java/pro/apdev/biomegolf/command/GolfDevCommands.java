@@ -3,6 +3,7 @@ package pro.apdev.biomegolf.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -17,6 +18,7 @@ import net.minecraft.world.level.entity.EntityTypeTest;
 
 import pro.apdev.biomegolf.MinecraftGolf;
 import pro.apdev.biomegolf.ball.BallState;
+import pro.apdev.biomegolf.clear.ClearGeometry;
 import pro.apdev.biomegolf.dev.DevelopmentHoleBuilder;
 import pro.apdev.biomegolf.dev.DevelopmentHoleBuilder.Layout;
 import pro.apdev.biomegolf.entity.GolfBallEntities;
@@ -99,9 +101,41 @@ public final class GolfDevCommands {
 				.then(Commands.literal("dev")
 						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.then(Commands.literal("preparehole")
-								.executes(GolfDevCommands::prepareHole))));
+								.executes(GolfDevCommands::prepareHole)))
+				.then(Commands.literal("clear")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(GolfClearCommands::usage)
+						.then(Commands.literal("status")
+								.executes(GolfClearCommands::status))
+						.then(Commands.literal("reset")
+								.executes(GolfClearCommands::reset))
+						.then(Commands.literal("reload")
+								.executes(GolfClearCommands::reload))
+						.then(Commands.literal("depth")
+								.executes(GolfClearCommands::depthShow)
+								.then(Commands.argument("n", IntegerArgumentType.integer(1, ClearGeometry.MAX_DEPTH))
+										.executes(GolfClearCommands::depthSet)))
+						.then(Commands.literal("width")
+								.executes(GolfClearCommands::widthShow)
+								.then(Commands.argument("n", IntegerArgumentType.integer(1, ClearGeometry.MAX_WIDTH))
+										.executes(GolfClearCommands::widthSet)))
+						.then(Commands.literal("height")
+								.executes(GolfClearCommands::heightShow)
+								.then(Commands.argument("h", IntegerArgumentType.integer(
+									ClearGeometry.MIN_HEIGHT, ClearGeometry.MAX_HEIGHT))
+									.executes(GolfClearCommands::heightSet)))
+						.then(Commands.literal("item")
+								.executes(GolfClearCommands::itemShow)
+								.then(Commands.argument("name", StringArgumentType.word())
+									.executes(GolfClearCommands::itemSet)))
+						.then(Commands.argument("group", StringArgumentType.word())
+							.executes(GolfClearCommands::runWithGroup)
+							.then(Commands.argument("depth", IntegerArgumentType.integer(1, ClearGeometry.MAX_DEPTH))
+								.executes(GolfClearCommands::runWithGroupDepth)
+								.then(Commands.argument("width", IntegerArgumentType.integer(1, ClearGeometry.MAX_WIDTH))
+									.executes(GolfClearCommands::runWithGroupDepthWidth))))));
 		MinecraftGolf.LOGGER.info(
-			"Registered /golf developer commands (spawn, launch, inspect, dev preparehole)");
+			"Registered /golf developer commands (spawn, launch, inspect, dev preparehole, clear)");
 	}
 
 	// ------------------------------------------------------------------
@@ -140,7 +174,7 @@ public final class GolfDevCommands {
 	// ------------------------------------------------------------------
 	// /golf spawn
 	// ------------------------------------------------------------------
-	private static boolean activePlayBlocksWorldMutation(CommandContext<CommandSourceStack> ctx) {
+	static boolean activePlayBlocksWorldMutation(CommandContext<CommandSourceStack> ctx) {
 		if (!ActiveHoleService.instance().hasActivePlay()) return false;
 		ctx.getSource().sendFailure(Component.literal(
 			"[golf] cannot reconfigure or rebuild golf terrain while play is active"));

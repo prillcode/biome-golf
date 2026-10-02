@@ -173,6 +173,33 @@ normal play.
 | `/golf inspect <id>` | Inspect a golf ball by entity ID. |
 | `/golf dev preparehole` | Prepare the configured development hole. |
 
+### Builder bulk clearing (operator, Builder mode only)
+
+These commands clear a bounded corridor of matching blocks to air. They require
+Builder mode (`/golf mode build`) and operator/gamemaster permission.
+
+| Command | What it does |
+|---|---|
+| `/golf clear <group> [depth] [width]` | Clear a corridor of blocks matching the named target group (e.g. `trees`). Depth counts blocks forward from just in front of you on the nearest cardinal axis; width is centered on you and rounded up to an odd width; height is the session default. |
+| `/golf clear depth [n]` | Show or set the session default depth (1–64). |
+| `/golf clear width [n]` | Show or set the session default width (odd, 1–21; even input rounds up). |
+| `/golf clear height [h]` | Show or set the session default height (signed −64..64, nonzero; positive clears up from feet level, negative digs down from feet level, including the block at your feet so a trench has no rim). |
+| `/golf clear item <name>` | Select the session target group. |
+| `/golf clear status` | Show session settings and the available groups. |
+| `/golf clear reset` | Restore the defaults (item `trees`, depth 10, width 9, height +32). |
+| `/golf clear reload` | Reload `config/minecraft_golf/clear_items.json`. |
+
+Matching blocks become air; everything else is untouched. Configured tee/cup
+vicinities and locked course landscapes are always preserved (skipped matches are
+counted in the result), and the whole operation is rejected while golf play is
+active. Unloaded chunks and positions outside build height are skipped and counted.
+Settings are session-local memory and reset on disconnect, server restart, or
+`/golf clear reset`. Target groups come from `config/minecraft_golf/clear_items.json`
+as lists of block IDs and `#`-prefixed block tags; the built-in defaults are
+`trees` (logs + leaves), `logs`, `leaves`, `ground` (grass-block/dirt, sand,
+terracotta, stone, deepslate, and ore families), and `grass` (the grass and fern
+plants that grow atop terrain).
+
 ## Course builder commands
 
 Course authoring commands require gamemaster permission. They define golf metadata on

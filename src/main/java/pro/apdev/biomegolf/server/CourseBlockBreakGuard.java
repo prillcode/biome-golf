@@ -79,6 +79,15 @@ public final class CourseBlockBreakGuard {
 	public static void clearConfigured() { INDEX.clearConfigured(); }
 	public static void clear() { INDEX.clear(); }
 
+	/**
+	 * Combined protection verdict for a bulk course tool (e.g. the Builder's
+	 * {@code /golf clear}) at a block position: tee/cup vicinities deny
+	 * non-operators, locked landscapes deny everyone, everything else allows.
+	 */
+	public static ProtectionVerdict bulkVerdict(Level world, BlockPos pos) {
+		return INDEX.verdict(dimension(world), pos.getX(), pos.getY(), pos.getZ());
+	}
+
 	/** Installs the guard; safe on dedicated and integrated servers. */
 	public static void register() {
 		if (registered) {
