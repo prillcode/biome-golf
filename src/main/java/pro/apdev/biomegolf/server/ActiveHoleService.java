@@ -674,6 +674,31 @@ public final class ActiveHoleService {
 		return new StartResult(true, message);
 	}
 
+	/**
+	 * Operator scoped: removes every explicit practice ball in already-loaded chunks across
+	 * all dimensions, regardless of owner. Balls currently assigned to an active round session
+	 * are always preserved; balls stored in unloaded chunks are not touched and require either
+	 * chunk loading or a future on-disk sweep.
+	 */
+	public StartResult clearAllPracticeBalls(ServerPlayer operator) {
+		Set<UUID> inPlayBallIds = lifecycle.activeAssignedBallIds();
+		int removed = 0;
+		for (ServerLevel level : operator.level().getServer().getAllLevels()) {
+			for (GolfBallEntity ball : level.getEntities(EntityTypeTest.forClass(GolfBallEntity.class),
+				candidate -> PracticeBallCleanup.shouldClearAll(
+					candidate.isPracticeBall(), inPlayBallIds, candidate.getUUID()))) {
+				overspeedCupEntries.remove(ball.getUUID());
+				ball.discard();
+				removed++;
+			}
+		}
+		MinecraftGolf.LOGGER.info("{} cleared {} practice ball(s) across all loaded chunks",
+			operator.getName().getString(), removed);
+		String message = "[golf] cleared " + removed + " practice ball"
+			+ (removed == 1 ? "" : "s") + " across loaded chunks (all owners)";
+		return new StartResult(true, message);
+	}
+
 	private int removePracticeBalls(UUID playerId, UUID assignedBall, MinecraftServer server) {
 		int removed = 0;
 		for (ServerLevel level : server.getAllLevels()) {

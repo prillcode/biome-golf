@@ -7,6 +7,12 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ## [0.9.2] - 2026-10-03
 
+### Added
+
+- Added the operator `/golf practice clear all` sweep: removes every practice ball in
+  loaded chunks across dimensions, regardless of owner. Balls assigned to an active round
+  and balls stored in unloaded chunks are preserved.
+
 ### Changed
 
 - Cloned course drafts retain the source landscape bounds but start with an unlocked

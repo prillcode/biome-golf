@@ -3,6 +3,7 @@ package pro.apdev.biomegolf.ball;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,31 @@ class PracticeBallCleanupTest {
 	void preservesOwnedBallThatWasNotExplicitlyMarkedForPractice() {
 		assertFalse(PracticeBallCleanup.shouldClear(
 			ALICE, ALICE, false, null, PRACTICE_BALL));
+	}
+
+	@Test
+	void clearsAnyOwnersPracticeBallInTheOperatorSweep() {
+		assertTrue(PracticeBallCleanup.shouldClearAll(
+			true, Set.of(ACTIVE_BALL), PRACTICE_BALL));
+	}
+
+	@Test
+	void sweepPreservesAssignedInPlayBallEvenIfItHasPracticeMarker() {
+		assertFalse(PracticeBallCleanup.shouldClearAll(
+			true, Set.of(ACTIVE_BALL), ACTIVE_BALL));
+	}
+
+	@Test
+	void sweepPreservesBallThatWasNotExplicitlyMarkedForPractice() {
+		assertFalse(PracticeBallCleanup.shouldClearAll(
+			false, Set.of(ACTIVE_BALL), PRACTICE_BALL));
+	}
+
+	@Test
+	void sweepIsSafeWhenNoSessionsAreTracked() {
+		assertTrue(PracticeBallCleanup.shouldClearAll(
+			true, Set.of(), PRACTICE_BALL));
+		assertTrue(PracticeBallCleanup.shouldClearAll(true, null, PRACTICE_BALL));
 	}
 
 	private static UUID id(long value) {

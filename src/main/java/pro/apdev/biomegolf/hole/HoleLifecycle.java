@@ -1,9 +1,11 @@
 package pro.apdev.biomegolf.hole;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -82,6 +84,19 @@ public final class HoleLifecycle {
 
 	public boolean allowsPracticeBall(UUID playerId) {
 		return !sessions.containsKey(Objects.requireNonNull(playerId, "playerId"));
+	}
+
+	/**
+	 * All ball UUIDs currently assigned to active sessions. Used by the operator
+	 * practice-ball sweep so an in-play ball is never removed, even if it carries a
+	 * practice marker.
+	 */
+	public Set<UUID> activeAssignedBallIds() {
+		Set<UUID> ballIds = new HashSet<>();
+		for (PlayerHoleSession session : sessions.values()) {
+			ballIds.add(session.ballUuid());
+		}
+		return ballIds;
 	}
 
 	public void update(UUID playerId, PlayerHoleSession updatedSession) {

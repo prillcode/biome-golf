@@ -131,7 +131,11 @@ public final class GolfHoleCommands {
 				.then(Commands.literal("equip").executes(GolfHoleCommands::equipClubs)))
 			.then(Commands.literal("practice")
 				.then(Commands.literal("ball").executes(GolfHoleCommands::dropPracticeBall))
-				.then(Commands.literal("clear").executes(GolfHoleCommands::clearPracticeBalls))
+				.then(Commands.literal("clear")
+					.executes(GolfHoleCommands::clearPracticeBalls)
+					.then(Commands.literal("all")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(GolfHoleCommands::clearAllPracticeBalls)))
 				.then(Commands.literal("tee")
 					.executes(GolfHoleCommands::goToPracticeTee)
 					.then(Commands.literal("set").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -318,6 +322,12 @@ public final class GolfHoleCommands {
 	private static int clearPracticeBalls(CommandContext<CommandSourceStack> context)
 			throws CommandSyntaxException {
 		return sendResult(context, ActiveHoleService.instance().clearPracticeBalls(
+			context.getSource().getPlayerOrException()));
+	}
+
+	private static int clearAllPracticeBalls(CommandContext<CommandSourceStack> context)
+			throws CommandSyntaxException {
+		return sendResult(context, ActiveHoleService.instance().clearAllPracticeBalls(
 			context.getSource().getPlayerOrException()));
 	}
 

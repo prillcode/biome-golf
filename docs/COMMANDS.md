@@ -109,7 +109,7 @@ a right-click swing attempt with a golf club automatically reveals them again.
 | `/golf practice tee` | Teleport to the configured practice tee, if it is set in your current dimension. |
 | `/golf practice target list` | Show the saved practice tee and targets. |
 
-Practice tee and target setup commands are operator-only; see the operator section.
+Practice tee/target setup and `/golf practice clear all` are operator-only; see the operator section.
 
 ### Visitor view controls
 
@@ -142,6 +142,7 @@ section.
 | `/golf practice tee set` | Save your current standing position as the practice tee. |
 | `/golf practice target set <1-8>` | Set or move a numbered target at your current position and place its cup and flag. |
 | `/golf practice target clear <1-8>` | Remove that target's cup and flag and clear its saved location. |
+| `/golf practice clear all` | Remove every practice ball currently loaded in chunks across dimensions, regardless of owner. Balls assigned to an active round and balls stored in unloaded chunks are preserved. |
 
 Target setup requires the target position to be in the same dimension as the player.
 
