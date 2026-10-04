@@ -85,6 +85,14 @@ public final class ActiveHoleService {
 	private static final int DROP_SCAN_BLOCKS_UP = 16;
 	private static final int DROP_SCAN_BLOCKS_DOWN = 12;
 
+	/**
+	 * Farthest a water/lava drop may rest below where the shot was played. Deeper
+	 * candidates (for example a cave floor under a sunken pool) are rejected so the
+	 * search keeps looking upward for the playing surface; the final fallback is the
+	 * previous-shot position.
+	 */
+	private static final double DROP_MAX_BLOCKS_BELOW_SHOT = 5.0;
+
 	/** Minimum horizontal shot-origin-to-entry distance before the flight chord is trusted. */
 	private static final double MIN_FLIGHT_LINE_BLOCKS = 2.0;
 	/** Hard cap on the back-on-the-line search, in blocks. */
@@ -1282,29 +1290,34 @@ public final class ActiveHoleService {
 		double lineCap = Math.min(MAX_LINE_BACKTRACK_BLOCKS,
 			Math.max(HazardDropSearch.MAX_BACKTRACK_BLOCKS,
 				flight.horizontalLength() + LINE_CAP_MARGIN));
+		// A drop must not strand the ball far below where the shot was played; deep
+		// cave floors are rejected so the search keeps walking back to safe land.
+		double minRestY = origin.y() - DROP_MAX_BLOCKS_BELOW_SHOT;
 		Optional<Vec3> clear = HazardDropSearch.findDrop(entry, heading, boundary, lineCap,
-			(x, z) -> resolveDropRest(level, entry, x, z, false));
+			(x, z) -> resolveDropRest(level, entry, x, z, minRestY, false));
 		if (clear.isPresent()) {
 			return clear.orElseThrow();
 		}
 		// Last resort before the previous-shot position: accept a hazard surface
 		// (a bunker or honey) rather than give the whole shot distance back.
 		return HazardDropSearch.findDrop(entry, heading, boundary, lineCap,
-			(x, z) -> resolveDropRest(level, entry, x, z, true))
+			(x, z) -> resolveDropRest(level, entry, x, z, minRestY, true))
 			.orElse(session.lastSafePosition());
 	}
 
 	/**
 	 * Resolves a safe ball rest site for a horizontal column. Ground at or below the
 	 * hazard entry level is preferred (the realistic water-margin drop); a higher
-	 * tee-side bank is the fallback.
+	 * tee-side bank is the fallback. A resting site below {@code minRestY} (for
+	 * example a cave floor beneath a sunken pool) is never accepted, so the search
+	 * keeps looking upward and then further back along the line.
 	 *
 	 * @param allowHazardSurfaces when false, a support block that resolves to a golf
 	 *                           hazard surface (bunker sand, honey) is skipped so the
 	 *                           drop keeps looking for fairway-like land
 	 */
 	private static Optional<Vec3> resolveDropRest(ServerLevel level, Vec3 entryPoint,
-			double x, double z, boolean allowHazardSurfaces) {
+			double x, double z, double minRestY, boolean allowHazardSurfaces) {
 		int columnX = (int) Math.floor(x);
 		int columnZ = (int) Math.floor(z);
 		double centerX = columnX + 0.5;
@@ -1312,11 +1325,12 @@ public final class ActiveHoleService {
 		int entryBlockY = (int) Math.floor(entryPoint.y());
 		Optional<Vec3> atOrBelow = scanDropColumn(level, columnX, columnZ, centerX, centerZ,
 			entryBlockY, entryBlockY - DROP_SCAN_BLOCKS_DOWN, allowHazardSurfaces);
-		if (atOrBelow.isPresent()) {
+		if (atOrBelow.isPresent() && atOrBelow.orElseThrow().y() >= minRestY) {
 			return atOrBelow;
 		}
 		return scanDropColumn(level, columnX, columnZ, centerX, centerZ,
-			entryBlockY + 1, entryBlockY + DROP_SCAN_BLOCKS_UP, allowHazardSurfaces);
+			entryBlockY + 1, entryBlockY + DROP_SCAN_BLOCKS_UP, allowHazardSurfaces)
+			.filter(rest -> rest.y() >= minRestY);
 	}
 
 	/**
