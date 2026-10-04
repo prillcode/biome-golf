@@ -10,6 +10,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.server.level.ServerPlayer;
 
 import org.slf4j.Logger;
+import java.util.UUID;
+
 import org.slf4j.LoggerFactory;
 
 import pro.apdev.biomegolf.block.GolfBlocks;
@@ -17,6 +19,7 @@ import pro.apdev.biomegolf.command.GolfCourseCommands;
 import pro.apdev.biomegolf.command.GolfDevCommands;
 import pro.apdev.biomegolf.command.GolfHoleCommands;
 import pro.apdev.biomegolf.entity.GolfBallEntities;
+import pro.apdev.biomegolf.entity.GolfBallEntity;
 import pro.apdev.biomegolf.item.GolfItems;
 import pro.apdev.biomegolf.net.HoleStateNetworking;
 import pro.apdev.biomegolf.net.HudVisibilityNetworking;
@@ -123,14 +126,22 @@ public class MinecraftGolf implements ModInitializer {
 			player.addTag(WELCOME_TAG);
 			ActiveHoleService.instance().onPlayerConnected(player);
 			VisitorService.instance().onPlayerJoined(player);
+			// Reconcile vanilla snowball mirrors after any join so a Bedrock/vanilla
+			// visitor gets a view and left-over mirrors without a live golf ball are swept.
+			GolfBallEntity.refreshClientLightMirrors(server, null);
 		});
 
 		// S5: apply the Ready Golf suspension policy on disconnect.
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-			BallCameraService.instance().forget(handler.getPlayer().getUUID());
-			HeldShotService.forget(handler.getPlayer().getUUID());
+			UUID uuid = handler.getPlayer().getUUID();
+			BallCameraService.instance().forget(uuid);
+			HeldShotService.forget(uuid);
 			VisitorService.instance().onPlayerDisconnected(handler.getPlayer());
 			ActiveHoleService.instance().onPlayerDisconnected(handler.getPlayer(), server);
+			// Reconcile mirrors after the disconnect clears practice balls: mirrors for
+			// those balls become orphans and are removed; mirrors still needed by another
+			// nearby visitor are kept.
+			GolfBallEntity.refreshClientLightMirrors(server, uuid);
 		});
 	}
 

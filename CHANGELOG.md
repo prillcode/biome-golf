@@ -5,7 +5,7 @@ All notable changes to Biome Golf are documented in this file.
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and uses [Semantic Versioning](https://semver.org/).
 
-## [0.9.2] - 2026-10-03
+## [0.9.2] - 2026-10-04
 
 ### Added
 
@@ -23,6 +23,9 @@ and uses [Semantic Versioning](https://semver.org/).
 - `/golf hole tee` now keeps the hole's entry transition in sync with the tee, so
   re-recording a tee position no longer leaves the post-hole-out teleport pointing at an
   older location (visible on cloned courses such as oh18).
+- Ball-camera snowball mirrors now reconcile on player join and disconnect: a vanilla
+  item mirror that outlives its golf ball (or its Bedrock/vanilla visitor) is removed
+  instead of lingering in the world, and ball removal resolves its mirror by UUID.
 - Builder `/golf clear` now allows operator edits inside unlocked course landscapes while
   continuing to skip tee/cup vicinities and locked landscapes.
 

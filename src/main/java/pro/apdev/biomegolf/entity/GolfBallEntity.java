@@ -1,5 +1,9 @@
 package pro.apdev.biomegolf.entity;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -11,6 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -406,12 +411,18 @@ public class GolfBallEntity extends Entity {
 	// ------------------------------------------------------------------
 
 	private void tickVisual() {
-		ServerLevel serverLevel = (ServerLevel) level();
-		Vec3 p = state.position();
+		refreshVisual(null);
+	}
+
+	private void refreshVisual(UUID excludedPlayerId) {
+		if (!(level() instanceof ServerLevel serverLevel)) {
+			return;
+		}
+		Vec3 p = state == null ? currentCenter() : state.position();
 		// M10.3 S1: only mirror while a client-light player is near the ball. With no
 		// such player online/near (the normal all-modded-Java world) no mirror exists,
 		// so modded Java sees only the custom golf ball.
-		if (!shouldMirror(serverLevel)) {
+		if (!shouldMirror(serverLevel, p, excludedPlayerId)) {
 			if (visual != null) {
 				visual.discard();
 				visual = null;
@@ -450,14 +461,16 @@ public class GolfBallEntity extends Entity {
 	 * primitive, so this keep-alive is the Tier 1 gate; a mixed session may briefly show
 	 * the proxy to modded Java, but the default all-Java experience no longer does.
 	 */
-	private boolean shouldMirror(ServerLevel level) {
+	private boolean shouldMirror(ServerLevel level, Vec3 p, UUID excludedPlayerId) {
 		MinecraftServer server = level.getServer();
 		if (server == null) {
 			return false;
 		}
-		Vec3 p = state.position();
 		double rangeSq = MIRROR_TRACKING_RANGE_BLOCKS * MIRROR_TRACKING_RANGE_BLOCKS;
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+			if (player.getUUID().equals(excludedPlayerId)) {
+				continue;
+			}
 			if (!BallCameraService.isClientLight(player)) {
 				continue;
 			}
@@ -473,14 +486,50 @@ public class GolfBallEntity extends Entity {
 		return false;
 	}
 
+	/**
+	 * Reconciles all loaded vanilla snowball mirrors after a connection change.
+	 * Mirrors remain only while a nearby client-light player can see their golf ball;
+	 * tagged item entities with no live golf-ball owner are discarded as orphans.
+	 * @return number of orphaned mirrors removed
+	 */
+	public static int refreshClientLightMirrors(MinecraftServer server, UUID excludedPlayerId) {
+		int removed = 0;
+		for (ServerLevel level : server.getAllLevels()) {
+			Set<UUID> ownedMirrors = new HashSet<>();
+			for (GolfBallEntity ball : level.getEntities(EntityTypeTest.forClass(GolfBallEntity.class),
+				candidate -> true)) {
+				ball.refreshVisual(excludedPlayerId);
+				if (ball.visualUuid != null && !ball.isRemoved()) {
+					ownedMirrors.add(ball.visualUuid);
+				}
+			}
+			for (ItemEntity item : level.getEntities(EntityTypeTest.forClass(ItemEntity.class),
+				candidate -> candidate.entityTags().contains(BALL_VISUAL_TAG))) {
+				if (!ownedMirrors.contains(item.getUUID())) {
+					item.discard();
+					removed++;
+				}
+			}
+		}
+		if (removed > 0) {
+			MinecraftGolf.LOGGER.info("Removed {} orphaned golf-ball visual mirror(s)", removed);
+		}
+		return removed;
+	}
+
 	@Override
 	public void remove(RemovalReason reason) {
 		if (!level().isClientSide()) {
 			BallCameraService.instance().onBallRest(this);
-			if (visual != null) {
-				visual.discard();
-				visual = null;
+			Entity mirror = visual;
+			if (mirror == null && visualUuid != null && level() instanceof ServerLevel serverLevel) {
+				mirror = serverLevel.getEntity(visualUuid);
 			}
+			if (mirror instanceof ItemEntity item && item.entityTags().contains(BALL_VISUAL_TAG)) {
+				item.discard();
+			}
+			visual = null;
+			visualUuid = null;
 		}
 		super.remove(reason);
 	}
