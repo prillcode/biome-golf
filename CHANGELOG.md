@@ -5,6 +5,18 @@ All notable changes to Biome Golf are documented in this file.
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and uses [Semantic Versioning](https://semver.org/).
 
+## [0.9.2] - 2026-10-03
+
+### Changed
+
+- Cloned course drafts retain the source landscape bounds but start with an unlocked
+  perimeter, so operators can edit the new draft without changing the source course's lock.
+
+### Fixed
+
+- Builder `/golf clear` now allows operator edits inside unlocked course landscapes while
+  continuing to skip tee/cup vicinities and locked landscapes.
+
 ## [0.9.1] - 2026-10-02
 
 ### Added
@@ -453,6 +465,7 @@ world-sync baseline/reset workflow.
 - Additional game modes and other M9 scope.
 
 [Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.9.0...HEAD
+[0.9.2]: https://github.com/prillcode/biome-golf/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/prillcode/biome-golf/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/prillcode/biome-golf/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/prillcode/biome-golf/compare/v0.8.1...v0.8.5

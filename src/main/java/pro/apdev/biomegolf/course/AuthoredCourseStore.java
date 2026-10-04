@@ -27,9 +27,10 @@ import pro.apdev.biomegolf.hole.HoleDefinition;
  * with precise messages, mirroring {@link HoleDefinition} and
  * {@link CourseDefinition}.</p>
  *
- * <p>M8.10 S1 adds course-level {@link CourseLandscape} metadata (perimeter and
- * lock) that is mutable for both drafts and finalized courses, is copied by
- * {@link #cloneCourse}, and is dropped by {@link #removeCourse}.</p>
+ * <p>Course-level {@link CourseLandscape} metadata is mutable for both drafts and
+ * finalized courses. Cloning copies a landscape's dimension and bounds into an
+ * independent, unlocked perimeter so the new draft is immediately editable; the
+ * source lock state remains unchanged. Metadata is dropped by {@link #removeCourse}.</p>
  */
 public final class AuthoredCourseStore {
 
@@ -110,11 +111,11 @@ public final class AuthoredCourseStore {
 				setHoleTransition(destinationId, hole.number(), hole.transition());
 			}
 		}
-		// M8.10 S1: landscape metadata is course-level and follows the clone.
+		// Keep the source perimeter on the clone, but let its new draft be edited immediately.
 		CourseLandscape landscape = landscapes.get(sourceId);
 		if (landscape != null) {
 			landscapes.put(destinationId, new CourseLandscape(destinationId, landscape.dimension(),
-				landscape.bounds(), landscape.locked()));
+				landscape.bounds(), false));
 		}
 		return destinationId;
 	}

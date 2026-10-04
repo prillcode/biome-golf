@@ -327,7 +327,7 @@ class AuthoredCourseStoreTest {
 	}
 
 	@Test
-	void cloneCopiesLandscapeAndDeleteRemovesIt() {
+	void cloneCopiesLandscapeUnlockedAndDeleteRemovesIt() {
 		AuthoredCourseStore store = new AuthoredCourseStore();
 		store.createCourse("links", "Links", DIMENSION);
 		completeHole(store, "links", 1, 4);
@@ -337,7 +337,8 @@ class AuthoredCourseStoreTest {
 		CourseLandscape cloneLandscape = store.landscape(cloneId).orElseThrow();
 		assertEquals(cloneId, cloneLandscape.courseId());
 		assertEquals(boundary(), cloneLandscape.bounds());
-		assertTrue(cloneLandscape.locked());
+		assertFalse(cloneLandscape.locked());
+		assertTrue(store.landscape("links").orElseThrow().locked());
 
 		// Clearing the clone leaves the source untouched, and deleting drops it.
 		store.clearLandscape(cloneId);

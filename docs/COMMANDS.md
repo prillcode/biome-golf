@@ -191,7 +191,8 @@ Builder mode (`/golf mode build`) and operator/gamemaster permission.
 
 Matching blocks become air; everything else is untouched. Configured tee/cup
 vicinities and locked course landscapes are always preserved (skipped matches are
-counted in the result), and the whole operation is rejected while golf play is
+counted in the result); unlocked landscape perimeters allow this operator-only edit.
+The whole operation is rejected while golf play is
 active. Unloaded chunks and positions outside build height are skipped and counted.
 Settings are session-local memory and reset on disconnect, server restart, or
 `/golf clear reset`. Target groups come from `config/minecraft_golf/clear_items.json`
@@ -216,8 +217,8 @@ in the draft with `/golf course edit <id>` and the hole commands below.
 |---|---|
 | `/golf course create <id>` | Create a course draft using the ID as its display name. |
 | `/golf course create <id> <display name>` | Create a course draft with a separate display name. |
-| `/golf course clone <sourceId> <newId>` | Clone a course into a separate draft. |
-| `/golf course clone <sourceId> <newId> <display name>` | Clone a course and assign the draft a display name. |
+| `/golf course clone <sourceId> <newId>` | Clone a course into a separate draft, copying its landscape bounds but leaving the clone's perimeter unlocked for editing. |
+| `/golf course clone <sourceId> <newId> <display name>` | Clone a course, assign the draft a display name, and copy its landscape bounds with the new perimeter unlocked. |
 | `/golf course list` | List authored courses. |
 | `/golf course status <id>` | Show a draft or finalized course and its hole metadata. |
 | `/golf course edit <id>` | Select a draft as the current course to edit. |

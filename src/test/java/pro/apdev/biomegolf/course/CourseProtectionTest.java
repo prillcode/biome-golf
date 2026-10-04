@@ -127,6 +127,21 @@ class CourseProtectionTest {
 	}
 
 	@Test
+	void bulkClearAllowsUnlockedLandscapesButKeepsTeeCupZonesAndLocksProtected() {
+		List<CourseLandscape> unlocked = List.of(landscape(false));
+		List<CourseLandscape> locked = List.of(landscape(true));
+
+		assertSame(ProtectionVerdict.ALLOW,
+			CourseProtection.resolveForBulkClear(List.of(), unlocked, 40, 64, 0));
+		assertSame(ProtectionVerdict.DENY_ALL,
+			CourseProtection.resolveForBulkClear(List.of(), locked, 40, 64, 0));
+		assertSame(ProtectionVerdict.DENY_NON_OP,
+			CourseProtection.resolveForBulkClear(teeZones(), unlocked, 0, 64, 0));
+		assertSame(ProtectionVerdict.DENY_ALL,
+			CourseProtection.resolveForBulkClear(teeZones(), locked, 0, 64, 0));
+	}
+
+	@Test
 	void fullBreakPolicyCombinesZonesLandscapeLockAndOperatorPermission() {
 		List<ProtectedZone> zones = teeZones();
 		List<CourseLandscape> unlocked = List.of(landscape(false));

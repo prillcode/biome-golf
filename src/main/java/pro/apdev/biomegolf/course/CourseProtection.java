@@ -92,6 +92,25 @@ public final class CourseProtection {
 		return verdict;
 	}
 
+	/**
+	 * Protection policy for operator-only bulk course edits. Tee/cup vicinities
+	 * remain protected, and locked landscapes deny everyone; unlocked landscape
+	 * perimeters do not block this operator-only operation.
+	 */
+	public static ProtectionVerdict resolveForBulkClear(List<ProtectedZone> zones,
+			List<CourseLandscape> landscapes, int x, int y, int z) {
+		Objects.requireNonNull(zones, "zones");
+		Objects.requireNonNull(landscapes, "landscapes");
+		for (CourseLandscape landscape : landscapes) {
+			if (landscape.locked() && landscape.contains(x, y, z)) {
+				return ProtectionVerdict.DENY_ALL;
+			}
+		}
+		return isProtected(zones, x, y, z)
+			? ProtectionVerdict.DENY_NON_OP
+			: ProtectionVerdict.ALLOW;
+	}
+
 	/** Convenience overload for a course with no landscape perimeter. */
 	public static ProtectionVerdict resolve(List<ProtectedZone> zones, int x, int y, int z) {
 		return resolve(zones, List.of(), x, y, z);
