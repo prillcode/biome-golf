@@ -55,6 +55,21 @@ class AuthoredCourseStoreTest {
 	}
 
 	@Test
+	void replacingTheTeeMovesTheHoleTransitionWithIt() {
+		AuthoredCourseStore store = new AuthoredCourseStore();
+		store.createCourse("links", "Links", DIMENSION);
+		store.setHolePar("links", 1, 4);
+
+		store.setHoleTee("links", 1, tee(0));
+		store.setHoleTee("links", 1, tee(1));
+
+		assertEquals(tee(1), store.draftSnapshot("links").holes().getFirst().tee());
+		assertEquals(tee(1), store.draftSnapshot("links").holes().getFirst().transition().playerPosition());
+		assertEquals(0.0, store.draftSnapshot("links").holes().getFirst().transition().yaw());
+		assertEquals(0.0, store.draftSnapshot("links").holes().getFirst().transition().pitch());
+	}
+
+	@Test
 	void rejectsInvalidIdsNamesAndDimensions() {
 		AuthoredCourseStore store = new AuthoredCourseStore();
 		assertThrows(IllegalArgumentException.class, () -> store.createCourse("  ", "Name", DIMENSION));

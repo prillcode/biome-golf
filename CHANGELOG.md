@@ -20,6 +20,9 @@ and uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- `/golf hole tee` now keeps the hole's entry transition in sync with the tee, so
+  re-recording a tee position no longer leaves the post-hole-out teleport pointing at an
+  older location (visible on cloned courses such as oh18).
 - Builder `/golf clear` now allows operator edits inside unlocked course landscapes while
   continuing to skip tee/cup vicinities and locked landscapes.
 

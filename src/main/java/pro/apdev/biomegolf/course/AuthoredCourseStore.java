@@ -121,7 +121,12 @@ public final class AuthoredCourseStore {
 	}
 
 	public void setHoleTee(String courseId, int number, Vec3 tee) {
-		holeDraft(courseId, number).tee = Objects.requireNonNull(tee, "tee");
+		HoleDraft hole = holeDraft(courseId, number);
+		Vec3 updatedTee = Objects.requireNonNull(tee, "tee");
+		hole.tee = updatedTee;
+		HoleTransition previous = hole.transition;
+		hole.transition = new HoleTransition(updatedTee,
+			previous == null ? 0.0 : previous.yaw(), previous == null ? 0.0 : previous.pitch());
 	}
 
 	public void setHoleCup(String courseId, int number, Vec3 cup) {
