@@ -193,7 +193,7 @@ world-sync baseline/reset workflow.
 
 ### Added
 
-- Releases are published to [Modrinth](https://modrinth.com/mod/biome-golf) via the
+- Releases are published to [Modrinth](https://modrinth.com/mod/biomegolf) via the
   Minotaur Gradle plugin, alongside the GitHub release.
 - `docs/COMMANDS.md`: a reference for player, operator, and course-builder `/golf`
   commands.

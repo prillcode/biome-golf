@@ -50,6 +50,11 @@ dev-server/mods/*.jar
 bg-shell*
 *.log
 
+# Large screenshot sources for the promo site. The optimized, committed copies
+# live in the apcode-dev site (apps/biome-golf-site/public). The tracked
+# docs/assets/biome-golf-logo-square.png stays tracked.
+docs/assets/
+
 # ── GSD baseline (auto-generated) ──
 .gsd
 .gsd-worktrees/
