@@ -10,7 +10,7 @@
 	"contact": {
 		"sources": "https://github.com/prillcode/biome-golf"
 	},
-	"license": "Biome Golf Custom License 1.0",
+	"license": "MIT",
 	"icon": "assets/minecraft_golf/icon.png",
 	"environment": "*",
 	"entrypoints": {
