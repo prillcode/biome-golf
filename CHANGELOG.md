@@ -5,6 +5,16 @@ All notable changes to Biome Golf are documented in this file.
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and uses [Semantic Versioning](https://semver.org/).
 
+## [0.9.4] - 2026-10-15
+
+### Changed
+
+- Biome Golf is now licensed under the [MIT License](LICENSE). The previous custom
+  license restricted published forks from using the Biome Golf name and branding; the
+  `LICENSE`, the `fabric.mod.json` metadata, and the README now declare MIT, and the
+  distinct-name/branding request is a recommendation rather than a license condition.
+  There are no code or gameplay changes.
+
 ## [0.9.3] - 2026-10-04
 
 ### Fixed
@@ -485,7 +495,8 @@ world-sync baseline/reset workflow.
 - Multiple tee boxes and per-player tee selection.
 - Additional game modes and other M9 scope.
 
-[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/prillcode/biome-golf/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/prillcode/biome-golf/compare/v0.9.3...v0.9.4
 [0.9.2]: https://github.com/prillcode/biome-golf/compare/v0.9.1...v0.9.2
 [0.9.3]: https://github.com/prillcode/biome-golf/compare/v0.9.2...v0.9.3
 [0.9.1]: https://github.com/prillcode/biome-golf/compare/v0.9.0...v0.9.1
